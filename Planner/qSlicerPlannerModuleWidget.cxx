@@ -19,8 +19,12 @@
 #include <QDebug>
 
 // SlicerQt includes
+#include "qMRMLSceneModelHierarchyModel.h"
 #include "qSlicerPlannerModuleWidget.h"
 #include "ui_qSlicerPlannerModuleWidget.h"
+
+// Slicer
+#include "vtkMRMLModelHierarchyNode.h"
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -28,6 +32,9 @@ class qSlicerPlannerModuleWidgetPrivate: public Ui_qSlicerPlannerModuleWidget
 {
 public:
   qSlicerPlannerModuleWidgetPrivate();
+
+  vtkMRMLModelHierarchyNode* HierarchyNode;
+  QStringList HideChildNodeTypes;
 };
 
 //-----------------------------------------------------------------------------
@@ -36,6 +43,8 @@ public:
 //-----------------------------------------------------------------------------
 qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 {
+  this->HideChildNodeTypes =
+    (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
 }
 
 //-----------------------------------------------------------------------------
@@ -59,4 +68,58 @@ void qSlicerPlannerModuleWidget::setup()
   Q_D(qSlicerPlannerModuleWidget);
   d->setupUi(this);
   this->Superclass::setup();
+
+  d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
+  d->ModelHierarchyTreeView->setShowScene(false);
+  qMRMLSceneModelHierarchyModel* sceneModel =
+    qobject_cast<qMRMLSceneModelHierarchyModel*>(
+      d->ModelHierarchyTreeView->sceneModel());
+  sceneModel->setIDColumn(-1);
+  sceneModel->setExpandColumn(1);
+  sceneModel->setColorColumn(2);
+  sceneModel->setOpacityColumn(3);
+
+  d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+
+  d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
+  d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
+
+    // use lazy update instead of responding to scene import end event
+  sceneModel->setLazyUpdate(true);
+
+  // Connect
+  this->connect(
+    d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    this, SLOT(setCurrentNode(vtkMRMLNode*)));
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::setCurrentNode(vtkMRMLNode* node)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  vtkMRMLModelHierarchyNode* hNode = vtkMRMLModelHierarchyNode::SafeDownCast(node);
+  if (!hNode)
+    {
+    return;
+    }
+  d->HierarchyNode = hNode;
+  this->updateWidgetFromMRML();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  // Inputs
+  d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
+
+  if (d->HierarchyNode)
+    {
+    d->ModelHierarchyTreeView->setMRMLScene(this->mrmlScene());
+    }
+  d->ModelHierarchyTreeView->setRootNode(d->HierarchyNode);
 }

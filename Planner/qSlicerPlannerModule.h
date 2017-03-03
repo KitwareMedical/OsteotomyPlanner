@@ -27,8 +27,7 @@ class qSlicerPlannerModulePrivate;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_PLANNER_EXPORT
-qSlicerPlannerModule
-  : public qSlicerLoadableModule
+qSlicerPlannerModule : public qSlicerLoadableModule
 {
   Q_OBJECT
   Q_INTERFACES(qSlicerLoadableModule);

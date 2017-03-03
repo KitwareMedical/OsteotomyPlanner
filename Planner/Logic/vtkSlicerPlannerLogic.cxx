@@ -51,6 +51,7 @@ void vtkSlicerPlannerLogic::PrintSelf(ostream& os, vtkIndent indent)
 //---------------------------------------------------------------------------
 void vtkSlicerPlannerLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)
 {
+  Superclass::SetMRMLSceneInternal(newScene);
   //vtkNew<vtkIntArray> events;
   //events->InsertNextValue(vtkMRMLScene::NodeAddedEvent);
   //events->InsertNextValue(vtkMRMLScene::NodeRemovedEvent);

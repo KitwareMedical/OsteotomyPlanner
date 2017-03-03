@@ -27,7 +27,6 @@ mark_as_superbuild(GIT_EXECUTABLE)
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(Planner)
-## NEXT_MODULE
 
 #-----------------------------------------------------------------------------
 set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${CMAKE_BINARY_DIR};${EXTENSION_NAME};ALL;/")

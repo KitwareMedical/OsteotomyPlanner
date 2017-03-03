@@ -33,18 +33,18 @@ class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :
   Q_OBJECT
 
 public:
-
   typedef qSlicerAbstractModuleWidget Superclass;
   qSlicerPlannerModuleWidget(QWidget *parent=0);
   virtual ~qSlicerPlannerModuleWidget();
 
 public slots:
-
+  void setCurrentNode(vtkMRMLNode* node);
 
 protected:
-  QScopedPointer<qSlicerPlannerModuleWidgetPrivate> d_ptr;
-
   virtual void setup();
+  void updateWidgetFromMRML();
+
+  QScopedPointer<qSlicerPlannerModuleWidgetPrivate> d_ptr;
 
 private:
   Q_DECLARE_PRIVATE(qSlicerPlannerModuleWidget);

@@ -10,5 +10,10 @@ extensions, please visit the following links:
 
 ##
 Osteotomy Planner allows you to access the following modules:
- - Planner
+ - Planner:
+   A module to visualize and plan an osteotomy surgery.
+
+
+ - PlannerPythonTesting: The testing python module to test the Planner module.
+
 
