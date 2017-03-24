@@ -25,6 +25,7 @@
 
 class qSlicerPlannerModuleWidgetPrivate;
 class vtkMRMLNode;
+class vtkSlicerPlannerLogic;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :
@@ -37,8 +38,17 @@ public:
   qSlicerPlannerModuleWidget(QWidget *parent=0);
   virtual ~qSlicerPlannerModuleWidget();
 
+  // Shorthand
+  vtkSlicerPlannerLogic* plannerLogic() const;
+
 public slots:
   void setCurrentNode(vtkMRMLNode* node);
+  virtual void setMRMLScene(vtkMRMLScene* scene);
+
+protected slots:
+  void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
+  void onNodeAboutToBeRemoved(vtkMRMLNode* node);
+  void onSceneUpdated();
 
 protected:
   virtual void setup();

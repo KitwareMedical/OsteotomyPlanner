@@ -20,6 +20,7 @@
 
 // MRML includes
 #include <vtkMRMLScene.h>
+#include <vtkMRMLHierarchyNode.h>
 
 // VTK includes
 #include <vtkIntArray.h>
@@ -40,6 +41,50 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
 //----------------------------------------------------------------------------
 vtkSlicerPlannerLogic::~vtkSlicerPlannerLogic()
 {
+}
+
+//-----------------------------------------------------------------------------
+const char* vtkSlicerPlannerLogic::DeleteChildrenWarningSettingName()
+{
+  return "Planner/DeleteChildrenWarning";
+}
+
+//----------------------------------------------------------------------------
+bool vtkSlicerPlannerLogic::DeleteHierarchyChildren(vtkMRMLNode *node)
+{
+  vtkMRMLHierarchyNode* hNode = vtkMRMLHierarchyNode::SafeDownCast(node);
+  if (!hNode)
+    {
+    vtkErrorMacro("DeleteHierarchyChildren: Not a hierarchy node.");
+    return false;
+    }
+  if (!this->GetMRMLScene())
+    {
+    vtkErrorMacro("DeleteHierarchyChildren: No scene defined on this class");
+    return false;
+    }
+
+  // first off, set up batch processing mode on the scene
+  this->GetMRMLScene()->StartState(vtkMRMLScene::BatchProcessState);
+
+  // get all the children nodes
+  std::vector< vtkMRMLHierarchyNode *> allChildren;
+  hNode->GetAllChildrenNodes(allChildren);
+
+  // and loop over them
+  for (unsigned int i = 0; i < allChildren.size(); ++i)
+    {
+    vtkMRMLNode *associatedNode = allChildren[i]->GetAssociatedNode();
+    if (associatedNode)
+      {
+      this->GetMRMLScene()->RemoveNode(associatedNode);
+      }
+    this->GetMRMLScene()->RemoveNode(allChildren[i]);
+    }
+  // end batch processing
+  this->GetMRMLScene()->EndState(vtkMRMLScene::BatchProcessState);
+
+  return true;
 }
 
 //----------------------------------------------------------------------------

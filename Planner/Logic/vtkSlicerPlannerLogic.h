@@ -45,6 +45,11 @@ public:
   vtkTypeMacro(vtkSlicerPlannerLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  static const char* DeleteChildrenWarningSettingName();
+
+  // Delete all the children of the given hierarchy node.
+  bool DeleteHierarchyChildren(vtkMRMLNode* node);
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();

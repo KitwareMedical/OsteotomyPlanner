@@ -77,6 +77,9 @@
         <property name="showHidden">
          <bool>false</bool>
         </property>
+        <property name="showScene">
+         <bool>false</bool>
+        </property>
         <property name="showRootNode">
          <bool>true</bool>
         </property>
@@ -129,6 +132,22 @@
     <hint type="destinationlabel">
      <x>375</x>
      <y>41</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>qSlicerPlannerModuleWidget</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>ModelHierarchyTreeView</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>159</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>178</y>
     </hint>
    </hints>
   </connection>
