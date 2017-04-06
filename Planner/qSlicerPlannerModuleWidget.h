@@ -47,12 +47,13 @@ public slots:
 
 protected slots:
   void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
+  void onNodeAboutToBeRemovedEvent(vtkObject* scene, vtkObject* node);
   void onNodeAboutToBeRemoved(vtkMRMLNode* node);
   void onSceneUpdated();
+  void updateWidgetFromMRML();
 
 protected:
   virtual void setup();
-  void updateWidgetFromMRML();
 
   QScopedPointer<qSlicerPlannerModuleWidgetPrivate> d_ptr;
 
