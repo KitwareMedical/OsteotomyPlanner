@@ -71,6 +71,7 @@ public:
     qMRMLSliderWidget* slider) const;
   void updateReferenceNodeFromWidget(
     vtkMRMLNode* node, QColor color, double opacity) const;
+  vtkMRMLNode* openReferenceDialog() const;
 
   vtkMRMLModelHierarchyNode* HierarchyNode;
   vtkMRMLModelHierarchyNode* StagedHierarchyNode;
@@ -246,6 +247,21 @@ void qSlicerPlannerModuleWidgetPrivate::updateReferenceNodeFromWidget(
 }
 
 //-----------------------------------------------------------------------------
+vtkMRMLNode* qSlicerPlannerModuleWidgetPrivate::openReferenceDialog() const
+{
+  qSlicerIOManager* ioManager = qSlicerApplication::application()->ioManager();
+  vtkNew<vtkCollection> loadedNodes;
+  bool success = ioManager->openDialog(
+    "ModelFile", qSlicerFileDialog::Read,
+    qSlicerIO::IOProperties(), loadedNodes.GetPointer());
+  if (success && loadedNodes->GetNumberOfItems() > 0)
+    {
+    return vtkMRMLNode::SafeDownCast(loadedNodes->GetItemAsObject(0));
+    }
+  return NULL;
+}
+
+//-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidget methods
 
 //-----------------------------------------------------------------------------
@@ -304,6 +320,11 @@ void qSlicerPlannerModuleWidget::setup()
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
 
+  QIcon loadIcon =
+    qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
+  d->BrainReferenceOpenButton->setIcon(loadIcon);
+  d->TemplateReferenceOpenButton->setIcon(loadIcon);
+
   // Connect
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
@@ -331,6 +352,12 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->TemplateReferenceOpacitySliderWidget, SIGNAL(valueChanged(double)),
     this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->BrainReferenceOpenButton, SIGNAL(clicked()),
+    this, SLOT(onOpenBrainReference()));
+  this->connect(
+    d->TemplateReferenceOpenButton, SIGNAL(clicked()),
+    this, SLOT(onOpenTemplateReference()));
 }
 
 //-----------------------------------------------------------------------------
@@ -514,4 +541,26 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton->color(),
     d->TemplateReferenceOpacitySliderWidget->value());
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::onOpenBrainReference()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  vtkMRMLNode* model = d->openReferenceDialog();
+  if (model)
+    {
+    d->BrainReferenceNodeComboBox->setCurrentNode(model);
+    }
+}
+  
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::onOpenTemplateReference()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  vtkMRMLNode* model = d->openReferenceDialog();
+  if (model)
+    {
+    d->TemplateReferenceNodeComboBox->setCurrentNode(model);
+    }
 }

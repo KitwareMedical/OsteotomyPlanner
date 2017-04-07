@@ -60,6 +60,8 @@ protected slots:
   /// References slots
   void updateBrainReferenceNode(vtkMRMLNode* node);
   void updateTemplateReferenceNode(vtkMRMLNode* node);
+  void onOpenBrainReference();
+  void onOpenTemplateReference();
 
 protected:
   virtual void setup();
