@@ -65,10 +65,19 @@ public:
   qMRMLPlannerModelHierarchyModel* sceneModel() const;
   void updateDisplayTransformNode(vtkMRMLNode* nodeRef) const;
 
+  void updateWidgetFromReferenceNode(
+    vtkMRMLNode* node,
+    ctkColorPickerButton* button,
+    qMRMLSliderWidget* slider) const;
+  void updateReferenceNodeFromWidget(
+    vtkMRMLNode* node, QColor color, double opacity) const;
+
   vtkMRMLModelHierarchyNode* HierarchyNode;
   vtkMRMLModelHierarchyNode* StagedHierarchyNode;
   QStringList HideChildNodeTypes;
   QMap<QString, QString> Transforms;
+  vtkMRMLNode* BrainReferenceNode;
+  vtkMRMLNode* TemplateReferenceNode;
 };
 
 //-----------------------------------------------------------------------------
@@ -81,6 +90,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->StagedHierarchyNode = NULL;
   this->HideChildNodeTypes =
     (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
+  this->BrainReferenceNode = NULL;
+  this->TemplateReferenceNode = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -187,6 +198,53 @@ qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
     this->ModelHierarchyTreeView->sceneModel());
 }
 
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate::updateWidgetFromReferenceNode(
+  vtkMRMLNode* node,
+  ctkColorPickerButton* button,
+  qMRMLSliderWidget* slider) const
+{
+  vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
+  button->setEnabled(model != NULL);
+  slider->setEnabled(model != NULL);
+  if (model)
+    {
+    vtkMRMLDisplayNode* display = model->GetDisplayNode();
+    if (display)
+      {
+      double rgb[3];
+      display->GetColor(rgb);
+
+      bool wasBlocking = button->blockSignals(true);
+      button->setColor(QColor::fromRgbF(rgb[0], rgb[1], rgb[2]));
+      button->blockSignals(wasBlocking);
+
+      wasBlocking = slider->blockSignals(true);
+      slider->setValue(display->GetOpacity());
+      slider->blockSignals(wasBlocking);
+      }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate::updateReferenceNodeFromWidget(
+  vtkMRMLNode* node, QColor color, double opacity) const
+{
+  vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
+  if (model)
+    {
+    vtkMRMLDisplayNode* display = model->GetDisplayNode();
+    if (display)
+      {
+      int wasModifying = display->StartModify();
+      display->SetColor(color.redF(), color.greenF(), color.blueF());
+      display->SetOpacity(opacity);
+      display->EndModify(wasModifying);
+      }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidget methods
 
@@ -253,6 +311,26 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
     this, SLOT(onNodeAboutToBeRemoved(vtkMRMLNode*)));
+
+  this->connect(
+    d->BrainReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    this, SLOT(updateBrainReferenceNode(vtkMRMLNode*)));
+  this->connect(
+    d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    this, SLOT(updateTemplateReferenceNode(vtkMRMLNode*)));
+
+  this->connect(
+    d->BrainReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
+    this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->TemplateReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
+    this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->BrainReferenceOpacitySliderWidget, SIGNAL(valueChanged(double)),
+    this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->TemplateReferenceOpacitySliderWidget, SIGNAL(valueChanged(double)),
+    this, SLOT(updateMRMLFromWidget()));
 }
 
 //-----------------------------------------------------------------------------
@@ -332,7 +410,6 @@ void qSlicerPlannerModuleWidget
       this->updateWidgetFromMRML();
       }
     }
-
   d->removeTransformNode(scene, node);
 }
 
@@ -362,6 +439,15 @@ void qSlicerPlannerModuleWidget::onNodeAboutToBeRemoved(vtkMRMLNode* node)
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget
+::updateWidgetFromMRML(vtkObject* obj1, vtkObject* obj2)
+{
+  Q_UNUSED(obj1);
+  Q_UNUSED(obj2);
+  this->updateWidgetFromMRML();
+}
+
+//-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 {
   Q_D(qSlicerPlannerModuleWidget);
@@ -374,4 +460,57 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   // Create all the transforms for the current hierarchy node
   d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
+
+  d->updateWidgetFromReferenceNode(
+    d->BrainReferenceNodeComboBox->currentNode(),
+    d->BrainReferenceColorPickerButton,
+    d->BrainReferenceOpacitySliderWidget);
+  d->updateWidgetFromReferenceNode(
+    d->TemplateReferenceNodeComboBox->currentNode(),
+    d->TemplateReferenceColorPickerButton,
+    d->TemplateReferenceOpacitySliderWidget);
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  this->qvtkReconnect(d->BrainReferenceNode, node,
+    vtkCommand::ModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  this->qvtkReconnect(d->BrainReferenceNode, node,
+    vtkMRMLDisplayableNode::DisplayModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  d->BrainReferenceNode = node;
+
+  this->updateMRMLFromWidget();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  this->qvtkReconnect(d->TemplateReferenceNode, node, vtkCommand::ModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  this->qvtkReconnect(d->TemplateReferenceNode, node,
+    vtkMRMLDisplayableNode::DisplayModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  d->TemplateReferenceNode = node;
+
+  this->updateMRMLFromWidget();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+
+  d->updateReferenceNodeFromWidget(
+    d->BrainReferenceNodeComboBox->currentNode(),
+    d->BrainReferenceColorPickerButton->color(),
+    d->BrainReferenceOpacitySliderWidget->value());
+  d->updateReferenceNodeFromWidget(
+    d->TemplateReferenceNodeComboBox->currentNode(),
+    d->TemplateReferenceColorPickerButton->color(),
+    d->TemplateReferenceOpacitySliderWidget->value());
 }

@@ -46,11 +46,20 @@ public slots:
   virtual void setMRMLScene(vtkMRMLScene* scene);
 
 protected slots:
+  /// Tree view slots
   void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
   void onNodeAboutToBeRemovedEvent(vtkObject* scene, vtkObject* node);
   void onNodeAboutToBeRemoved(vtkMRMLNode* node);
   void onSceneUpdated();
+
+  /// General widget slots
+  void updateWidgetFromMRML(vtkObject*, vtkObject*);
   void updateWidgetFromMRML();
+  void updateMRMLFromWidget();
+
+  /// References slots
+  void updateBrainReferenceNode(vtkMRMLNode* node);
+  void updateTemplateReferenceNode(vtkMRMLNode* node);
 
 protected:
   virtual void setup();
