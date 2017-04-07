@@ -454,6 +454,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
 
+  d->ModelHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
   d->ModelHierarchyTreeView->setRootNode(d->HierarchyNode);
   d->ModelHierarchyTreeView->setCurrentNode(d->HierarchyNode);
   d->ModelHierarchyTreeView->expandAll();
