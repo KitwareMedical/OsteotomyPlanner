@@ -17,14 +17,16 @@
 
 
 // MRML includes
-#include "vtkMRMLMarkupsDisplayNode.h"
-#include "vtkMRMLMarkupsPlaneNode.h"
-#include "vtkMRMLScene.h"
+#include <vtkMRMLMarkupsDisplayNode.h>
+#include <vtkMRMLScene.h>
 
 // VTK includes
 #include <vtkBoundingBox.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
+
+// Planner includes
+#include "vtkMRMLMarkupsPlaneNode.h"
 
 // STD includes
 #include <sstream>
@@ -123,67 +125,84 @@ vtkMRMLMarkupsDisplayNode *vtkMRMLMarkupsPlaneNode::GetMarkupsDisplayNode()
 
 //-------------------------------------------------------------------------
 int vtkMRMLMarkupsPlaneNode::AddPlane(double x, double y, double z,
-                                      double p1x, double p1y, double p1z,
-                                      double p2x, double p2y, double p2z,
+                                      double nx, double ny, double nz,
+                                      double xmin, double ymin, double zmin,
+                                      double xmax, double ymax, double zmax,
                                       std::string label)
 {
   Markup markup;
   markup.Label = label;
   this->InitMarkup(&markup);
 
-  markup.points.push_back(vtkVector3d(x,y,z));
-  markup.points.push_back(vtkVector3d(p1x,p1y,p1z));
-  markup.points.push_back(vtkVector3d(p2x,p2y,p2z));
+  markup.points.resize(4);
+  markup.points[vtkMRMLMarkupsPlaneNode::ORIGIN_INDEX] = vtkVector3d(x,y,z);
+  markup.points[vtkMRMLMarkupsPlaneNode::NORMAL_INDEX] = vtkVector3d(nx,ny,nz);
+  markup.points[vtkMRMLMarkupsPlaneNode::BOUND_MIN_INDEX] = vtkVector3d(xmin,ymin,zmin);
+  markup.points[vtkMRMLMarkupsPlaneNode::BOUND_MAX_INDEX] = vtkVector3d(xmax,ymax,zmax);
   return this->AddMarkup(markup);
 }
 
 //-------------------------------------------------------------------------
 int vtkMRMLMarkupsPlaneNode::AddPlaneFromArray(double origin[3],
-                                               double p1[3],
-                                               double p2[3],
+                                               double normal[3],
+                                               double min[3],
+                                               double max[3],
                                                std::string label)
 {
   return this->AddPlane(
     origin[0], origin[1], origin[2],
-    p1[0], p1[1], p1[2],
-    p2[0], p2[1], p2[2],
+    normal[0], normal[1], normal[2],
+    min[0], min[1], min[2],
+    max[0], max[1], max[2],
     label);
 }
 
 //-------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneNode::GetNthPlaneOrigin(int n, double pos[3])
 {
-  this->GetMarkupPoint(n, 0, pos);
+  this->GetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::ORIGIN_INDEX, pos);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::GetNthPlaneP1(int n, double pos[3])
+void vtkMRMLMarkupsPlaneNode::GetNthPlaneNormal(int n, double pos[3])
 {
-  this->GetMarkupPoint(n, 1, pos);
+  this->GetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::NORMAL_INDEX, pos);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::GetNthPlaneP2(int n, double pos[3])
+void vtkMRMLMarkupsPlaneNode::GetNthPlaneBoundMinimum(int n, double pos[3])
 {
-  this->GetMarkupPoint(n, 2, pos);
+  this->GetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::BOUND_MIN_INDEX, pos);
+}
+
+//-------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneNode::GetNthPlaneBoundMaximum(int n, double pos[3])
+{
+  this->GetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::BOUND_MAX_INDEX, pos);
 }
 
 //-------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneNode::SetNthPlaneOrigin(int n, double x, double y, double z)
 {
-  this->SetMarkupPoint(n, 0, x, y, z);
+  this->SetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::ORIGIN_INDEX, x, y, z);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP1(int n, double x, double y, double z)
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneNormal(int n, double x, double y, double z)
 {
-  this->SetMarkupPoint(n, 1, x, y, z);
+  this->SetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::NORMAL_INDEX, x, y, z);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP2(int n, double x, double y, double z)
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneBoundMinimum(int n, double x, double y, double z)
 {
-  this->SetMarkupPoint(n, 2, x, y, z);
+  this->SetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::BOUND_MIN_INDEX, x, y, z);
+}
+
+//-------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneBoundMaximum(int n, double x, double y, double z)
+{
+  this->SetMarkupPoint(n, vtkMRMLMarkupsPlaneNode::BOUND_MAX_INDEX, x, y, z);
 }
 
 //-------------------------------------------------------------------------
@@ -193,15 +212,23 @@ void vtkMRMLMarkupsPlaneNode::SetNthPlaneOriginFromArray(int n, double pos[3])
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP1FromArray(int n, double pos[3])
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneNormalFromArray(int n, double pos[3])
 {
-  this->SetNthPlaneP1(n, pos[0], pos[1], pos[2]);
+  this->SetNthPlaneNormal(n, pos[0], pos[1], pos[2]);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP2FromArray(int n, double pos[3])
+void vtkMRMLMarkupsPlaneNode
+::SetNthPlaneBoundMinimumFromArray(int n, double pos[3])
 {
-  this->SetNthPlaneP2(n, pos[0], pos[1], pos[2]);
+  this->SetNthPlaneBoundMinimum(n, pos[0], pos[1], pos[2]);
+}
+
+//-------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneNode
+::SetNthPlaneBoundMaximumFromArray(int n, double pos[3])
+{
+  this->SetNthPlaneBoundMaximum(n, pos[0], pos[1], pos[2]);
 }
 
 //-------------------------------------------------------------------------
@@ -255,37 +282,40 @@ void vtkMRMLMarkupsPlaneNode::SetNthPlaneAssociatedNodeID(int n, const char* id)
 //-------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneNode::SetNthPlaneOriginWorldCoordinates(int n, double coords[4])
 {
-  this->SetMarkupPointWorld(n, 0, coords[0], coords[1], coords[2]);
-}
-
-//-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP1WorldCoordinates(int n, double coords[4])
-{
-  this->SetMarkupPointWorld(n, 1, coords[0], coords[1], coords[2]);
-}
-
-//-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::SetNthPlaneP2WorldCoordinates(int n, double coords[4])
-{
-  this->SetMarkupPointWorld(n, 2, coords[0], coords[1], coords[2]);
+  this->SetMarkupPointWorld(
+    n, vtkMRMLMarkupsPlaneNode::ORIGIN_INDEX, coords[0], coords[1], coords[2]);
 }
 
 //-------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneNode::GetNthPlaneOriginWorldCoordinates(int n, double coords[4])
 {
-  this->GetMarkupPointWorld(n, 0, coords);
+  this->GetMarkupPointWorld(n, vtkMRMLMarkupsPlaneNode::ORIGIN_INDEX, coords);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::GetNthPlaneP1WorldCoordinates(int n, double coords[4])
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneBoundMinimumWorldCoordinates(int n, double coords[4])
 {
-  this->GetMarkupPointWorld(n, 1, coords);
+  this->SetMarkupPointWorld(
+    n, vtkMRMLMarkupsPlaneNode::BOUND_MIN_INDEX, coords[0], coords[1], coords[2]);
 }
 
 //-------------------------------------------------------------------------
-void vtkMRMLMarkupsPlaneNode::GetNthPlaneP2WorldCoordinates(int n, double coords[4])
+void vtkMRMLMarkupsPlaneNode::GetNthPlaneBoundMinimumWorldCoordinates(int n, double coords[4])
 {
-  this->GetMarkupPointWorld(n, 2, coords);
+  this->GetMarkupPointWorld(n, vtkMRMLMarkupsPlaneNode::BOUND_MIN_INDEX, coords);
+}
+
+//-------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneNode::GetNthPlaneBoundMaximumWorldCoordinates(int n, double coords[4])
+{
+  this->GetMarkupPointWorld(n, vtkMRMLMarkupsPlaneNode::BOUND_MAX_INDEX, coords);
+}
+
+//-------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneNode::SetNthPlaneBoundMaximumWorldCoordinates(int n, double coords[4])
+{
+  this->SetMarkupPointWorld(
+    n, vtkMRMLMarkupsPlaneNode::BOUND_MAX_INDEX, coords[0], coords[1], coords[2]);
 }
 
 //---------------------------------------------------------------------------
@@ -303,10 +333,9 @@ void vtkMRMLMarkupsPlaneNode::GetRASBounds(double bounds[6])
   for (int i = 0; i < numberOfMarkups; i++)
     {
     double tmp[4];
-    this->GetNthPlaneP1WorldCoordinates(i, tmp);
+    this->GetNthPlaneBoundMinimumWorldCoordinates(i, tmp);
     box.AddPoint(tmp);
-
-    this->GetNthPlaneP2WorldCoordinates(i, tmp);
+    this->GetNthPlaneBoundMaximumWorldCoordinates(i, tmp);
     box.AddPoint(tmp);
     }
   box.GetBounds(bounds);
@@ -327,10 +356,9 @@ void vtkMRMLMarkupsPlaneNode::GetBounds(double bounds[6])
   for (int i = 0; i < numberOfMarkups; i++)
     {
     double tmp[3];
-    this->GetNthPlaneP1(i, tmp);
+    this->GetNthPlaneBoundMinimum(i, tmp);
     box.AddPoint(tmp);
-
-    this->GetNthPlaneP2(i, tmp);
+    this->GetNthPlaneBoundMaximum(i, tmp);
     box.AddPoint(tmp);
     }
   box.GetBounds(bounds);

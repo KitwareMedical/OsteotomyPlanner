@@ -19,7 +19,7 @@
 #define __vtkMRMLMarkupsPlaneNode_h
 
 // MRML includes
-#include "vtkMRMLMarkupsNode.h"
+#include <vtkMRMLMarkupsNode.h>
 
 // Markups includes
 #include "vtkSlicerPlannerModuleMRMLExport.h"
@@ -77,32 +77,43 @@ public:
   vtkMRMLMarkupsDisplayNode *GetMarkupsDisplayNode();
 
   // Wrapping some of the generic markup methods
+  enum
+    {
+    ORIGIN_INDEX = 0,
+    NORMAL_INDEX,
+    BOUND_MIN_INDEX,
+    BOUND_MAX_INDEX,
+    } PlanePointIndexes;
 
   /// Add a new plane return the plane index
   int AddPlane(double ox, double oy, double oz,
-               double p1x, double p1y, double p1z,
-               double p2x, double p2y, double p2z,
+               double nx, double ny, double nz,
+               double xmin, double ymin, double zmin,
+               double xmax, double ymax, double zmax,
                std::string label = std::string());
 
   /// Add a new fiducial from an array and return the plane index
   int AddPlaneFromArray(
-    double origin[3], double p1[3], double p2[3],
+    double origin[3], double normal[3], double min[3], double max[3],
     std::string label = std::string());
 
-  /// Get the position of the nth plane origin or p1 or p2.
+  /// Get the position of the nth plane origin or normal or bound.
   void GetNthPlaneOrigin(int n, double origin[3]);
-  void GetNthPlaneP1(int n, double p1[3]);
-  void GetNthPlaneP2(int n, double p2[3]);
+  void GetNthPlaneNormal(int n, double normal[3]);
+  void GetNthPlaneBoundMinimum(int n, double bound[3]);
+  void GetNthPlaneBoundMaximum(int n, double bound[3]);
 
-  /// Set the position of the nth plane origin or p1 or p2 from x, y, z coordinates
+  /// Set the position of the nth plane origin or normal or bound from x, y, z coordinates
   void SetNthPlaneOrigin(int n, double x, double y, double z);
-  void SetNthPlaneP1(int n, double x, double y, double z);
-  void SetNthPlaneP2(int n, double x, double y, double z);
+  void SetNthPlaneNormal(int n, double x, double y, double z);
+  void SetNthPlaneBoundMinimum(int n, double x, double y, double z);
+  void SetNthPlaneBoundMaximum(int n, double x, double y, double z);
 
   /// Set the position of the nth plane normal or origin from a double array
   void SetNthPlaneOriginFromArray(int n, double pos[3]);
-  void SetNthPlaneP1FromArray(int n, double pos[3]);
-  void SetNthPlaneP2FromArray(int n, double pos[3]);
+  void SetNthPlaneNormalFromArray(int n, double normal[3]);
+  void SetNthPlaneBoundMinimumFromArray(int n, double bound[3]);
+  void SetNthPlaneBoundMaximumFromArray(int n, double bound[3]);
 
   /// Set/Get selected property on Nth plane
   bool GetNthPlaneSelected(int n = 0);
@@ -128,11 +139,11 @@ public:
   
   /// Set/Get world coordinates on nth plane normal or origin
   void SetNthPlaneOriginWorldCoordinates(int n, double coords[4]);
-  void SetNthPlaneP1WorldCoordinates(int n, double coords[4]);
-  void SetNthPlaneP2WorldCoordinates(int n, double coords[4]);
   void GetNthPlaneOriginWorldCoordinates(int n, double coords[4]);
-  void GetNthPlaneP1WorldCoordinates(int n, double coords[4]);
-  void GetNthPlaneP2WorldCoordinates(int n, double coords[4]);
+  void SetNthPlaneBoundMinimumWorldCoordinates(int n, double coords[4]);
+  void GetNthPlaneBoundMinimumWorldCoordinates(int n, double coords[4]);
+  void SetNthPlaneBoundMaximumWorldCoordinates(int n, double coords[4]);
+  void GetNthPlaneBoundMaximumWorldCoordinates(int n, double coords[4]);
 
   virtual void GetRASBounds(double bounds[6]);
   virtual void GetBounds(double bounds[6]);
