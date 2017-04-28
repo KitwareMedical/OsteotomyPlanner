@@ -329,19 +329,19 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
         widget->GetImplicitPlaneRepresentation();
 
       // origin
-      double origin[3];
-      planeNode->GetNthPlaneOrigin(n, origin);
+      double origin[4];
+      planeNode->GetNthPlaneOriginWorldCoordinates(n, origin);
       rep->SetOrigin(origin);
 
       // normal
-      double normal[3];
+      double normal[4];
       planeNode->GetNthPlaneNormal(n, normal);
       rep->SetNormal(normal);
 
-      double bounds[6];
-      planeNode->GetNthPlaneBoundMinimum(n, bounds);
-      planeNode->GetNthPlaneBoundMaximum(n, &(bounds[2]));
-      rep->SetWidgetBounds(bounds);
+      double min[4], max[4];
+      planeNode->GetNthPlaneBoundMinimumWorldCoordinates(n, min);
+      planeNode->GetNthPlaneBoundMaximumWorldCoordinates(n, max);
+      rep->SetWidgetBounds(min[0], max[0], min[1], max[1], min[2], max[2]);
       }
     }
 }
@@ -375,8 +375,8 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 
   double bounds[6];
   rep->GetWidgetBounds(bounds);
-  planeNode->SetNthPlaneBoundMinimumFromArray(index, bounds);
-  planeNode->SetNthPlaneBoundMaximumFromArray(index, &(bounds[2]));
+  planeNode->SetNthPlaneBoundMinimum(index, bounds[0], bounds[2], bounds[4]);
+  planeNode->SetNthPlaneBoundMaximum(index, bounds[1], bounds[3], bounds[5]);
 }
 
 //---------------------------------------------------------------------------
@@ -404,6 +404,8 @@ std::vector<int> vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
   events.push_back(vtkMRMLMarkupsPlaneNode::MarkupAddedEvent);
   events.push_back(vtkMRMLMarkupsPlaneNode::MarkupRemovedEvent);
   events.push_back(vtkMRMLMarkupsPlaneNode::NthMarkupModifiedEvent);
+  events.push_back(vtkMRMLMarkupsPlaneNode::PointModifiedEvent);
+  events.push_back(vtkCommand::ModifiedEvent);
   return events;
 }
 
