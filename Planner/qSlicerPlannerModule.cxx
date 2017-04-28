@@ -18,7 +18,12 @@
 // Qt includes
 #include <QtPlugin>
 
+// VTK includes
+#include <vtkSmartPointer.h>
+
 // Planner Logic includes
+#include <vtkMRMLMarkupsPlaneDisplayableManager3D.h>
+#include <vtkMRMLThreeDViewDisplayableManagerFactory.h>
 #include <vtkSlicerPlannerLogic.h>
 
 // Planner includes
@@ -100,6 +105,12 @@ QStringList qSlicerPlannerModule::dependencies() const
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModule::setup()
 {
+  vtkSmartPointer<vtkMRMLMarkupsPlaneDisplayableManager3D> dm3d=
+    vtkSmartPointer<vtkMRMLMarkupsPlaneDisplayableManager3D>::New();
+
+  vtkMRMLThreeDViewDisplayableManagerFactory::GetInstance()
+    ->RegisterDisplayableManager("vtkMRMLMarkupsPlaneDisplayableManager3D");
+
   this->Superclass::setup();
 }
 
