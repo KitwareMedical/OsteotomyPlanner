@@ -23,8 +23,13 @@
 #include "vtkMRMLMarkupsPlaneDisplayableManager3D.h"
 
 // MRML includes
+#include <vtkMRMLApplicationLogic.h>
+#include <vtkMRMLDisplayableManagerGroup.h>
 #include <vtkMRMLInteractionNode.h>
+#include <vtkMRMLMarkupsClickCounter.h>
+#include <vtkMRMLModelDisplayableManager.h>
 #include <vtkMRMLScene.h>
+#include <vtkMRMLSelectionNode.h>
 #include <vtkMRMLViewNode.h>
 
 // VTK includes
@@ -36,6 +41,7 @@
 #include <vtkObjectFactory.h>
 #include <vtkPlane.h>
 #include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
 #include <vtkImplicitPlaneWidget2.h>
 #include <vtkImplicitPlaneRepresentation.h>
 #include <vtkSmartPointer.h>
@@ -54,9 +60,10 @@ public:
   vtkInternal(vtkMRMLMarkupsPlaneDisplayableManager3D* external);
   ~vtkInternal();
 
+  typedef std::vector<vtkImplicitPlaneWidget2*> WidgetListType;
   struct Pipeline
     {
-    std::vector<vtkImplicitPlaneWidget2*> Widgets;
+    WidgetListType Widgets;
     };
 
   typedef std::map<vtkMRMLMarkupsDisplayNode*, Pipeline* > PipelinesCacheType;
@@ -84,10 +91,14 @@ public:
   // Widget
   void UpdateWidgetFromNode(vtkMRMLMarkupsDisplayNode*, vtkMRMLMarkupsPlaneNode*, Pipeline*);
   void UpdateNodeFromWidget(vtkImplicitPlaneWidget2*);
+  void UpdateActiveNode();
 
   // Observations
   void AddObservations(vtkMRMLMarkupsPlaneNode* node);
   void RemoveObservations(vtkMRMLMarkupsPlaneNode* node);
+
+  void AddObservationsToInteractionNode(vtkMRMLInteractionNode*);
+  void RemoveObservationsFromInteractionNode(vtkMRMLInteractionNode*);
 
   // Helper functions
   bool UseDisplayNode(vtkMRMLMarkupsDisplayNode* displayNode);
@@ -96,9 +107,11 @@ public:
   vtkImplicitPlaneWidget2* CreatePlaneWidget() const;
   std::vector<int> EventsToObserve() const;
 
-private:
+public:
   vtkMRMLMarkupsPlaneDisplayableManager3D* External;
   bool AddingNode;
+  vtkMRMLMarkupsClickCounter* ClickCounter;
+  double LastPosition[3];
 };
 
 //---------------------------------------------------------------------------
@@ -110,12 +123,14 @@ vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 : External(external)
 , AddingNode(false)
 {
+  this->ClickCounter = vtkMRMLMarkupsClickCounter::New();
 }
 
 //---------------------------------------------------------------------------
 vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal::~vtkInternal()
 {
   this->ClearDisplayableNodes();
+  this->ClickCounter->Delete();
 }
 
 //---------------------------------------------------------------------------
@@ -295,6 +310,79 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 
 //---------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
+::UpdateActiveNode()
+{
+  vtkMRMLSelectionNode* selectionNode = this->External->GetSelectionNode();
+  vtkMRMLMarkupsPlaneNode* planesNode =
+    vtkMRMLMarkupsPlaneNode::SafeDownCast(
+      this->External->GetMRMLScene()->GetNodeByID(
+        selectionNode ? selectionNode->GetActivePlaceNodeID() : NULL));
+
+  if (!planesNode)
+    {
+    planesNode = vtkMRMLMarkupsPlaneNode::SafeDownCast(
+      this->External->GetMRMLScene()->AddNode(vtkMRMLMarkupsPlaneNode::New()));
+    planesNode->Delete();
+    }
+
+  // ModelDisplayableManager is expected to be instantiated !
+  vtkMRMLModelDisplayableManager * modelDisplayableManager =
+    vtkMRMLModelDisplayableManager::SafeDownCast(
+      this->External->GetMRMLDisplayableManagerGroup()->GetDisplayableManagerByClassName(
+        "vtkMRMLModelDisplayableManager"));
+  assert(modelDisplayableManager);
+
+  vtkRenderWindowInteractor* interactor = this->External->GetInteractor();
+  double x = interactor->GetEventPosition()[0];
+  double y = interactor->GetEventPosition()[1];
+
+  double windowHeight = interactor->GetRenderWindow()->GetSize()[1];
+  double yNew = windowHeight - y - 1;
+
+  double worldCoordinates[4];
+  if (modelDisplayableManager->Pick(x,yNew))
+    {
+    double* pickedWorldCoordinates = modelDisplayableManager->GetPickedRAS();
+    worldCoordinates[0] = pickedWorldCoordinates[0];
+    worldCoordinates[1] = pickedWorldCoordinates[1];
+    worldCoordinates[2] = pickedWorldCoordinates[2];
+    worldCoordinates[3] = 1;
+    }
+  else
+    {
+    // we could not pick so just convert to world coordinates
+    vtkInteractorObserver::ComputeDisplayToWorld(
+      this->External->GetRenderer(),x,y,0,worldCoordinates);
+    }
+
+  if (this->ClickCounter->HasEnoughClicks(2))
+    {
+    double normal[3];
+    vtkMath::Subtract(worldCoordinates, this->LastPosition, normal);
+    double distance = vtkMath::Normalize(normal);
+
+    planesNode->AddPlane(
+      this->LastPosition[0], this->LastPosition[1], this->LastPosition[2],
+      normal[0], normal[1], normal[2],
+      this->LastPosition[0] - distance, this->LastPosition[1] - distance, this->LastPosition[2] - distance,
+      this->LastPosition[0] + distance, this->LastPosition[1] + distance, this->LastPosition[2] + distance
+      );
+
+    vtkMRMLInteractionNode* interactionNode = this->External->GetInteractionNode();
+    if (interactionNode->GetPlaceModePersistence() != 1)
+      {
+      interactionNode->SwitchToViewTransformMode();
+      }
+    }
+
+  for (int i = 0; i < 3; ++i)
+    {
+    this->LastPosition[i] = worldCoordinates[i];
+    }
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 ::UpdateWidgetFromNode(vtkMRMLMarkupsDisplayNode* displayNode,
                        vtkMRMLMarkupsPlaneNode* planeNode,
                        Pipeline* pipeline)
@@ -322,6 +410,10 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
     vtkImplicitPlaneWidget2* widget = pipeline->Widgets[n];
     bool visible = planeNode ? planeNode->GetNthMarkupVisibility(n) : false;
     widget->SetEnabled(visible);
+
+    int processEvents = planeNode->GetLocked() ? 0 :
+       (planeNode->GetNthMarkupLocked(n) ? 0 : 1);
+    widget->SetProcessEvents(processEvents);
 
     if (visible)
       {
@@ -439,6 +531,30 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 }
 
 //---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
+::AddObservationsToInteractionNode(vtkMRMLInteractionNode* interactionNode)
+{
+  if (!interactionNode)
+    {
+    return;
+    }
+
+  vtkNew<vtkIntArray> interactionEvents;
+  interactionEvents->InsertNextValue(vtkMRMLInteractionNode::InteractionModeChangedEvent);
+  interactionEvents->InsertNextValue(vtkMRMLInteractionNode::InteractionModePersistenceChangedEvent);
+  interactionEvents->InsertNextValue(vtkMRMLInteractionNode::EndPlacementEvent);
+  this->External->GetMRMLNodesObserverManager()->AddObjectEvents(
+    interactionNode, interactionEvents.GetPointer());
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
+::RemoveObservationsFromInteractionNode(vtkMRMLInteractionNode* interactionNode)
+{
+  this->External->GetMRMLNodesObserverManager()->RemoveObjectEvents(interactionNode);
+}
+
+//---------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal::ClearDisplayableNodes()
 {
   while(this->MarkupToDisplayNodes.size() > 0)
@@ -472,9 +588,39 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::PrintSelf ( ostream& os, vtkIndent
 
 //---------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneDisplayableManager3D
+::SetMRMLSceneInternal(vtkMRMLScene* newScene)
+{
+  Superclass::SetMRMLSceneInternal(newScene);
+
+  if (newScene)
+    {
+    this->Internal->AddObservationsToInteractionNode(
+      this->GetInteractionNode());
+    }
+  else
+    {
+    this->Internal->RemoveObservationsFromInteractionNode(
+      this->GetInteractionNode());
+    }
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D
 ::OnMRMLSceneNodeAdded(vtkMRMLNode* node)
 {
-  if (!node || !node->IsA("vtkMRMLMarkupsPlaneNode"))
+  if (!node)
+    {
+    return;
+    }
+
+  if (node->IsA("vtkMRMLInteractionNode"))
+    {
+    this->Internal->AddObservationsToInteractionNode(
+      vtkMRMLInteractionNode::SafeDownCast(node));
+    return;
+    }
+
+  if (!node->IsA("vtkMRMLMarkupsPlaneNode"))
     {
     return;
     }
@@ -532,6 +678,7 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D
 
   vtkMRMLMarkupsPlaneNode* planeNode = vtkMRMLMarkupsPlaneNode::SafeDownCast(caller);
   vtkMRMLMarkupsDisplayNode* displayNode = vtkMRMLMarkupsDisplayNode::SafeDownCast(caller);
+  vtkMRMLInteractionNode* interactionNode = vtkMRMLInteractionNode::SafeDownCast(caller);
 
   if (planeNode)
     {
@@ -545,6 +692,13 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D
       {
       this->Internal->UpdateDisplayableNode(planeNode);
       this->RequestRender();
+      }
+    }
+  else if (interactionNode)
+    {
+    if (event == vtkMRMLInteractionNode::EndPlacementEvent)
+      {
+      this->Internal->ClickCounter->Reset();
       }
     }
   else
@@ -578,6 +732,40 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::UpdateFromMRML()
     }
   this->RequestRender();
 }
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D
+::OnInteractorStyleEvent(int eventid)
+{
+  vtkMRMLSelectionNode* selectionNode =
+    this->GetMRMLApplicationLogic()->GetSelectionNode();
+  if (!selectionNode || !selectionNode->GetActivePlaceNodeClassName())
+    {
+    return;
+    }
+
+  if (strcmp(selectionNode->GetActivePlaceNodeClassName(), "vtkMRMLMarkupsPlaneNode") != 0)
+    {
+    return;
+    }
+
+  if (eventid == vtkCommand::LeftButtonReleaseEvent)
+    {
+    if (this->GetInteractionNode()->GetCurrentInteractionMode() == vtkMRMLInteractionNode::Place)
+      {
+      this->Internal->UpdateActiveNode();
+      }
+    }
+  else if (eventid == vtkCommand::RightButtonReleaseEvent)
+    {
+    if (this->GetInteractionNode()->GetCurrentInteractionMode() == vtkMRMLInteractionNode::Place &&
+        this->GetInteractionNode()->GetPlaceModePersistence() == 1)
+      {
+      this->GetInteractionNode()->SwitchToViewTransformMode();
+      }
+    }
+}
+
 
 //---------------------------------------------------------------------------
 void vtkMRMLMarkupsPlaneDisplayableManager3D::UnobserveMRMLScene()

@@ -99,7 +99,7 @@ QStringList qSlicerPlannerModule::categories() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerPlannerModule::dependencies() const
 {
-  return QStringList();
+  return QStringList() << "Markups" << "Models";
 }
 
 //-----------------------------------------------------------------------------

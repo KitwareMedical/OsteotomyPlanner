@@ -50,6 +50,8 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
+  vtkMRMLNode* GetSelectionNode();
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
@@ -58,8 +60,8 @@ protected:
   /// Register MRML Node classes to Scene. Gets called automatically when the MRMLScene is attached to this logic class.
   virtual void RegisterNodes();
   virtual void UpdateFromMRMLScene();
-  virtual void OnMRMLSceneNodeAdded(vtkMRMLNode* node);
-  virtual void OnMRMLSceneNodeRemoved(vtkMRMLNode* node);
+  virtual void ObserveMRMLScene();
+
 private:
 
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented

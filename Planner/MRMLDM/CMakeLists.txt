@@ -32,6 +32,8 @@ set(${KIT}_SRCS
 set(${KIT}_TARGET_LIBRARIES
   ${MRML_LIBRARIES}
   vtkSlicer${MODULE_NAME}ModuleMRML
+  vtkSlicerMarkupsModuleMRML
+  vtkSlicerMarkupsModuleMRMLDisplayableManager
 )
 
 #-----------------------------------------------------------------------------

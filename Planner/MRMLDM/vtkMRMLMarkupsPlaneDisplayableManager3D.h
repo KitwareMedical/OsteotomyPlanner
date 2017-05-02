@@ -50,6 +50,9 @@ protected:
   virtual void ProcessMRMLNodesEvents(
     vtkObject* caller, unsigned long event, void* callData);
 
+  virtual void SetMRMLSceneInternal(vtkMRMLScene* scene);
+  virtual void OnInteractorStyleEvent(int eventid);
+
   /// Update Actors based on transforms in the scene
   virtual void UpdateFromMRML();
 
