@@ -53,6 +53,8 @@ protected:
   virtual void SetMRMLSceneInternal(vtkMRMLScene* scene);
   virtual void OnInteractorStyleEvent(int eventid);
 
+  virtual void SetRenderer(vtkRenderer* newRenderer);
+
   /// Update Actors based on transforms in the scene
   virtual void UpdateFromMRML();
 

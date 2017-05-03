@@ -40,11 +40,14 @@
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkPlane.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPointHandleRepresentation3D.h>
 #include <vtkRenderer.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkImplicitPlaneWidget2.h>
 #include <vtkImplicitPlaneRepresentation.h>
 #include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
 
 // STD includes
 #include <sstream>
@@ -106,12 +109,17 @@ public:
   void ClearPipeline(Pipeline* pipeline);
   vtkImplicitPlaneWidget2* CreatePlaneWidget() const;
   std::vector<int> EventsToObserve() const;
+  void StopInteraction();
 
 public:
   vtkMRMLMarkupsPlaneDisplayableManager3D* External;
   bool AddingNode;
-  vtkMRMLMarkupsClickCounter* ClickCounter;
+  bool ClickCounter;
   double LastPosition[3];
+
+  vtkSmartPointer<vtkSphereSource> ClickedPointSource;
+  vtkSmartPointer<vtkPolyDataMapper> ClickedPointMapper;
+  vtkSmartPointer<vtkActor> ClickedPointActor;
 };
 
 //---------------------------------------------------------------------------
@@ -120,17 +128,26 @@ public:
 //---------------------------------------------------------------------------
 vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 ::vtkInternal(vtkMRMLMarkupsPlaneDisplayableManager3D * external)
-: External(external)
-, AddingNode(false)
+: External(external),
+  AddingNode(false),
+  ClickCounter(0)
 {
-  this->ClickCounter = vtkMRMLMarkupsClickCounter::New();
+  this->ClickedPointSource = vtkSmartPointer<vtkSphereSource>::New();
+  this->ClickedPointSource->SetCenter(0.0, 0.0, 0.0);
+  this->ClickedPointSource->SetRadius(5.0);
+
+  this->ClickedPointMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+  this->ClickedPointMapper->SetInputConnection(
+    this->ClickedPointSource->GetOutputPort());
+
+  this->ClickedPointActor = vtkSmartPointer<vtkActor>::New();
+  this->ClickedPointActor->SetMapper(this->ClickedPointMapper);
 }
 
 //---------------------------------------------------------------------------
 vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal::~vtkInternal()
 {
   this->ClearDisplayableNodes();
-  this->ClickCounter->Delete();
 }
 
 //---------------------------------------------------------------------------
@@ -355,7 +372,7 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
       this->External->GetRenderer(),x,y,0,worldCoordinates);
     }
 
-  if (this->ClickCounter->HasEnoughClicks(2))
+  if (this->ClickCounter == 1) // 2nd click (click counter==1) for the normal
     {
     double normal[3];
     vtkMath::Subtract(worldCoordinates, this->LastPosition, normal);
@@ -368,17 +385,30 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
       this->LastPosition[0] + distance, this->LastPosition[1] + distance, this->LastPosition[2] + distance
       );
 
-    vtkMRMLInteractionNode* interactionNode = this->External->GetInteractionNode();
-    if (interactionNode->GetPlaceModePersistence() != 1)
-      {
-      interactionNode->SwitchToViewTransformMode();
-      }
+    this->StopInteraction();
     }
-
-  for (int i = 0; i < 3; ++i)
+  else // First click (click counter==0) for the origin
     {
-    this->LastPosition[i] = worldCoordinates[i];
+    this->ClickedPointActor->SetPosition(worldCoordinates);
+    this->ClickedPointActor->SetVisibility(1);
+    for (int i = 0; i < 3; ++i)
+      {
+      this->LastPosition[i] = worldCoordinates[i];
+      }
+    ++this->ClickCounter;
     }
+  this->External->RequestRender();
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal::StopInteraction()
+{
+  vtkMRMLInteractionNode* interactionNode =
+    this->External->GetInteractionNode();
+  interactionNode->SwitchToViewTransformMode();
+  this->ClickedPointActor->SetVisibility(0);
+  this->ClickCounter = 0;
+  this->External->RequestRender();
 }
 
 //---------------------------------------------------------------------------
@@ -541,7 +571,6 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
 
   vtkNew<vtkIntArray> interactionEvents;
   interactionEvents->InsertNextValue(vtkMRMLInteractionNode::InteractionModeChangedEvent);
-  interactionEvents->InsertNextValue(vtkMRMLInteractionNode::InteractionModePersistenceChangedEvent);
   interactionEvents->InsertNextValue(vtkMRMLInteractionNode::EndPlacementEvent);
   this->External->GetMRMLNodesObserverManager()->AddObjectEvents(
     interactionNode, interactionEvents.GetPointer());
@@ -698,7 +727,7 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D
     {
     if (event == vtkMRMLInteractionNode::EndPlacementEvent)
       {
-      this->Internal->ClickCounter->Reset();
+      this->Internal->StopInteraction();
       }
     }
   else
@@ -758,11 +787,7 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D
     }
   else if (eventid == vtkCommand::RightButtonReleaseEvent)
     {
-    if (this->GetInteractionNode()->GetCurrentInteractionMode() == vtkMRMLInteractionNode::Place &&
-        this->GetInteractionNode()->GetPlaceModePersistence() == 1)
-      {
-      this->GetInteractionNode()->SwitchToViewTransformMode();
-      }
+    this->Internal->StopInteraction();
     }
 }
 
@@ -811,5 +836,16 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D
     {
     this->Internal->UpdateNodeFromWidget(planeWidget);
     this->RequestRender();
+    }
+}
+
+//---------------------------------------------------------------------------
+void vtkMRMLMarkupsPlaneDisplayableManager3D
+::SetRenderer(vtkRenderer* newRenderer)
+{
+  Superclass::SetRenderer(newRenderer);
+  if (newRenderer)
+    {
+    newRenderer->AddActor(this->Internal->ClickedPointActor);
     }
 }
