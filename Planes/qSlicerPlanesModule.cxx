@@ -19,64 +19,66 @@
 #include <QtPlugin>
 
 // VTK includes
+#include <vtkNew.h>
 #include <vtkSmartPointer.h>
 
-// Planner Logic includes
+// Planes Logic includes
+#include <vtkSlicerPlanesLogic.h>
+#include <vtkMRMLMarkupsPlanesDisplayableManager3D.h>
+#include <vtkMRMLScene.h>
 #include <vtkMRMLThreeDViewDisplayableManagerFactory.h>
-#include <vtkSlicerPlannerLogic.h>
 
 // Planner includes
-#include "qSlicerPlannerModule.h"
-#include "qSlicerPlannerModuleWidget.h"
+#include "qSlicerPlanesModule.h"
 
 //-----------------------------------------------------------------------------
-Q_EXPORT_PLUGIN2(qSlicerPlannerModule, qSlicerPlannerModule);
+Q_EXPORT_PLUGIN2(qSlicerPlanesModule, qSlicerPlanesModule);
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class qSlicerPlannerModulePrivate
+class qSlicerPlanesModulePrivate
 {
 public:
-  qSlicerPlannerModulePrivate();
+  qSlicerPlanesModulePrivate();
 };
 
 //-----------------------------------------------------------------------------
-// qSlicerPlannerModulePrivate methods
+// qSlicerPlanesModulePrivate methods
 
 //-----------------------------------------------------------------------------
-qSlicerPlannerModulePrivate::qSlicerPlannerModulePrivate()
+qSlicerPlanesModulePrivate::qSlicerPlanesModulePrivate()
 {
 }
 
 //-----------------------------------------------------------------------------
-// qSlicerPlannerModule methods
+// qSlicerPlanesModule methods
 
 //-----------------------------------------------------------------------------
-qSlicerPlannerModule::qSlicerPlannerModule(QObject* _parent)
+qSlicerPlanesModule::qSlicerPlanesModule(QObject* _parent)
   : Superclass(_parent)
-  , d_ptr(new qSlicerPlannerModulePrivate)
+  , d_ptr(new qSlicerPlanesModulePrivate)
 {
 }
 
 //-----------------------------------------------------------------------------
-qSlicerPlannerModule::~qSlicerPlannerModule()
+qSlicerPlanesModule::~qSlicerPlanesModule()
 {
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerPlannerModule::helpText() const
+QString qSlicerPlanesModule::helpText() const
 {
-  return "This module helps with planning bone surgeries.";
+  return "This module helps with planes interaction.";
 }
 
 //-----------------------------------------------------------------------------
-QString qSlicerPlannerModule::acknowledgementText() const
+QString qSlicerPlanesModule::acknowledgementText() const
 {
   return "TODO";
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerPlannerModule::contributors() const
+QStringList qSlicerPlanesModule::contributors() const
 {
   QStringList moduleContributors;
   moduleContributors << QString("Johan Andruejol (Kitware Inc.)");
@@ -84,38 +86,44 @@ QStringList qSlicerPlannerModule::contributors() const
 }
 
 //-----------------------------------------------------------------------------
-QIcon qSlicerPlannerModule::icon() const
+QIcon qSlicerPlanesModule::icon() const
 {
-  return QIcon(":/Icons/Planner.png");
+  return QIcon(":/Icons/Planes.png");
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerPlannerModule::categories() const
+QStringList qSlicerPlanesModule::categories() const
 {
-  return QStringList() << "Planning";
+  return QStringList() << "Interaction";
 }
 
 //-----------------------------------------------------------------------------
-QStringList qSlicerPlannerModule::dependencies() const
+QStringList qSlicerPlanesModule::dependencies() const
 {
-  return QStringList() << "Planes";
+  return QStringList() << "Markups" << "Models";
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerPlannerModule::setup()
+void qSlicerPlanesModule::setup()
 {
   this->Superclass::setup();
+
+  vtkSmartPointer<vtkMRMLMarkupsPlanesDisplayableManager3D> dm3d=
+    vtkSmartPointer<vtkMRMLMarkupsPlanesDisplayableManager3D>::New();
+
+  vtkMRMLThreeDViewDisplayableManagerFactory::GetInstance()
+    ->RegisterDisplayableManager("vtkMRMLMarkupsPlanesDisplayableManager3D");
 }
 
 //-----------------------------------------------------------------------------
-qSlicerAbstractModuleRepresentation* qSlicerPlannerModule
+qSlicerAbstractModuleRepresentation* qSlicerPlanesModule
 ::createWidgetRepresentation()
 {
-  return new qSlicerPlannerModuleWidget;
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLAbstractLogic* qSlicerPlannerModule::createLogic()
+vtkMRMLAbstractLogic* qSlicerPlanesModule::createLogic()
 {
-  return vtkSlicerPlannerLogic::New();
+  return vtkSlicerPlanesLogic::New();
 }

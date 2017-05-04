@@ -15,14 +15,14 @@
 
 ==============================================================================*/
 
-#ifndef __vtkMRMLMarkupsPlaneNode_h
-#define __vtkMRMLMarkupsPlaneNode_h
+#ifndef __vtkMRMLMarkupsPlanesNode_h
+#define __vtkMRMLMarkupsPlanesNode_h
 
 // MRML includes
 #include <vtkMRMLMarkupsNode.h>
 
 // Markups includes
-#include "vtkSlicerPlannerModuleMRMLExport.h"
+#include "vtkSlicerPlanesModuleMRMLExport.h"
 
 // VTK includes
 #include <vtkSmartPointer.h>
@@ -31,11 +31,11 @@ class vtkMRMLMarkupsDisplayNode;
 
 //
 //
-class  VTK_SLICER_PLANNER_MODULE_MRML_EXPORT vtkMRMLMarkupsPlaneNode : public vtkMRMLMarkupsNode
+class  VTK_SLICER_PLANES_MODULE_MRML_EXPORT vtkMRMLMarkupsPlanesNode : public vtkMRMLMarkupsNode
 {
 public:
-  static vtkMRMLMarkupsPlaneNode *New();
-  vtkTypeMacro(vtkMRMLMarkupsPlaneNode,vtkMRMLMarkupsNode);
+  static vtkMRMLMarkupsPlanesNode *New();
+  vtkTypeMacro(vtkMRMLMarkupsPlanesNode,vtkMRMLMarkupsNode);
   /// Print out the node information to the output stream
   void PrintSelf(ostream& os, vtkIndent indent);
 
@@ -149,10 +149,10 @@ public:
   virtual void GetBounds(double bounds[6]);
 
 protected:
-  vtkMRMLMarkupsPlaneNode();
-  ~vtkMRMLMarkupsPlaneNode();
-  vtkMRMLMarkupsPlaneNode(const vtkMRMLMarkupsPlaneNode&);
-  void operator=(const vtkMRMLMarkupsPlaneNode&);
+  vtkMRMLMarkupsPlanesNode();
+  ~vtkMRMLMarkupsPlanesNode();
+  vtkMRMLMarkupsPlanesNode(const vtkMRMLMarkupsPlanesNode&);
+  void operator=(const vtkMRMLMarkupsPlanesNode&);
 
 };
 

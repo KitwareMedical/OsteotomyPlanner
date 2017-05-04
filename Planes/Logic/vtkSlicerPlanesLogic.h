@@ -15,14 +15,11 @@
 
 ==============================================================================*/
 
-// .NAME vtkSlicerPlannerLogic - slicer logic class for volumes manipulation
+// .NAME vtkSlicerPlanesLogic -
 // .SECTION Description
-// This class manages the logic associated with reading, saving,
-// and changing propertied of the volumes
 
-
-#ifndef __vtkSlicerPlannerLogic_h
-#define __vtkSlicerPlannerLogic_h
+#ifndef __vtkSlicerPlanesLogic_h
+#define __vtkSlicerPlanesLogic_h
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
@@ -32,35 +29,29 @@
 // STD includes
 #include <cstdlib>
 
-#include "vtkSlicerPlannerModuleLogicExport.h"
-
+#include "vtkSlicerPlanesModuleLogicExport.h"
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
-class VTK_SLICER_PLANNER_MODULE_LOGIC_EXPORT vtkSlicerPlannerLogic :
+class VTK_SLICER_PLANES_MODULE_LOGIC_EXPORT vtkSlicerPlanesLogic :
   public vtkSlicerModuleLogic
 {
 public:
-
-  static vtkSlicerPlannerLogic *New();
-  vtkTypeMacro(vtkSlicerPlannerLogic, vtkSlicerModuleLogic);
+  static vtkSlicerPlanesLogic *New();
+  vtkTypeMacro(vtkSlicerPlanesLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
 
-  static const char* DeleteChildrenWarningSettingName();
-
-  // Delete all the children of the given hierarchy node.
-  bool DeleteHierarchyChildren(vtkMRMLNode* node);
+  vtkMRMLNode* GetSelectionNode() const;
 
 protected:
-  vtkSlicerPlannerLogic();
-  virtual ~vtkSlicerPlannerLogic();
+  vtkSlicerPlanesLogic();
+  virtual ~vtkSlicerPlanesLogic();
 
-  virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
-  virtual void UpdateFromMRMLScene();
+  virtual void RegisterNodes();
+  virtual void ObserveMRMLScene();
 
 private:
-
-  vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
-  void operator=(const vtkSlicerPlannerLogic&); // Not implemented
+  vtkSlicerPlanesLogic(const vtkSlicerPlanesLogic&); // Not implemented
+  void operator=(const vtkSlicerPlanesLogic&); // Not implemented
 };
 
 #endif
