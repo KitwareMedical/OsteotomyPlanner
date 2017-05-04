@@ -485,6 +485,8 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
     std::find(pipeline->Widgets.begin(), pipeline->Widgets.end(), widget)
     - pipeline->Widgets.begin();
 
+  int wasModifying = planeNode->StartModify();
+
   // origin
   double origin[3];
   rep->GetOrigin(origin);
@@ -499,6 +501,8 @@ void vtkMRMLMarkupsPlaneDisplayableManager3D::vtkInternal
   rep->GetWidgetBounds(bounds);
   planeNode->SetNthPlaneBoundMinimum(index, bounds[0], bounds[2], bounds[4]);
   planeNode->SetNthPlaneBoundMaximum(index, bounds[1], bounds[3], bounds[5]);
+
+  planeNode->EndModify(wasModifying);
 }
 
 //---------------------------------------------------------------------------
