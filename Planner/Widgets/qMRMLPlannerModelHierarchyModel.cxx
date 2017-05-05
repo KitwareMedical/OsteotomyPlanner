@@ -31,6 +31,8 @@
 // MRML includes
 #include <vtkMRMLDisplayableNode.h>
 #include <vtkMRMLDisplayableHierarchyNode.h>
+#include <vtkMRMLMarkupsPlanesNode.h>
+#include <vtkMRMLModelNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLTransformDisplayNode.h>
 #include <vtkMRMLTransformNode.h>
@@ -46,14 +48,19 @@ public:
 
   vtkMRMLTransformDisplayNode* transformDisplayNode(
     vtkMRMLScene* scene,vtkMRMLNode* node) const;
+  vtkMRMLMarkupsPlanesNode* planesNode(
+    vtkMRMLScene* scene,vtkMRMLNode* node) const;
+  vtkMRMLModelNode* modelNode(vtkMRMLNode* node) const;
 
   int TransformVisibilityColumn;
+  int PlanesVisibilityColumn;
 };
 
 //------------------------------------------------------------------------------
 qMRMLPlannerModelHierarchyModelPrivate::qMRMLPlannerModelHierarchyModelPrivate()
 {
   this->TransformVisibilityColumn = -1;
+  this->PlanesVisibilityColumn = -1;
 }
 
 //------------------------------------------------------------------------------
@@ -67,6 +74,38 @@ vtkMRMLTransformDisplayNode* qMRMLPlannerModelHierarchyModelPrivate
 
   return vtkMRMLTransformDisplayNode::SafeDownCast(node->GetNodeReference(
     qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()));
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLMarkupsPlanesNode* qMRMLPlannerModelHierarchyModelPrivate
+::planesNode(vtkMRMLScene* scene, vtkMRMLNode* node) const
+{
+  if (!node)
+    {
+    return NULL;
+    }
+
+  return vtkMRMLMarkupsPlanesNode::SafeDownCast(node->GetNodeReference(
+    qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
+}
+
+//------------------------------------------------------------------------------
+vtkMRMLModelNode* qMRMLPlannerModelHierarchyModelPrivate
+::modelNode(vtkMRMLNode* node) const
+{
+  if (!node)
+    {
+    return NULL;
+    }
+
+  vtkMRMLDisplayableHierarchyNode* displayableHierarchyNode
+    = vtkMRMLDisplayableHierarchyNode::SafeDownCast(node);
+  if (displayableHierarchyNode)
+    {
+    return vtkMRMLModelNode::SafeDownCast(
+      displayableHierarchyNode->GetAssociatedNode());
+    }
+  return NULL;
 }
 
 //------------------------------------------------------------------------------
@@ -111,6 +150,12 @@ const char* qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()
 }
 
 //------------------------------------------------------------------------------
+const char* qMRMLPlannerModelHierarchyModel::planesReferenceRole()
+{
+  return "Planner/PlanesID";
+}
+
+//------------------------------------------------------------------------------
 void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
 {
   this->Superclass::observeNode(node);
@@ -133,7 +178,16 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
 
   vtkMRMLTransformDisplayNode* display =
     d->transformDisplayNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
-  qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
+  if (display || (!display && !node))
+    {
+    qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
+    }
+  vtkMRMLMarkupsPlanesNode* markup =
+    d->planesNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
+  if (markup || (!markup && !node))
+    {
+    qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -150,8 +204,15 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
   QFlags<Qt::ItemFlag> flags = this->Superclass::nodeFlags(node, column);
 
   vtkMRMLTransformableNode* transformable = vtkMRMLTransformableNode::SafeDownCast(node);
+  vtkMRMLModelNode* model = d->modelNode(node);
+
   if (column == this->transformVisibilityColumn() &&
     (transformable || d->hasTransformableNodeChildren(node)))
+    {
+    qDebug() << "Inside: " << node->GetClassName();
+    flags |= Qt::ItemIsUserCheckable;
+    }
+  else if (column == this->planesVisibilityColumn() && model)
     {
     flags |= Qt::ItemIsUserCheckable;
     }
@@ -169,9 +230,19 @@ void qMRMLPlannerModelHierarchyModel
       d->transformDisplayNode(this->mrmlScene(), node);
     if (display)
       {
-      item->setToolTip("Save node");
+      item->setToolTip("Transform");
       item->setCheckState(
         display->GetEditorVisibility() ? Qt::Checked : Qt::Unchecked);
+      }
+    }
+  if (column == this->planesVisibilityColumn())
+    {
+    vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+    if (planes)
+      {
+      item->setToolTip("Show cutting plane");
+      item->setCheckState(
+        planes->GetNthMarkupVisibility(item->row()) ? Qt::Checked : Qt::Unchecked);
       }
     }
   this->Superclass::updateItemDataFromNode(item, node, column);
@@ -212,10 +283,26 @@ void qMRMLPlannerModelHierarchyModel::setTransformVisibilityColumn(int column)
 }
 
 //------------------------------------------------------------------------------
+int qMRMLPlannerModelHierarchyModel::planesVisibilityColumn() const
+{
+  Q_D(const qMRMLPlannerModelHierarchyModel);
+  return d->PlanesVisibilityColumn;
+}
+
+//------------------------------------------------------------------------------
+void qMRMLPlannerModelHierarchyModel::setPlanesVisibilityColumn(int column)
+{
+  Q_D(qMRMLPlannerModelHierarchyModel);
+  d->PlanesVisibilityColumn = column;
+  this->updateColumnCount();
+}
+
+//------------------------------------------------------------------------------
 int qMRMLPlannerModelHierarchyModel::maxColumnId()const
 {
   Q_D(const qMRMLPlannerModelHierarchyModel);
   int maxId = this->Superclass::maxColumnId();
   maxId = qMax(maxId, d->TransformVisibilityColumn);
+  maxId = qMax(maxId, d->PlanesVisibilityColumn);
   return maxId;
 }

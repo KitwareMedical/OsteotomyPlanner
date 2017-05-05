@@ -306,6 +306,8 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
   sceneModel->setTransformVisibilityColumn(4);
   sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
+  sceneModel->setPlanesVisibilityColumn(5);
+  sceneModel->setHeaderData(5, Qt::Horizontal, "Planes");
   // use lazy update instead of responding to scene import end event
   sceneModel->setLazyUpdate(true);
 
@@ -316,6 +318,7 @@ void qSlicerPlannerModuleWidget::setup()
   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->planesVisibilityColumn(), QHeaderView::ResizeToContents);
 
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();

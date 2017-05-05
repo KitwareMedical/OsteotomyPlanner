@@ -37,6 +37,10 @@ class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
     READ transformVisibilityColumn
     WRITE setTransformVisibilityColumn)
 
+  Q_PROPERTY (int planesVisibilityColumn
+    READ planesVisibilityColumn
+    WRITE setPlanesVisibilityColumn)
+
 public:
   typedef qMRMLSceneModelHierarchyModel Superclass;
   qMRMLPlannerModelHierarchyModel(QObject *parent=0);
@@ -45,7 +49,11 @@ public:
   int transformVisibilityColumn()const;
   void setTransformVisibilityColumn(int column);
 
+  int planesVisibilityColumn()const;
+  void setPlanesVisibilityColumn(int column);
+
   static const char* transformDisplayReferenceRole();
+  static const char* planesReferenceRole();
 
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
