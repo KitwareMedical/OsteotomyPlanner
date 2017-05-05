@@ -63,7 +63,6 @@ public:
   void removeTransformNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
 
   qMRMLPlannerModelHierarchyModel* sceneModel() const;
-  void updateDisplayTransformNode(vtkMRMLNode* nodeRef) const;
 
   void updateWidgetFromReferenceNode(
     vtkMRMLNode* node,
@@ -76,7 +75,6 @@ public:
   vtkMRMLModelHierarchyNode* HierarchyNode;
   vtkMRMLModelHierarchyNode* StagedHierarchyNode;
   QStringList HideChildNodeTypes;
-  QMap<QString, QString> Transforms;
   vtkMRMLNode* BrainReferenceNode;
   vtkMRMLNode* TemplateReferenceNode;
 };
@@ -161,7 +159,6 @@ vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
   vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
   transform->SetAndObserveDisplayNodeID(display->GetID());
 
-  this->Transforms[refNode->GetID()] = transform->GetID();
   refNode->SetNodeReferenceID(
     this->sceneModel()->transformDisplayReferenceRole(), display->GetID());
   return transform;
@@ -171,12 +168,11 @@ vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
 vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
 ::getTransformNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
 {
-  if (refNode && this->Transforms.contains(refNode->GetID()))
-    {
-    return vtkMRMLLinearTransformNode::SafeDownCast(
-      scene->GetNodeByID(this->Transforms[refNode->GetID()].toAscii()));
-    }
-  return NULL;
+  vtkMRMLTransformDisplayNode* display =
+    vtkMRMLTransformDisplayNode::SafeDownCast(refNode ?
+      refNode->GetNodeReference(this->sceneModel()->transformDisplayReferenceRole()) : NULL);
+  return display ?
+    vtkMRMLLinearTransformNode::SafeDownCast(display->GetDisplayableNode()) : NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -186,7 +182,6 @@ void qSlicerPlannerModuleWidgetPrivate
   vtkMRMLLinearTransformNode* transform = this->getTransformNode(scene, nodeRef);
   if (transform)
     {
-    this->Transforms.remove(nodeRef->GetID());
     scene->RemoveNode(transform);
     }
 }
@@ -334,7 +329,7 @@ void qSlicerPlannerModuleWidget::setup()
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
-    this, SLOT(onNodeAboutToBeRemoved(vtkMRMLNode*)));
+    this, SLOT(onCurrentNodeAboutToBeRemoved(vtkMRMLNode*)));
 
   this->connect(
     d->BrainReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
@@ -382,8 +377,8 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
     this, SLOT(onNodeAddedEvent(vtkObject*, vtkObject*)));
 
   this->qvtkReconnect(
-    this->mrmlScene(), vtkMRMLScene::NodeAboutToBeRemovedEvent,
-    this, SLOT(onNodeAboutToBeRemovedEvent(vtkObject*, vtkObject*)));
+    this->mrmlScene(), vtkMRMLScene::NodeRemovedEvent,
+    this, SLOT(onNodeRemovedEvent(vtkObject*, vtkObject*)));
 }
 
 //-----------------------------------------------------------------------------
@@ -423,24 +418,20 @@ void qSlicerPlannerModuleWidget
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidget
-::onNodeAboutToBeRemovedEvent(vtkObject* sceneObject, vtkObject* nodeObject)
+::onNodeRemovedEvent(vtkObject* sceneObject, vtkObject* nodeObject)
 {
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLScene* scene = vtkMRMLScene::SafeDownCast(sceneObject);
   vtkMRMLNode* node = vtkMRMLNode::SafeDownCast(nodeObject);
 
+  d->removeTransformNode(scene, node);
+
   vtkMRMLLinearTransformNode* transform =
     vtkMRMLLinearTransformNode::SafeDownCast(node);
-  if (transform)
+  if (transform && !this->mrmlScene()->IsClosing())
     {
-    d->Transforms.remove(d->Transforms.key(transform->GetID()));
-
-    if (!this->mrmlScene()->IsClosing())
-      {
-      this->updateWidgetFromMRML();
-      }
+    this->updateWidgetFromMRML();
     }
-  d->removeTransformNode(scene, node);
 }
 
 //-----------------------------------------------------------------------------
@@ -456,7 +447,7 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget::onNodeAboutToBeRemoved(vtkMRMLNode* node)
+void qSlicerPlannerModuleWidget::onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLModelHierarchyNode* hierarchy =

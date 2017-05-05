@@ -48,8 +48,8 @@ public slots:
 protected slots:
   /// Tree view slots
   void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
-  void onNodeAboutToBeRemovedEvent(vtkObject* scene, vtkObject* node);
-  void onNodeAboutToBeRemoved(vtkMRMLNode* node);
+  void onNodeRemovedEvent(vtkObject* scene, vtkObject* node);
+  void onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node);
   void onSceneUpdated();
 
   /// General widget slots

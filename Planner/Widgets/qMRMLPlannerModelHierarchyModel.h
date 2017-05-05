@@ -70,7 +70,6 @@ protected:
 
 protected slots:
   void onReferenceChangedEvent(vtkObject*);
-  void modifyNode(vtkObject*);
 
 protected:
   QScopedPointer<qMRMLPlannerModelHierarchyModelPrivate> d_ptr;

@@ -72,8 +72,15 @@ vtkMRMLTransformDisplayNode* qMRMLPlannerModelHierarchyModelPrivate
     return NULL;
     }
 
-  return vtkMRMLTransformDisplayNode::SafeDownCast(node->GetNodeReference(
-    qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()));
+  vtkMRMLTransformDisplayNode* display =
+    vtkMRMLTransformDisplayNode::SafeDownCast(node->GetNodeReference(
+      qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()));
+  if (!display)
+    {
+    node->SetNodeReferenceID(
+      qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole(), NULL);
+    }
+  return display;
 }
 
 //------------------------------------------------------------------------------
@@ -180,7 +187,7 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
     d->transformDisplayNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
   if (display || (!display && !node))
     {
-    qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
+    qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
     }
   vtkMRMLMarkupsPlanesNode* markup =
     d->planesNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
@@ -188,12 +195,6 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
     {
     qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
     }
-}
-
-//------------------------------------------------------------------------------
-void qMRMLPlannerModelHierarchyModel::modifyNode(vtkObject* object)
-{
-  this->updateNodeItems();
 }
 
 //------------------------------------------------------------------------------
@@ -209,7 +210,6 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
   if (column == this->transformVisibilityColumn() &&
     (transformable || d->hasTransformableNodeChildren(node)))
     {
-    qDebug() << "Inside: " << node->GetClassName();
     flags |= Qt::ItemIsUserCheckable;
     }
   else if (column == this->planesVisibilityColumn() && model)
