@@ -50,7 +50,6 @@ public:
     vtkMRMLScene* scene,vtkMRMLNode* node) const;
   vtkMRMLMarkupsPlanesNode* planesNode(
     vtkMRMLScene* scene,vtkMRMLNode* node) const;
-  vtkMRMLModelNode* modelNode(vtkMRMLNode* node) const;
 
   int TransformVisibilityColumn;
   int PlanesVisibilityColumn;
@@ -92,27 +91,15 @@ vtkMRMLMarkupsPlanesNode* qMRMLPlannerModelHierarchyModelPrivate
     return NULL;
     }
 
-  return vtkMRMLMarkupsPlanesNode::SafeDownCast(node->GetNodeReference(
-    qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
-}
-
-//------------------------------------------------------------------------------
-vtkMRMLModelNode* qMRMLPlannerModelHierarchyModelPrivate
-::modelNode(vtkMRMLNode* node) const
-{
-  if (!node)
+  vtkMRMLMarkupsPlanesNode* planes =
+    vtkMRMLMarkupsPlanesNode::SafeDownCast(node->GetNodeReference(
+      qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
+  if (!planes)
     {
-    return NULL;
+    node->SetNodeReferenceID(
+      qMRMLPlannerModelHierarchyModel::planesReferenceRole(), NULL);
     }
-
-  vtkMRMLDisplayableHierarchyNode* displayableHierarchyNode
-    = vtkMRMLDisplayableHierarchyNode::SafeDownCast(node);
-  if (displayableHierarchyNode)
-    {
-    return vtkMRMLModelNode::SafeDownCast(
-      displayableHierarchyNode->GetAssociatedNode());
-    }
-  return NULL;
+  return planes;
 }
 
 //------------------------------------------------------------------------------
@@ -193,7 +180,7 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
     d->planesNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
   if (markup || (!markup && !node))
     {
-    qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(modifyNode(vtkObject*)));
+    qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
     }
 }
 
@@ -205,7 +192,7 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
   QFlags<Qt::ItemFlag> flags = this->Superclass::nodeFlags(node, column);
 
   vtkMRMLTransformableNode* transformable = vtkMRMLTransformableNode::SafeDownCast(node);
-  vtkMRMLModelNode* model = d->modelNode(node);
+  vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
 
   if (column == this->transformVisibilityColumn() &&
     (transformable || d->hasTransformableNodeChildren(node)))
@@ -224,6 +211,7 @@ void qMRMLPlannerModelHierarchyModel
 ::updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
+
   if (column == this->transformVisibilityColumn())
     {
     vtkMRMLTransformDisplayNode* display =
@@ -235,14 +223,22 @@ void qMRMLPlannerModelHierarchyModel
         display->GetEditorVisibility() ? Qt::Checked : Qt::Unchecked);
       }
     }
-  if (column == this->planesVisibilityColumn())
+  else if (column == this->planesVisibilityColumn())
     {
     vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
     if (planes)
       {
+      bool visible = false;
+      for (int i = 0; i < planes->GetNumberOfMarkups(); ++i)
+        {
+        if (planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
+          {
+          visible = planes->GetNthMarkupVisibility(i);
+          break;
+          }
+        }
       item->setToolTip("Show cutting plane");
-      item->setCheckState(
-        planes->GetNthMarkupVisibility(item->row()) ? Qt::Checked : Qt::Unchecked);
+      item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
       }
     }
   this->Superclass::updateItemDataFromNode(item, node, column);
@@ -262,6 +258,22 @@ void qMRMLPlannerModelHierarchyModel
       display->SetEditorVisibility(
         item->checkState() == Qt::Checked ? true : false);
       display->UpdateEditorBounds();
+      }
+    }
+  else if (item->column() == this->planesVisibilityColumn())
+    {
+    vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+    if (planes)
+      {
+      for (int i = 0; i < planes->GetNumberOfMarkups(); ++i)
+        {
+        if (planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
+          {
+          planes->SetNthMarkupVisibility(i,
+            item->checkState() == Qt::Checked ? true : false);
+          break;
+          }
+        }
       }
     }
   return this->Superclass::updateNodeFromItemData(node, item);

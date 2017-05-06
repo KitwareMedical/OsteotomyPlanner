@@ -37,6 +37,8 @@
 // Slicer
 #include "vtkMRMLDisplayableHierarchyLogic.h"
 #include "vtkMRMLLinearTransformNode.h"
+#include "vtkMRMLMarkupsDisplayNode.h"
+#include "vtkMRMLMarkupsPlanesNode.h"
 #include "vtkMRMLModelHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
@@ -62,6 +64,11 @@ public:
     vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
   void removeTransformNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
 
+  void createPlanesIfNecessary(
+    vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+  vtkMRMLMarkupsPlanesNode* createPlanesNode(vtkMRMLScene* scene);
+  void updatePlanesFromModel(vtkMRMLModelNode*, int) const;
+
   qMRMLPlannerModelHierarchyModel* sceneModel() const;
 
   void updateWidgetFromReferenceNode(
@@ -77,6 +84,7 @@ public:
   QStringList HideChildNodeTypes;
   vtkMRMLNode* BrainReferenceNode;
   vtkMRMLNode* TemplateReferenceNode;
+  vtkMRMLMarkupsPlanesNode* PlanesNode;
 };
 
 //-----------------------------------------------------------------------------
@@ -91,6 +99,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
     (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
   this->BrainReferenceNode = NULL;
   this->TemplateReferenceNode = NULL;
+  this->PlanesNode = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -187,13 +196,120 @@ void qSlicerPlannerModuleWidgetPrivate
 }
 
 //-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
+  vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+{
+  if (!hierarchy)
+    {
+    return;
+    }
+
+  if (!this->PlanesNode)
+    {
+    this->PlanesNode = this->createPlanesNode(scene);
+    }
+
+  int count = 0;
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  std::vector<vtkMRMLModelNode*> models;
+  hierarchy->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+    {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+    if (childModel)
+      {
+      models.push_back(childModel);
+      }
+    }
+
+  if (this->PlanesNode->GetNumberOfMarkups() > models.size())
+    {
+    this->PlanesNode->RemoveAllMarkups();
+    }
+  for (size_t i = 0; i < models.size(); ++i)
+    {
+    this->updatePlanesFromModel(models[i], i);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(
+  vtkMRMLModelNode* model, int count) const
+{
+  if (!model)
+    {
+    return;
+    }
+
+  model->SetNodeReferenceID(
+    this->sceneModel()->planesReferenceRole(), this->PlanesNode->GetID());
+
+  if (this->PlanesNode->GetNumberOfMarkups() > count)
+    {
+    return;
+    }
+
+  double bounds[6];
+  model->GetRASBounds(bounds);
+
+  double min[3], max[3];
+  min[0] = bounds[0]; min[1] = bounds[2]; min[2] = bounds[4];
+  max[0] = bounds[1]; max[1] = bounds[3]; max[2] = bounds[5];
+
+  double origin[3];
+  for (int i = 0; i < 3; ++i)
+    {
+    origin[i] = min[i] + (max[i] - min[i])/2;
+    }
+
+  // For the normal, pick the bounding largest size
+  double largest = 0;
+  int largetDimension = 0;
+  for (int i = 0; i < 3; ++i)
+    {
+    double size = fabs(max[i] - min[i]);
+    if (size > largest)
+      {
+      largest = size;
+      largetDimension = i;
+      }
+    }
+  double normal[3] = {0.0, 0.0, 0.0};
+  normal[largetDimension] = 1.0;
+
+  this->PlanesNode->AddPlaneFromArray(origin, normal, min, max);
+  this->PlanesNode->SetNthMarkupVisibility(count, false);
+  this->PlanesNode->SetNthMarkupAssociatedNodeID(count, model->GetID());
+}
+
+//-----------------------------------------------------------------------------
+vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate
+::createPlanesNode(vtkMRMLScene* scene)
+{
+  Q_ASSERT(scene);
+  vtkNew<vtkMRMLMarkupsPlanesNode> newPlanes;
+  vtkMRMLMarkupsPlanesNode* planes =
+    vtkMRMLMarkupsPlanesNode::SafeDownCast(
+      scene->AddNode(newPlanes.GetPointer()));
+  QString planesName = "Planner_Planes";
+  planes->SetName(planesName.toLatin1());
+
+  vtkNew<vtkMRMLMarkupsDisplayNode> newDisplay;
+  vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
+  planes->SetAndObserveDisplayNodeID(display->GetID());
+
+  return planes;
+}
+
+//-----------------------------------------------------------------------------
 qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
 ::sceneModel() const
 {
   return qobject_cast<qMRMLPlannerModelHierarchyModel*>(
     this->ModelHierarchyTreeView->sceneModel());
 }
-
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate::updateWidgetFromReferenceNode(
@@ -432,6 +548,10 @@ void qSlicerPlannerModuleWidget
     {
     this->updateWidgetFromMRML();
     }
+  else if (node == d->PlanesNode)
+    {
+    d->PlanesNode = NULL;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -482,6 +602,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   // Create all the transforms for the current hierarchy node
   d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
+  // Create the plane node for the current hierarchy node
+  d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode);
 
   d->updateWidgetFromReferenceNode(
     d->BrainReferenceNodeComboBox->currentNode(),
