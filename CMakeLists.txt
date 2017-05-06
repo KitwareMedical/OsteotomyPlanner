@@ -27,6 +27,7 @@ mark_as_superbuild(GIT_EXECUTABLE)
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(Planes)
+add_subdirectory(SplitModel)
 add_subdirectory(Planner)
 
 #-----------------------------------------------------------------------------
