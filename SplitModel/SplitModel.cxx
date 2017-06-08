@@ -121,30 +121,10 @@ int main( int argc, char * argv[] )
   clipper->SetInputData(polydata);
   clipper->SetClipFunction(plane.GetPointer());
   clipper->SetValue(0);
-
-  // Now extract feature edges
-  vtkNew<vtkFeatureEdges> boundaryEdges;
-  boundaryEdges->SetInputConnection(clipper->GetOutputPort());
-  boundaryEdges->BoundaryEdgesOn();
-  boundaryEdges->FeatureEdgesOff();
-  boundaryEdges->NonManifoldEdgesOff();
-  boundaryEdges->ManifoldEdgesOff();
-
-  vtkNew<vtkStripper> boundaryStrips;
-  boundaryStrips->SetInputConnection(boundaryEdges->GetOutputPort());
-  boundaryStrips->Update();
-
-  // Change the polylines into polygons
-  vtkNew<vtkPolyData> boundaryPoly;
-  boundaryPoly->SetPoints(boundaryStrips->GetOutput()->GetPoints());
-  boundaryPoly->SetPolys(boundaryStrips->GetOutput()->GetLines());
-
-  vtkNew<vtkAppendPolyData> append1;
-  append1->AddInputData(boundaryPoly.GetPointer());
-  append1->AddInputConnection(clipper->GetOutputPort());
-
+  clipper->Update();
+  
   // Write first part
-  int success = WriteModel(ModelOutput1, append1->GetOutputPort());
+  int success = WriteModel(ModelOutput1, clipper->GetOutputPort());
   if (success != EXIT_SUCCESS)
     {
     std::cerr << "Error while cutting the model" << std::endl;
@@ -152,17 +132,10 @@ int main( int argc, char * argv[] )
     }
 
   // Negate plane normal and write second part
-  plane->SetNormal(-Normal[0], -Normal[1], -Normal[2]);
-  clipper->SetClipFunction(plane.GetPointer());
-  boundaryStrips->Update();
+  //plane->SetNormal(-Normal[0], -Normal[1], -Normal[2]);
+  //clipper->SetClipFunction(plane.GetPointer());
+  clipper->InsideOutOn();
+  clipper->Update();
 
-  vtkNew<vtkPolyData> boundaryPoly2;
-  boundaryPoly2->SetPoints(boundaryStrips->GetOutput()->GetPoints());
-  boundaryPoly2->SetPolys(boundaryStrips->GetOutput()->GetLines());
-
-  vtkNew<vtkAppendPolyData> append2;
-  append2->AddInputData(boundaryPoly.GetPointer());
-  append2->AddInputConnection(clipper->GetOutputPort());
-
-  return WriteModel(ModelOutput2, append2->GetOutputPort());
+  return WriteModel(ModelOutput2, clipper->GetOutputPort());
 }
