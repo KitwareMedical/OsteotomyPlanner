@@ -38,6 +38,9 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkVersion.h>
 #include <vtksys/SystemTools.hxx>
+#include <vtkFillHolesFilter.h>
+#include <vtkPolyDataNormals.h>
+#include <vtkPointData.h>
 
 namespace
 {
@@ -121,48 +124,38 @@ int main( int argc, char * argv[] )
   clipper->SetInputData(polydata);
   clipper->SetClipFunction(plane.GetPointer());
   clipper->SetValue(0);
+  clipper->Update();
 
-  // Now extract feature edges
-  vtkNew<vtkFeatureEdges> boundaryEdges;
-  boundaryEdges->SetInputConnection(clipper->GetOutputPort());
-  boundaryEdges->BoundaryEdgesOn();
-  boundaryEdges->FeatureEdgesOff();
-  boundaryEdges->NonManifoldEdgesOff();
-  boundaryEdges->ManifoldEdgesOff();
+  vtkSmartPointer<vtkFillHolesFilter> fillHolesFilter =
+    vtkSmartPointer<vtkFillHolesFilter>::New();
 
-  vtkNew<vtkStripper> boundaryStrips;
-  boundaryStrips->SetInputConnection(boundaryEdges->GetOutputPort());
-  boundaryStrips->Update();
+  fillHolesFilter->SetInputConnection(clipper->GetOutputPort());
+  fillHolesFilter->SetHoleSize(1000.0);
+  vtkSmartPointer<vtkPolyDataNormals> normals =
+    vtkSmartPointer<vtkPolyDataNormals>::New();
+  normals->SetInputConnection(fillHolesFilter->GetOutputPort());
+  normals->ConsistencyOn();
+  normals->SplittingOff();
+  normals->Update();
 
-  // Change the polylines into polygons
-  vtkNew<vtkPolyData> boundaryPoly;
-  boundaryPoly->SetPoints(boundaryStrips->GetOutput()->GetPoints());
-  boundaryPoly->SetPolys(boundaryStrips->GetOutput()->GetLines());
-
-  vtkNew<vtkAppendPolyData> append1;
-  append1->AddInputData(boundaryPoly.GetPointer());
-  append1->AddInputConnection(clipper->GetOutputPort());
-
+  // Restore the original normals
+  normals->GetOutput()->GetPointData()->
+    SetNormals(clipper->GetOutput()->GetPointData()->GetNormals());
+  
   // Write first part
-  int success = WriteModel(ModelOutput1, append1->GetOutputPort());
+  int success = WriteModel(ModelOutput1, normals->GetOutputPort());
   if (success != EXIT_SUCCESS)
     {
     std::cerr << "Error while cutting the model" << std::endl;
     return EXIT_FAILURE;
     }
 
-  // Negate plane normal and write second part
-  plane->SetNormal(-Normal[0], -Normal[1], -Normal[2]);
-  clipper->SetClipFunction(plane.GetPointer());
-  boundaryStrips->Update();
+  
+  clipper->InsideOutOn();
+  normals->Update();
+  // Restore the original normals
+  normals->GetOutput()->GetPointData()->
+    SetNormals(clipper->GetOutput()->GetPointData()->GetNormals());
 
-  vtkNew<vtkPolyData> boundaryPoly2;
-  boundaryPoly2->SetPoints(boundaryStrips->GetOutput()->GetPoints());
-  boundaryPoly2->SetPolys(boundaryStrips->GetOutput()->GetLines());
-
-  vtkNew<vtkAppendPolyData> append2;
-  append2->AddInputData(boundaryPoly.GetPointer());
-  append2->AddInputConnection(clipper->GetOutputPort());
-
-  return WriteModel(ModelOutput2, append2->GetOutputPort());
+  return WriteModel(ModelOutput2, normals->GetOutputPort());
 }

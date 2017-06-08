@@ -63,6 +63,12 @@ protected slots:
   void onOpenBrainReference();
   void onOpenTemplateReference();
 
+  //Actions slots
+  void updateCurrentCutNode(vtkMRMLNode* node);
+  void previewButtonClicked();
+  void confirmButtonClicked();
+  void cancelButtonClicked();
+  
 protected:
   virtual void setup();
 
