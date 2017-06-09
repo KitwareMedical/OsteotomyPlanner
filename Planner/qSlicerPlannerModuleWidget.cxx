@@ -134,10 +134,13 @@ void qSlicerPlannerModuleWidgetPrivate
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   hierarchy->GetAllChildrenNodes(children);
+  std::cerr << children.size() << std::endl;
   for (it = children.begin(); it != children.end(); ++it)
     {
-    vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      std::cerr << "test1" << std::endl;
+      vtkMRMLModelNode* childModel =
+        vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      std::cerr << "test2" << std::endl;
     if (childModel)
       {
       vtkMRMLLinearTransformNode* childTransform = this->getTransformNode(scene, childModel);
@@ -149,6 +152,8 @@ void qSlicerPlannerModuleWidgetPrivate
       childTransform->SetAndObserveTransformNodeID(transform->GetID());
       }
     }
+  std::cout << "test4" << std::endl;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -400,10 +405,10 @@ void qSlicerPlannerModuleWidget::setup()
   Q_D(qSlicerPlannerModuleWidget);
   d->setupUi(this);
   this->Superclass::setup();
-
+  
   qMRMLPlannerModelHierarchyModel* sceneModel =
     new qMRMLPlannerModelHierarchyModel(this);
-
+  
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
   d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -421,6 +426,7 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setHeaderData(5, Qt::Horizontal, "Planes");
   // use lazy update instead of responding to scene import end event
   sceneModel->setLazyUpdate(true);
+  
 
   d->ModelHierarchyTreeView->setHeaderHidden(false);
   d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
@@ -472,6 +478,7 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->TemplateReferenceOpenButton, SIGNAL(clicked()),
     this, SLOT(onOpenTemplateReference()));
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -594,7 +601,6 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   Q_D(qSlicerPlannerModuleWidget);
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
-
   d->ModelHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
   d->ModelHierarchyTreeView->setRootNode(d->HierarchyNode);
   d->ModelHierarchyTreeView->setCurrentNode(d->HierarchyNode);
@@ -602,8 +608,10 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   // Create all the transforms for the current hierarchy node
   d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
+
   // Create the plane node for the current hierarchy node
   d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode);
+
 
   d->updateWidgetFromReferenceNode(
     d->BrainReferenceNodeComboBox->currentNode(),
@@ -613,6 +621,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton,
     d->TemplateReferenceOpacitySliderWidget);
+
 }
 
 //-----------------------------------------------------------------------------
