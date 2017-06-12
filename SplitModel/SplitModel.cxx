@@ -38,6 +38,9 @@
 #include <vtkXMLPolyDataWriter.h>
 #include <vtkVersion.h>
 #include <vtksys/SystemTools.hxx>
+#include <vtkFillHolesFilter.h>
+#include <vtkPolyDataNormals.h>
+#include <vtkPointData.h>
 
 namespace
 {
@@ -122,20 +125,37 @@ int main( int argc, char * argv[] )
   clipper->SetClipFunction(plane.GetPointer());
   clipper->SetValue(0);
   clipper->Update();
+
+  vtkSmartPointer<vtkFillHolesFilter> fillHolesFilter =
+    vtkSmartPointer<vtkFillHolesFilter>::New();
+
+  fillHolesFilter->SetInputConnection(clipper->GetOutputPort());
+  fillHolesFilter->SetHoleSize(1000.0);
+  vtkSmartPointer<vtkPolyDataNormals> normals =
+    vtkSmartPointer<vtkPolyDataNormals>::New();
+  normals->SetInputConnection(fillHolesFilter->GetOutputPort());
+  normals->ConsistencyOn();
+  normals->SplittingOff();
+  normals->Update();
+
+  // Restore the original normals
+  normals->GetOutput()->GetPointData()->
+    SetNormals(clipper->GetOutput()->GetPointData()->GetNormals());
   
   // Write first part
-  int success = WriteModel(ModelOutput1, clipper->GetOutputPort());
+  int success = WriteModel(ModelOutput1, normals->GetOutputPort());
   if (success != EXIT_SUCCESS)
     {
     std::cerr << "Error while cutting the model" << std::endl;
     return EXIT_FAILURE;
     }
 
-  // Negate plane normal and write second part
-  //plane->SetNormal(-Normal[0], -Normal[1], -Normal[2]);
-  //clipper->SetClipFunction(plane.GetPointer());
+  
   clipper->InsideOutOn();
-  clipper->Update();
+  normals->Update();
+  // Restore the original normals
+  normals->GetOutput()->GetPointData()->
+    SetNormals(clipper->GetOutput()->GetPointData()->GetNormals());
 
-  return WriteModel(ModelOutput2, clipper->GetOutputPort());
+  return WriteModel(ModelOutput2, normals->GetOutputPort());
 }

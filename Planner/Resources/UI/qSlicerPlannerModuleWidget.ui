@@ -319,14 +319,14 @@
           <item row="0" column="3">
             <widget class="QPushButton" name="CutConfirmButton">
               <property name="text">
-                <string>Confirm Cut</string>
+                <string>Confirm</string>
               </property>
             </widget>
           </item>
           <item row="0" column="4">
             <widget class="QPushButton" name="CutCancelButton">
               <property name="text">
-                <string>Cancel Cut</string>
+                <string>Cancel</string>
               </property>
             </widget>
           </item>
@@ -442,6 +442,22 @@
     </hint>
    </hints>
   </connection>
+   <connection>
+     <sender>qSlicerPlannerModuleWidget</sender>
+     <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+     <receiver>CurrentCutNodeComboBox</receiver>
+     <slot>setMRMLScene(vtkMRMLScene*)</slot>
+     <hints>
+       <hint type="sourcelabel">
+         <x>334</x>
+         <y>159</y>
+       </hint>
+       <hint type="destinationlabel">
+         <x>374</x>
+         <y>243</y>
+       </hint>
+     </hints>
+   </connection>
   <connection>
    <sender>qSlicerPlannerModuleWidget</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>

@@ -6,7 +6,7 @@ project(OsteotomyPlanner)
 # Extension meta-information
 set(EXTENSION_HOMEPAGE "http://slicer.org/slicerWiki/index.php/Documentation/Nightly/Extensions/OsteotomyPlanner")
 set(EXTENSION_CATEGORY "Planning")
-set(EXTENSION_CONTRIBUTORS "Johan Andruejol (Kitware Inc.)")
+set(EXTENSION_CONTRIBUTORS "Johan Andruejol (Kitware Inc.), Sam Horvath (Kitware Inc.")
 set(EXTENSION_DESCRIPTION "Osteotomy Planner is an extension design to help the planning of bone surgeries.")
 set(EXTENSION_ICONURL "http://www.example.com/Slicer/Extensions/OsteotomyPlanner.png")
 set(EXTENSION_SCREENSHOTURLS "http://www.example.com/Slicer/Extensions/OsteotomyPlanner/Screenshots/1.png")
