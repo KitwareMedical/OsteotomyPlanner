@@ -196,6 +196,7 @@ vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
   transform->SetName(transformName.toLatin1());
 
   vtkNew<vtkMRMLTransformDisplayNode> newDisplay;
+  newDisplay->SetEditorScalingEnabled(false);
   vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
   transform->SetAndObserveDisplayNodeID(display->GetID());
 
