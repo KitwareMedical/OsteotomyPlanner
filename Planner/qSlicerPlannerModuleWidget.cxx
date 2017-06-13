@@ -164,7 +164,6 @@ void qSlicerPlannerModuleWidgetPrivate
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   hierarchy->GetAllChildrenNodes(children);
-  std::cerr << children.size() << std::endl;
   for (it = children.begin(); it != children.end(); ++it)
     {
       vtkMRMLModelNode* childModel =
@@ -446,10 +445,8 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   scene->AddNode(splitNode1.GetPointer());
   scene->AddNode(splitNode2.GetPointer());
 
-
   this->splitModel(vtkMRMLModelNode::SafeDownCast(CurrentCutNode), splitNode1.GetPointer(), 
     splitNode2.GetPointer(), scene);
-
 
   //add to hierarchy
   vtkNew<vtkMRMLModelHierarchyNode> splitNodeH1;
@@ -536,7 +533,6 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
 
   //Fails in this section
   vtkMRMLCommandLineModuleNode* cmdNode = splitLogic->CreateNodeInScene();
-  std::cerr << split1->GetName() << std::endl;
   int planeIndex = this->getPlaneIndex(inputNode, this->PlanesNode);
 
   double normal[3];
