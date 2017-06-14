@@ -92,6 +92,7 @@ public:
   void splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene);
   int getPlaneIndex(vtkMRMLModelNode* node, vtkMRMLMarkupsPlanesNode* planes);
   void applyRandomColor(vtkMRMLModelNode* node);
+  QString generateMetricsText();
 
   void updateWidgetFromReferenceNode(
     vtkMRMLNode* node,
@@ -111,6 +112,7 @@ public:
   vtkMRMLNode* StagedCutNode2;
   vtkMRMLMarkupsPlanesNode* PlanesNode;
   bool cuttingActive;
+  vtkSlicerCLIModuleLogic* splitLogic;
 };
 
 //-----------------------------------------------------------------------------
@@ -130,6 +132,12 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->StagedCutNode2 = NULL;
   this->PlanesNode = NULL;
   this->cuttingActive = false;
+
+  qSlicerAbstractCoreModule* splitModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
+
+  this->splitLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
 }
 
 //-----------------------------------------------------------------------------
@@ -285,7 +293,6 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(
 
   double bounds[6];
   model->GetRASBounds(bounds);
-
   double min[3], max[3];
   min[0] = bounds[0]; min[1] = bounds[2]; min[2] = bounds[4];
   max[0] = bounds[1]; max[1] = bounds[3]; max[2] = bounds[5];
@@ -524,16 +531,12 @@ void qSlicerPlannerModuleWidgetPrivate::deleteModel(vtkMRMLModelNode* node, vtkM
 //move
 void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene)
 {
-  qSlicerAbstractCoreModule* splitModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
+  
 
-  vtkSlicerCLIModuleLogic* splitLogic =
-    vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
-
-  splitLogic->SetMRMLScene(scene);
+  this->splitLogic->SetMRMLScene(scene);
 
   //Fails in this section
-  vtkMRMLCommandLineModuleNode* cmdNode = splitLogic->CreateNodeInScene();
+  vtkMRMLCommandLineModuleNode* cmdNode = this->splitLogic->CreateNodeInScene();
   int planeIndex = this->getPlaneIndex(inputNode, this->PlanesNode);
 
   double normal[3];
@@ -555,7 +558,7 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
   cmdNode->SetParameterAsString("Normal", normalStream.str());
 
 
-  splitLogic->ApplyAndWait(cmdNode, false);
+  this->splitLogic->ApplyAndWait(cmdNode, false);
   scene->RemoveNode(cmdNode);
 }
 
@@ -586,6 +589,12 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
       display->EndModify(wasModifying);
     }
   }
+}
+
+QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
+{
+  QString output = QString("Output Placeholder text");
+  return output;
 }
 
 //-----------------------------------------------------------------------------
@@ -680,6 +689,9 @@ void qSlicerPlannerModuleWidget::setup()
     d->CutConfirmButton, SIGNAL(clicked()), this, SLOT(confirmButtonClicked()));
   this->connect(
     d->CutCancelButton, SIGNAL(clicked()), this, SLOT(cancelButtonClicked()));
+
+  this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
+
 
   this->connect(
     d->BrainReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
@@ -979,4 +991,12 @@ void qSlicerPlannerModuleWidget::cancelButtonClicked()
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
   this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::onComputeButton()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  //Stuff happens!
+  d->MetricsOutput->setText(d->generateMetricsText());
+
 }

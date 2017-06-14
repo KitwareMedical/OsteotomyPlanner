@@ -334,7 +334,38 @@
         
       </widget>
     </item>
-    
+    <item>
+      <widget class="ctkCollapsibleButton" name="MetricsCollapsibleButton">
+        <property name="text">
+          <string>Surgical Metrics</string>
+        </property>
+        <property name="contentsFrameShape">
+          <enum>QFrame::StyledPanel</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayoutMetrics">
+          <item>
+            <widget class="QPushButton" name="ComputeMetricsButton">
+              <property name="text">
+                <string>Compute Surgical Metrics</string>
+              </property>
+            </widget>
+          </item>
+          <item>
+            <widget class="ctkFittedTextBrowser" name="MetricsOutput">
+              <property name="sizePolicy">
+                <sizepolicy hsizetype="Ignored" vsizetype="Minimum">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                </sizepolicy>
+              </property>
+              <property name="text">
+                <string>Load a model hierarchy and press "Compute Metrics" button to see basic info</string>
+              </property>
+            </widget>
+          </item>
+        </layout>
+      </widget>
+    </item>
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
