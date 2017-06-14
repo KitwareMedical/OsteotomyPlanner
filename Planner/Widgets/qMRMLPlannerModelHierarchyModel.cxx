@@ -258,6 +258,27 @@ void qMRMLPlannerModelHierarchyModel
       display->SetEditorVisibility(
         item->checkState() == Qt::Checked ? true : false);
       display->UpdateEditorBounds();
+      
+      vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
+      if (model)
+      {
+        vtkMRMLDisplayNode* display = model->GetDisplayNode();
+        if (display)
+        {
+          int wasModifying = display->StartModify();
+
+          if (item->checkState() == Qt::Checked ? true : false)
+          {
+            display->SetOpacity(0.5);
+          }
+          else
+          {
+            display->SetOpacity(1);
+
+          }
+          display->EndModify(wasModifying);
+        }
+      }
       }
     }
   else if (item->column() == this->planesVisibilityColumn())

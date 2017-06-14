@@ -68,6 +68,9 @@ protected slots:
   void previewButtonClicked();
   void confirmButtonClicked();
   void cancelButtonClicked();
+
+  // Metrics slots
+  void onComputeButton();
   
 protected:
   virtual void setup();
