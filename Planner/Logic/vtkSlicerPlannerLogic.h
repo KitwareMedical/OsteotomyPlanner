@@ -26,13 +26,18 @@
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
+#include "vtkMRMLModelNode.h"
 
 // MRML includes
 
 // STD includes
 #include <cstdlib>
+#include <vector>
+#include <map>
 
 #include "vtkSlicerPlannerModuleLogicExport.h"
+#include <vtkSlicerCLIModuleLogic.h>
+
 
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -50,6 +55,11 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
+  //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
+  //void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
+  std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
+  void createReferenceModels();
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
@@ -58,9 +68,14 @@ protected:
   virtual void UpdateFromMRMLScene();
 
 private:
-
+  
+  vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerCLIModuleLogic* wrapperLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
+  vtkMRMLModelNode* SkullBonesReference;
+  vtkMRMLModelNode* SkullWrappedReference;
+
 };
 
 #endif

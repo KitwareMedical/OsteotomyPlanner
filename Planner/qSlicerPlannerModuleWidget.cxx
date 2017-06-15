@@ -49,18 +49,19 @@
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelStorageNode.h"
 
-// Slicer includes
+// Slicer CLI includes
 #include <qSlicerCoreApplication.h>
 #include <qSlicerModuleManager.h>
 #include "qSlicerAbstractCoreModule.h"
 #include <qSlicerCLIModule.h>
-
-// CropVolume Logic includes
 #include <vtkSlicerCLIModuleLogic.h>
 
 // Self
 #include "qMRMLPlannerModelHierarchyModel.h"
 #include "vtkSlicerPlannerLogic.h"
+
+//STD includes
+#include <map>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -113,6 +114,7 @@ public:
   vtkMRMLMarkupsPlanesNode* PlanesNode;
   bool cuttingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerPlannerLogic* logic;
 };
 
 //-----------------------------------------------------------------------------
@@ -138,6 +140,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   this->splitLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
+
+  //this->logic->setSplitLogic(this->splitLogic);
 }
 
 //-----------------------------------------------------------------------------
@@ -523,6 +527,7 @@ void qSlicerPlannerModuleWidgetPrivate::deleteModel(vtkMRMLModelNode* node, vtkM
   }
   if (node)
   {
+    this->removeTransformNode(scene, node);
     scene->RemoveNode(node);
   }
   node = NULL;
@@ -628,6 +633,8 @@ void qSlicerPlannerModuleWidget::setup()
   
   qMRMLPlannerModelHierarchyModel* sceneModel =
     new qMRMLPlannerModelHierarchyModel(this);
+
+  d->logic = this->plannerLogic();
   
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
