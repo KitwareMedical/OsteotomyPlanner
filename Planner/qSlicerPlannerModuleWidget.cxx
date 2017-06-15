@@ -598,7 +598,31 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
 
 QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
 {
-  QString output = QString("Output Placeholder text");
+  QString output;
+  std::map<std::string, double> areas;
+  std::map<std::string, double>::iterator it;
+  std::stringstream outputStream;
+  if (this->HierarchyNode)
+  {
+    
+    areas = this->logic->computeBoneAreas(this->HierarchyNode);
+    
+    outputStream << "       Bone Plate Surface Areas       \n";
+    outputStream << "===============================\n";
+    outputStream << "   Plate Name\t\t\tSurface Area (cm^2)\n";
+    outputStream << "--------------------------------------------------\n";
+    for (it = areas.begin(); it != areas.end(); it++) {
+      std::cout << "printing item" << std::endl;
+      outputStream << "  " << it->first << "\t\t\t" << it->second << "\n";
+    }
+    std::cout << areas.size() << std::endl;
+
+    output = QString(outputStream.str().c_str());
+  }
+  else
+  {
+    output = QString("No models available!!!");
+  }
   return output;
 }
 
@@ -635,6 +659,12 @@ void qSlicerPlannerModuleWidget::setup()
     new qMRMLPlannerModelHierarchyModel(this);
 
   d->logic = this->plannerLogic();
+  qSlicerAbstractCoreModule* wrapperModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("Wrapper");
+
+  vtkSlicerCLIModuleLogic* wrapperLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
+  this->plannerLogic()->setWrapperLogic(wrapperLogic);
   
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");

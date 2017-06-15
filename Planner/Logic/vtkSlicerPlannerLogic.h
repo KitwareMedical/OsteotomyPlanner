@@ -56,7 +56,7 @@ public:
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
   //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
-  //void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
+  void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
   std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
   void createReferenceModels();
 
