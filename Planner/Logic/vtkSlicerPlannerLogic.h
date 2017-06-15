@@ -26,13 +26,18 @@
 
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
+#include "vtkMRMLModelNode.h"
 
 // MRML includes
 
 // STD includes
 #include <cstdlib>
+#include <vector>
+#include <map>
 
 #include "vtkSlicerPlannerModuleLogicExport.h"
+#include <vtkSlicerCLIModuleLogic.h>
+
 
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -50,6 +55,14 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
+  //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
+  void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
+  void setMergeLogic(vtkSlicerCLIModuleLogic* logic);
+  std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
+  void createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
+  double getPreOPICV();
+  double getCurrentICV(vtkMRMLModelHierarchyNode* HierarchyNode);
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
@@ -58,9 +71,20 @@ protected:
   virtual void UpdateFromMRMLScene();
 
 private:
-
+  
+  vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerCLIModuleLogic* wrapperLogic;
+  vtkSlicerCLIModuleLogic* mergeLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
+  vtkMRMLModelNode* wrapModel(vtkMRMLModelNode* model, std::string Name);
+  vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
+  double computeICV(vtkMRMLModelNode* model);
+  vtkMRMLModelNode* SkullBonesPreOP;
+  vtkMRMLModelNode* SkullWrappedPreOP;
+  double preOPICV;
+  void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
+
 };
 
 #endif

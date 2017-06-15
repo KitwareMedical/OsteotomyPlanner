@@ -26,6 +26,7 @@
 // VTK includes
 #include "vtkNew.h"
 #include <vtkMath.h>
+#include <vtkMatrix4x4.h>
 
 
 // SlicerQt includes
@@ -49,18 +50,19 @@
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelStorageNode.h"
 
-// Slicer includes
+// Slicer CLI includes
 #include <qSlicerCoreApplication.h>
 #include <qSlicerModuleManager.h>
 #include "qSlicerAbstractCoreModule.h"
 #include <qSlicerCLIModule.h>
-
-// CropVolume Logic includes
 #include <vtkSlicerCLIModuleLogic.h>
 
 // Self
 #include "qMRMLPlannerModelHierarchyModel.h"
 #include "vtkSlicerPlannerLogic.h"
+
+//STD includes
+#include <map>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -93,6 +95,7 @@ public:
   int getPlaneIndex(vtkMRMLModelNode* node, vtkMRMLMarkupsPlanesNode* planes);
   void applyRandomColor(vtkMRMLModelNode* node);
   QString generateMetricsText();
+  void hardenTransforms();
 
   void updateWidgetFromReferenceNode(
     vtkMRMLNode* node,
@@ -113,6 +116,7 @@ public:
   vtkMRMLMarkupsPlanesNode* PlanesNode;
   bool cuttingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerPlannerLogic* logic;
 };
 
 //-----------------------------------------------------------------------------
@@ -138,6 +142,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   this->splitLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
+
+  //this->logic->setSplitLogic(this->splitLogic);
 }
 
 //-----------------------------------------------------------------------------
@@ -421,6 +427,8 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
     return;
   }
 
+  this->hardenTransforms();
+
   //Create nodes
   vtkNew<vtkMRMLModelNode> splitNode1;
   vtkNew<vtkMRMLModelNode> splitNode2;
@@ -523,6 +531,7 @@ void qSlicerPlannerModuleWidgetPrivate::deleteModel(vtkMRMLModelNode* node, vtkM
   }
   if (node)
   {
+    this->removeTransformNode(scene, node);
     scene->RemoveNode(node);
   }
   node = NULL;
@@ -593,8 +602,74 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
 
 QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
 {
-  QString output = QString("Output Placeholder text");
+  QString output;
+  std::map<std::string, double> areas;
+  std::map<std::string, double>::iterator it;
+  std::stringstream outputStream;
+  double preOpVolume;
+  double currentVolume;
+  if (this->HierarchyNode)
+  {
+    this->hardenTransforms();
+    areas = this->logic->computeBoneAreas(this->HierarchyNode);
+    preOpVolume = this->logic->getPreOPICV();
+    currentVolume = this->logic->getCurrentICV(this->HierarchyNode);
+    
+    outputStream << "       Bone Plate Surface Areas       \n";
+    outputStream << "===============================\n";
+    outputStream << "   Plate Name\t\t\tSurface Area (cm^2)\n";
+    outputStream << "--------------------------------------------------\n";
+    for (it = areas.begin(); it != areas.end(); it++) {
+      outputStream << "  " << it->first << "\t\t\t" << it->second << "\n";
+    }
+
+    outputStream << "\n\n";
+    outputStream << "ICV Values (cm^3)\n";
+    outputStream << "------------------\n";
+    outputStream << "PreOP: " << preOpVolume << "\n";
+    outputStream << "Current: " << currentVolume << "\n";
+    output = QString(outputStream.str().c_str());
+  }
+  else
+  {
+    output = QString("No models available!!!");
+  }
   return output;
+}
+void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+    vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      int m = childModel->StartModify();
+      vtkMRMLTransformNode* transformNode = childModel->GetParentTransformNode();      //childModel->SetNodeReferenceID(
+      //  this->sceneModel()->transformDisplayReferenceRole(), NULL);
+      //this->removeTransformNode(this->HierarchyNode->GetScene(), childModel);
+
+      //this->createTransformNode(this->HierarchyNode->GetScene(), childModel);
+      if (!transformNode)
+      {
+        // already in the world coordinate system
+        return;
+      }
+      if (transformNode->IsTransformToWorldLinear())
+      {
+        vtkNew<vtkMatrix4x4> hardeningMatrix;
+        transformNode->GetMatrixTransformToWorld(hardeningMatrix.GetPointer());
+        childModel->ApplyTransformMatrix(hardeningMatrix.GetPointer());
+        hardeningMatrix->Identity();
+        transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+      }
+      childModel->EndModify(m);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -628,7 +703,23 @@ void qSlicerPlannerModuleWidget::setup()
   
   qMRMLPlannerModelHierarchyModel* sceneModel =
     new qMRMLPlannerModelHierarchyModel(this);
-  
+
+  d->logic = this->plannerLogic();
+  qSlicerAbstractCoreModule* wrapperModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("Wrapper");
+
+  vtkSlicerCLIModuleLogic* wrapperLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
+  this->plannerLogic()->setWrapperLogic(wrapperLogic);
+
+  qSlicerAbstractCoreModule* mergeModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("MergeModels");
+
+  vtkSlicerCLIModuleLogic* mergeLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(mergeModule->logic());
+  this->plannerLogic()->setMergeLogic(mergeLogic);
+
+    
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
   d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -691,6 +782,7 @@ void qSlicerPlannerModuleWidget::setup()
     d->CutCancelButton, SIGNAL(clicked()), this, SLOT(cancelButtonClicked()));
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
+  this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
 
 
   this->connect(
@@ -832,6 +924,7 @@ void qSlicerPlannerModuleWidget
 void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 {
   Q_D(qSlicerPlannerModuleWidget);
+
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
   d->ModelHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
@@ -998,5 +1091,16 @@ void qSlicerPlannerModuleWidget::onComputeButton()
   Q_D(qSlicerPlannerModuleWidget);
   //Stuff happens!
   d->MetricsOutput->setText(d->generateMetricsText());
+
+}
+
+void qSlicerPlannerModuleWidget::onSetPreOP()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  //Stuff happens!
+  if (d->HierarchyNode)
+    {
+      this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+    }
 
 }

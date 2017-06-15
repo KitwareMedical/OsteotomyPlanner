@@ -146,7 +146,7 @@ const char* qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()
 //------------------------------------------------------------------------------
 const char* qMRMLPlannerModelHierarchyModel::planesReferenceRole()
 {
-  return "Planner/PlanesID";
+  return "Planner/PlaneID";
 }
 
 //------------------------------------------------------------------------------
