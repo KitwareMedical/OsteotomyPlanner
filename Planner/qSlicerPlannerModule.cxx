@@ -79,7 +79,7 @@ QString qSlicerPlannerModule::acknowledgementText() const
 QStringList qSlicerPlannerModule::contributors() const
 {
   QStringList moduleContributors;
-  moduleContributors << QString("Johan Andruejol (Kitware Inc.)");
+  moduleContributors << QString("Johan Andruejol (Kitware Inc.), Sam Horvath (Kitware Inc.)");
   return moduleContributors;
 }
 
