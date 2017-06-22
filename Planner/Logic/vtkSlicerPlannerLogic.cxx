@@ -33,12 +33,16 @@
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLTransformNode.h>
 
+#include <QProgressBar.h>
+
 // VTK includes
 #include <vtkIntArray.h>
 #include <vtkNew.h>
 #include <vtkObjectFactory.h>
 #include <vtkMassProperties.h>
 #include <vtkTriangleFilter.h>
+#include <vtkAppendPolyData.h>
+#include <vtkCommand.h>
 
 // STD includes
 #include <cassert>
@@ -51,10 +55,12 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
 {
   this->SkullBonesPreOP = NULL;
   this->SkullWrappedPreOP = NULL;
+  this->HealthyBrain = NULL;
   this->splitLogic = NULL;
   this->wrapperLogic = NULL;
   this->mergeLogic = NULL;
   this->preOPICV = 0;
+  this->healthyBrainICV = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -191,13 +197,12 @@ void vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* Hierarc
   name = HierarchyNode->GetName();
   name += " - Merged";
   vtkMRMLModelNode* mergedModel = this->mergeModel(HierarchyNode, name);
+  mergedModel->GetDisplayNode()->SetVisibility(0);
+  this->SkullBonesPreOP = mergedModel;
   name = HierarchyNode->GetName();
   name += " - Wrapped";
   vtkMRMLModelNode* wrappedModel = this->wrapModel(mergedModel, name);
-
   wrappedModel->GetDisplayNode()->SetVisibility(0);
-  mergedModel->GetDisplayNode()->SetVisibility(0);
-  this->SkullBonesPreOP = mergedModel;
   this->SkullWrappedPreOP = wrappedModel;
   this->preOPICV = this->computeICV(this->SkullWrappedPreOP);
 
@@ -225,15 +230,16 @@ vtkMRMLModelNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std:
   cmdNode->SetParameterAsString("outputModel", wrappedModel->GetID());
   cmdNode->SetParameterAsString("PhiRes", "20");
   cmdNode->SetParameterAsString("ThetaRes", "20");
-  this->wrapperLogic->ApplyAndWait(cmdNode, false);
+  this->wrapperLogic->ApplyAndWait(cmdNode, true);
   scene->RemoveNode(cmdNode);
-
   return wrappedModel.GetPointer();
+  
 }
 vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name)
 {
   
   vtkNew<vtkMRMLModelNode> mergedModel;
+  vtkNew<vtkAppendPolyData> filter;
   vtkMRMLScene* scene = this->GetMRMLScene();
   mergedModel->SetScene(scene);
   mergedModel->SetName(name.c_str());
@@ -245,14 +251,7 @@ vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* H
   scene->AddNode(snode.GetPointer());
   scene->AddNode(mergedModel.GetPointer());
 
-  //CLI setup
-  this->mergeLogic->SetMRMLScene(scene);
-  vtkMRMLCommandLineModuleNode* cmdNode = this->mergeLogic->CreateNodeInScene();
-  cmdNode->SetParameterAsString("Model1", mergedModel->GetID());
   
-  cmdNode->SetParameterAsString("ModelOutput", mergedModel->GetID());
-
-
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   HierarchyNode->GetAllChildrenNodes(children);
@@ -263,12 +262,15 @@ vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* H
 
     if (childModel)
     {
-      cmdNode->SetParameterAsString("Model2", childModel->GetID());
-      this->mergeLogic->ApplyAndWait(cmdNode, false);
+      filter->AddInputData(childModel->GetPolyData());
+      
     }
   }
 
-  scene->RemoveNode(cmdNode);
+  filter->Update();
+  mergedModel->SetAndObservePolyData(filter->GetOutput());
+  mergedModel->SetAndObserveDisplayNodeID(dnode->GetID());
+
   return mergedModel.GetPointer();
 }
 
@@ -326,9 +328,35 @@ void vtkSlicerPlannerLogic::hardenTransforms(vtkMRMLModelHierarchyNode* hierarch
       childModel->HardenTransform();
       vtkNew<vtkMRMLTransformNode> newTransform;
       vtkMRMLTransformNode* transform = vtkMRMLTransformNode::SafeDownCast(this->GetMRMLScene()->GetNodeByID(childModel->GetTransformNodeID()));
-      //childModel->SetAndObserveTransformNodeID(newTransform->GetID());
-      //this->GetMRMLScene()->RemoveNode(transform);
       childModel->EndModify(m);
     }
   }
+}
+
+void vtkSlicerPlannerLogic::setProgressBar(QProgressBar* bar)
+{
+  this->progressBar = bar;
+}
+
+
+void vtkSlicerPlannerLogic::createHealthyBrainModel(vtkMRMLModelNode* model)
+{
+  if (this->HealthyBrain)
+  {
+    this->GetMRMLScene()->RemoveNode(this->HealthyBrain);
+    this->HealthyBrain = NULL;
+  }
+
+  std::string name;
+  name = model->GetName();
+  name += " - Wrapped";
+  vtkMRMLModelNode* wrappedModel = this->wrapModel(model, name);
+  wrappedModel->GetDisplayNode()->SetVisibility(0);
+  this->HealthyBrain = wrappedModel;
+  this->healthyBrainICV = this->computeICV(this->HealthyBrain);
+}
+
+double vtkSlicerPlannerLogic::getHealthyBrainICV()
+{
+  return this->healthyBrainICV;
 }

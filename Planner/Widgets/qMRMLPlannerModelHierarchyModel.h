@@ -55,6 +55,8 @@ public:
   static const char* transformDisplayReferenceRole();
   static const char* planesReferenceRole();
 
+  void setPlaneVisibility(vtkMRMLNode* node , bool visible);
+
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
                              QObject *parent=0);
