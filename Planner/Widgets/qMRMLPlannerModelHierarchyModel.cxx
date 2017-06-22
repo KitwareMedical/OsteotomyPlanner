@@ -146,13 +146,15 @@ const char* qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()
 //------------------------------------------------------------------------------
 const char* qMRMLPlannerModelHierarchyModel::planesReferenceRole()
 {
-  return "Planner/PlanesID";
+  return "Planner/PlaneID";
 }
 
 //------------------------------------------------------------------------------
 void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
 {
   this->Superclass::observeNode(node);
+  Q_D(const qMRMLPlannerModelHierarchyModel);
+  
   if (node->IsA("vtkMRMLModelHierarchyNode") || node->IsA("vtkMRMLModelNode"))
     {
     qvtkConnect(node, vtkMRMLNode::ReferenceAddedEvent,
@@ -161,6 +163,8 @@ void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
                 this, SLOT(onReferenceChangedEvent(vtkObject*)));
     qvtkConnect(node, vtkMRMLNode::ReferenceRemovedEvent,
                 this, SLOT(onReferenceChangedEvent(vtkObject*)));
+
+    
     }
 }
 
@@ -181,6 +185,7 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
   if (markup || (!markup && !node))
     {
     qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
+        
     }
 }
 
@@ -211,7 +216,6 @@ void qMRMLPlannerModelHierarchyModel
 ::updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-
   if (column == this->transformVisibilityColumn())
     {
     vtkMRMLTransformDisplayNode* display =
@@ -338,4 +342,13 @@ int qMRMLPlannerModelHierarchyModel::maxColumnId()const
   maxId = qMax(maxId, d->TransformVisibilityColumn);
   maxId = qMax(maxId, d->PlanesVisibilityColumn);
   return maxId;
+}
+
+void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool visible)
+{
+  Q_D(qMRMLPlannerModelHierarchyModel);
+  this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+  vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+  planes->SetNthMarkupVisibility(0,true);
+  
 }

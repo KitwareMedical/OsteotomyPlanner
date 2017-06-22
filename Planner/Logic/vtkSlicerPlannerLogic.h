@@ -37,6 +37,7 @@
 
 #include "vtkSlicerPlannerModuleLogicExport.h"
 #include <vtkSlicerCLIModuleLogic.h>
+#include <QProgressBar.h>
 
 
 
@@ -57,8 +58,15 @@ public:
 
   //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
+  void setMergeLogic(vtkSlicerCLIModuleLogic* logic);
+  void setProgressBar(QProgressBar* bar);
   std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
-  void createReferenceModels();
+  void createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
+  void createHealthyBrainModel(vtkMRMLModelNode* brain);
+  double getPreOPICV();
+  double getHealthyBrainICV();
+  double getCurrentICV(vtkMRMLModelHierarchyNode* HierarchyNode);
+
 
 protected:
   vtkSlicerPlannerLogic();
@@ -71,11 +79,19 @@ private:
   
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerCLIModuleLogic* wrapperLogic;
+  vtkSlicerCLIModuleLogic* mergeLogic;
+  QProgressBar* progressBar;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
-  vtkMRMLModelNode* SkullBonesReference;
-  vtkMRMLModelNode* SkullWrappedReference;
-
+  vtkMRMLModelNode* wrapModel(vtkMRMLModelNode* model, std::string Name);
+  vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
+  double computeICV(vtkMRMLModelNode* model);
+  vtkMRMLModelNode* SkullBonesPreOP;
+  vtkMRMLModelNode* SkullWrappedPreOP;
+  vtkMRMLModelNode* HealthyBrain;
+  double preOPICV;
+  double healthyBrainICV;
+  void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
 };
 
 #endif

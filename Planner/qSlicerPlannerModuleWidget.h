@@ -71,6 +71,8 @@ protected slots:
 
   // Metrics slots
   void onComputeButton();
+  void onSetPreOP();
+
   
 protected:
   virtual void setup();
