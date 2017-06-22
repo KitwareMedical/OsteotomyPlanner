@@ -358,6 +358,7 @@
             </widget>
           </item>
           <item>
+
             <widget class="QProgressBar" name="MetricsProgress">
               <property name="minimum">
                 <double>0</double>

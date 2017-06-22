@@ -29,6 +29,7 @@
 #include <vtkMatrix4x4.h>
 
 
+
 // SlicerQt includes
 #include "qSlicerApplication.h"
 #include "qSlicerIOManager.h"
@@ -98,6 +99,7 @@ public:
   void applyRandomColor(vtkMRMLModelNode* node);
   QString generateMetricsText();
   void hardenTransforms();
+
 
   void updateWidgetFromReferenceNode(
     vtkMRMLNode* node,
@@ -574,6 +576,7 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
   plane->GetNthPlaneOrigin(0, origin);
 
 
+
   cmdNode->SetParameterAsString("Model",inputNode->GetID());
   cmdNode->SetParameterAsString("ModelOutput1", split1->GetID());
   cmdNode->SetParameterAsString("ModelOutput2", split2->GetID());
@@ -624,6 +627,7 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
     preOpVolume = this->logic->getPreOPICV();
     brainVolume = this->logic->getHealthyBrainICV();
     currentVolume = this->logic->getCurrentICV(this->HierarchyNode);
+
     
     outputStream << "       Bone Plate Surface Areas       \n";
     outputStream << "===============================\n";
@@ -639,6 +643,7 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
     outputStream << "Healthy Model: " << brainVolume << "\n";
     outputStream << "PreOP: " << preOpVolume << "\n";
     outputStream << "Current: " << currentVolume << "\n";
+
     output = QString(outputStream.str().c_str());
   }
   else
@@ -683,6 +688,7 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
     }
   }
 }
+
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidget methods
@@ -733,7 +739,6 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->plannerLogic()->setProgressBar(d->MetricsProgress);
 
-    
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
   d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -797,6 +802,7 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
+
 
 
   this->connect(
@@ -1080,7 +1086,7 @@ void qSlicerPlannerModuleWidget::onOpenTemplateReference()
 void qSlicerPlannerModuleWidget::previewButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  
+
   if (d->cuttingActive)
   {
     d->adjustCut(this->mrmlScene());
@@ -1092,6 +1098,7 @@ void qSlicerPlannerModuleWidget::previewButtonClicked()
   }
   this->updateWidgetFromMRML();
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
+
 
 }
 
@@ -1127,5 +1134,6 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
     {
       this->plannerLogic()->createPreOPModels(d->HierarchyNode);
     }
+
 
 }

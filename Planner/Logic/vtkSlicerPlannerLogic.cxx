@@ -32,7 +32,6 @@
 #include <vtkMRMLModelStorageNode.h>
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLTransformNode.h>
-
 #include <QProgressBar.h>
 
 // VTK includes
@@ -43,6 +42,7 @@
 #include <vtkTriangleFilter.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCommand.h>
+
 
 // STD includes
 #include <cassert>
@@ -144,7 +144,6 @@ void vtkSlicerPlannerLogic::setMergeLogic(vtkSlicerCLIModuleLogic* logic)
 {
   this->mergeLogic = logic;
 }
-
 
 
 std::map<std::string, double> vtkSlicerPlannerLogic::computeBoneAreas(vtkMRMLModelHierarchyNode* hierarchy)

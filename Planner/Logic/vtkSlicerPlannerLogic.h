@@ -41,7 +41,6 @@
 
 
 
-
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class VTK_SLICER_PLANNER_MODULE_LOGIC_EXPORT vtkSlicerPlannerLogic :
   public vtkSlicerModuleLogic
@@ -68,6 +67,7 @@ public:
   double getHealthyBrainICV();
   double getCurrentICV(vtkMRMLModelHierarchyNode* HierarchyNode);
 
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
@@ -92,8 +92,6 @@ private:
   double preOPICV;
   double healthyBrainICV;
   void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
-  
-
 };
 
 #endif
