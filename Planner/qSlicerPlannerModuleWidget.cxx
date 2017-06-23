@@ -865,10 +865,7 @@ void qSlicerPlannerModuleWidget::setCurrentNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLModelHierarchyNode* hNode = vtkMRMLModelHierarchyNode::SafeDownCast(node);
-  if (hNode && hNode != d->HierarchyNode)
-  {
-    this->plannerLogic()->createPreOPModels(hNode);
-  }
+  
   d->HierarchyNode = hNode;
   this->updateWidgetFromMRML();
 }
@@ -1017,6 +1014,15 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->CutConfirmButton->setEnabled(false);
     d->CutCancelButton->setEnabled(false);
     d->CurrentCutNodeComboBox->setEnabled(true);
+  }
+
+  if (this->plannerLogic()->getPreOPICV() == 0)
+  {
+    d->SetPreOp->setText(QString("Need to set Pre Op State! - click"));
+  }
+  else
+  {
+    d->SetPreOp->setText("Pre Op State set - click to reset!");
   }
 
 
@@ -1181,7 +1187,16 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
   //Stuff happens!
   if (d->HierarchyNode)
     {
-      this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+      std::vector<vtkMRMLHierarchyNode*> children;
+
+      d->HierarchyNode->GetAllChildrenNodes(children);
+      std::cout << children.size() << std::endl;
+      if (children.size() > 0)
+        {
+        this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+        }
     }
+  this->updateWidgetFromMRML();
+
 
 }
