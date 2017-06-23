@@ -32,7 +32,6 @@
 #include <vtkMRMLModelStorageNode.h>
 #include <vtkMRMLModelDisplayNode.h>
 #include <vtkMRMLTransformNode.h>
-#include <QProgressBar.h>
 
 // VTK includes
 #include <vtkIntArray.h>
@@ -330,11 +329,6 @@ void vtkSlicerPlannerLogic::hardenTransforms(vtkMRMLModelHierarchyNode* hierarch
       childModel->EndModify(m);
     }
   }
-}
-
-void vtkSlicerPlannerLogic::setProgressBar(QProgressBar* bar)
-{
-  this->progressBar = bar;
 }
 
 

@@ -737,7 +737,6 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(mergeModule->logic());
   this->plannerLogic()->setMergeLogic(mergeLogic);
 
-  this->plannerLogic()->setProgressBar(d->MetricsProgress);
 
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
