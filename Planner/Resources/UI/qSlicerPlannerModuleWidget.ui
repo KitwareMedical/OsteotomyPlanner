@@ -359,16 +359,8 @@
           </item>
           <item>
 
-            <widget class="QProgressBar" name="MetricsProgress">
-              <property name="minimum">
-                <double>0</double>
-              </property>
-              <property name="maximum">
-                <double>100</double>
-              </property>
-              <property name="value">
-                <double>0</double>
-              </property>
+            <widget class="qSlicerCLIProgressBar" name="MetricsProgress">
+              
             </widget>
           </item>
           <item>
