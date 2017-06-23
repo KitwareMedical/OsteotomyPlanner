@@ -50,6 +50,7 @@
 #include "vtkMRMLStorageNode.h"
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelStorageNode.h"
+#include "vtkMRMLTableNode.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -117,6 +118,8 @@ public:
   vtkMRMLNode* CurrentCutNode;
   vtkMRMLNode* StagedCutNode1;
   vtkMRMLNode* StagedCutNode2;
+  vtkMRMLTableNode* plateMetricsTable;
+  vtkMRMLTableNode* modelMetricsTable;
   bool cuttingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerPlannerLogic* logic;
@@ -137,6 +140,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->CurrentCutNode = NULL;
   this->StagedCutNode1 = NULL;
   this->StagedCutNode2 = NULL;
+  this->plateMetricsTable = NULL;
+  this->modelMetricsTable = NULL;
   this->cuttingActive = false;
 
   qSlicerAbstractCoreModule* splitModule =
@@ -628,28 +633,58 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
     brainVolume = this->logic->getHealthyBrainICV();
     currentVolume = this->logic->getCurrentICV(this->HierarchyNode);
 
-    
-    outputStream << "       Bone Plate Surface Areas       \n";
-    outputStream << "===============================\n";
-    outputStream << "   Plate Name\t\t\tSurface Area (cm^2)\n";
-    outputStream << "--------------------------------------------------\n";
+    this->plateMetricsTable->RemoveAllColumns();
+    this->modelMetricsTable->RemoveAllColumns();
+
+    std::string plateTableName = "Plate Metrics - ";
+    plateTableName += this->HierarchyNode->GetName();
+    this->plateMetricsTable->SetName(plateTableName.c_str());
+
+    std::string modelTableName = "Model Metrics - ";
+    modelTableName += this->HierarchyNode->GetName();
+    this->modelMetricsTable->SetName(modelTableName.c_str());
+
+    auto col1 = this->plateMetricsTable->AddColumn();
+    col1->SetName("Bone Plate");
+    auto col2 = this->plateMetricsTable->AddColumn();
+    col2->SetName("Surface Area, cm^2");
+    this->plateMetricsTable->SetColumnUnitLabel(col2->GetName(), "cm^2");
+    this->plateMetricsTable->SetUseColumnNameAsColumnHeader(true);
+    this->plateMetricsTable->SetLocked(true);
+
+        
     for (it = areas.begin(); it != areas.end(); it++) {
-      outputStream << "  " << it->first << "\t\t\t" << it->second << "\n";
+      int r = this->plateMetricsTable->AddEmptyRow();
+      this->plateMetricsTable->SetCellText(r,0,it->first.c_str());
+      this->plateMetricsTable->SetCellText(r, 1, std::to_string(it->second).c_str());
     }
 
-    outputStream << "\n\n";
-    outputStream << "ICV Values (cm^3)\n";
-    outputStream << "------------------\n";
-    outputStream << "Healthy Model: " << brainVolume << "\n";
-    outputStream << "PreOP: " << preOpVolume << "\n";
-    outputStream << "Current: " << currentVolume << "\n";
+    auto col3 = this->modelMetricsTable->AddColumn();
+    col3->SetName("Skull Model");
+    auto col4 = this->modelMetricsTable->AddColumn();
+    col4->SetName("ICV, cm^3");
+    this->modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
+    this->modelMetricsTable->SetLocked(true);
 
+    int r1 = this->modelMetricsTable->AddEmptyRow();
+    this->modelMetricsTable->SetCellText(r1, 0, "Healthy Brain");
+    this->modelMetricsTable->SetCellText(r1, 1, std::to_string(brainVolume).c_str());
+
+    int r2 = this->modelMetricsTable->AddEmptyRow();
+    this->modelMetricsTable->SetCellText(r2, 0, "Pre Op");
+    this->modelMetricsTable->SetCellText(r2, 1, std::to_string(preOpVolume).c_str());
+
+    int r3 = this->modelMetricsTable->AddEmptyRow();
+    this->modelMetricsTable->SetCellText(r3, 0, "Current");
+    this->modelMetricsTable->SetCellText(r3, 1, std::to_string(currentVolume).c_str());
+       
     output = QString(outputStream.str().c_str());
   }
   else
   {
     output = QString("No models available!!!");
   }
+  this->MetricsOutput->setText(output);
   return output;
 }
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
@@ -737,7 +772,7 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(mergeModule->logic());
   this->plannerLogic()->setMergeLogic(mergeLogic);
 
-
+  
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
   d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
@@ -822,7 +857,7 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->TemplateReferenceOpenButton, SIGNAL(clicked()),
     this, SLOT(onOpenTemplateReference()));
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1121,7 +1156,22 @@ void qSlicerPlannerModuleWidget::onComputeButton()
 {
   Q_D(qSlicerPlannerModuleWidget);
   //Stuff happens!
-  d->MetricsOutput->setText(d->generateMetricsText());
+  if (!d->plateMetricsTable)
+    {
+    vtkNew<vtkMRMLTableNode> table1;
+    d->plateMetricsTable = table1.GetPointer();
+    this->mrmlScene()->AddNode(d->plateMetricsTable);
+    d->PlateMetrics->setMRMLTableNode(d->plateMetricsTable);
+    }
+
+  if (!d->modelMetricsTable)
+  {
+    vtkNew<vtkMRMLTableNode> table2;
+    d->modelMetricsTable = table2.GetPointer();
+    this->mrmlScene()->AddNode(d->modelMetricsTable);
+    d->ModelMetrics->setMRMLTableNode(d->modelMetricsTable);
+  }
+  d->generateMetricsText();
   this->updateWidgetFromMRML();
 }
 
@@ -1133,6 +1183,5 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
     {
       this->plannerLogic()->createPreOPModels(d->HierarchyNode);
     }
-
 
 }
