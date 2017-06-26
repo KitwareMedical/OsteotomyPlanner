@@ -15,12 +15,9 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="ctkCollapsibleButton" name="InputsCollapsibleButton">
-     <property name="text">
+    <widget class="ctkCollapsibleButton" name="InputsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
       <string>Inputs</string>
-     </property>
-     <property name="contentsFrameShape">
-      <enum>QFrame::StyledPanel</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
@@ -31,16 +28,16 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="ModelHierarchyNodeComboBox">
-        <property name="nodeTypes">
+       <widget class="qMRMLNodeComboBox" name="ModelHierarchyNodeComboBox" native="true">
+        <property name="nodeTypes" stdset="0">
          <stringlist>
           <string>vtkMRMLModelHierarchyNode</string>
          </stringlist>
         </property>
-        <property name="addEnabled">
+        <property name="addEnabled" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="renameEnabled">
+        <property name="renameEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -62,49 +59,46 @@
         <property name="headerHidden">
          <bool>true</bool>
         </property>
-        <property name="sceneModelType">
+        <property name="sceneModelType" stdset="0">
          <string>ModelHierarchy</string>
         </property>
-        <property name="nodeTypes">
+        <property name="nodeTypes" stdset="0">
          <stringlist>
           <string>vtkMRMLModelHierarchyNode</string>
           <string>vtkMRMLModelNode</string>
          </stringlist>
         </property>
-        <property name="renameMenuActionVisible">
+        <property name="renameMenuActionVisible" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="deleteMenuActionVisible">
+        <property name="deleteMenuActionVisible" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="showHidden">
+        <property name="showHidden" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="showScene">
+        <property name="showScene" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="showRootNode">
+        <property name="showRootNode" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
       </item>
-       <item row ="0" column="2">
-         <widget class="QPushButton" name="SetPreOp">
-           <property name="text">
-             <string>Set the PreOP State</string>
-           </property>
-         </widget>
-       </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="SetPreOp">
+        <property name="text">
+         <string>Set the PreOP State</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="ReferencesCollapsibleButton">
-     <property name="text">
+    <widget class="ctkCollapsibleButton" name="ReferencesCollapsibleButton" native="true">
+     <property name="text" stdset="0">
       <string>References</string>
-     </property>
-     <property name="contentsFrameShape">
-      <enum>QFrame::StyledPanel</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="2">
@@ -112,44 +106,50 @@
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="color">
+        <property name="color" stdset="0">
          <color>
           <red>255</red>
           <green>238</green>
           <blue>255</blue>
          </color>
         </property>
-        <property name="displayColorName">
+        <property name="displayColorName" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
       </item>
       <item row="2" column="1">
-       <widget class="qMRMLNodeComboBox" name="TemplateReferenceNodeComboBox">
+       <widget class="qMRMLNodeComboBox" name="TemplateReferenceNodeComboBox" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="nodeTypes">
+         <property name="minimumSize">
+           <size>
+             <width>60</width>
+             <height>0</height>
+           </size>
+         </property>
+        <property name="nodeTypes" stdset="0">
          <stringlist>
           <string>vtkMRMLModelNode</string>
          </stringlist>
         </property>
-        <property name="noneEnabled">
+        <property name="noneEnabled" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="addEnabled">
+        <property name="addEnabled" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="renameEnabled">
+        <property name="renameEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
       </item>
       <item row="0" column="3">
-       <widget class="qMRMLSliderWidget" name="BrainReferenceOpacitySliderWidget">
+       <widget class="qMRMLSliderWidget" name="BrainReferenceOpacitySliderWidget" native="true">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -159,19 +159,19 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="decimals">
+        <property name="decimals" stdset="0">
          <number>1</number>
         </property>
-        <property name="singleStep">
+        <property name="singleStep" stdset="0">
          <double>0.100000000000000</double>
         </property>
-        <property name="pageStep">
+        <property name="pageStep" stdset="0">
          <double>0.100000000000000</double>
         </property>
-        <property name="maximum">
+        <property name="maximum" stdset="0">
          <double>1.000000000000000</double>
         </property>
-        <property name="value">
+        <property name="value" stdset="0">
          <double>1.000000000000000</double>
         </property>
        </widget>
@@ -181,14 +181,14 @@
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="color">
+        <property name="color" stdset="0">
          <color>
           <red>189</red>
           <green>189</green>
           <blue>189</blue>
          </color>
         </property>
-        <property name="displayColorName">
+        <property name="displayColorName" stdset="0">
          <bool>false</bool>
         </property>
        </widget>
@@ -201,7 +201,7 @@
        </widget>
       </item>
       <item row="2" column="3">
-       <widget class="qMRMLSliderWidget" name="TemplateReferenceOpacitySliderWidget">
+       <widget class="qMRMLSliderWidget" name="TemplateReferenceOpacitySliderWidget" native="true">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -211,43 +211,49 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="decimals">
+        <property name="decimals" stdset="0">
          <number>1</number>
         </property>
-        <property name="singleStep">
+        <property name="singleStep" stdset="0">
          <double>0.100000000000000</double>
         </property>
-        <property name="pageStep">
+        <property name="pageStep" stdset="0">
          <double>0.100000000000000</double>
         </property>
-        <property name="maximum">
+        <property name="maximum" stdset="0">
          <double>1.000000000000000</double>
         </property>
-        <property name="value">
+        <property name="value" stdset="0">
          <double>1.000000000000000</double>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="BrainReferenceNodeComboBox">
+       <widget class="qMRMLNodeComboBox" name="BrainReferenceNodeComboBox" native="true">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="nodeTypes">
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="nodeTypes" stdset="0">
          <stringlist>
           <string>vtkMRMLModelNode</string>
          </stringlist>
         </property>
-        <property name="noneEnabled">
+        <property name="noneEnabled" stdset="0">
          <bool>true</bool>
         </property>
-        <property name="addEnabled">
+        <property name="addEnabled" stdset="0">
          <bool>false</bool>
         </property>
-        <property name="renameEnabled">
+        <property name="renameEnabled" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -276,122 +282,92 @@
      </layout>
     </widget>
    </item>
-    <item>
-      <widget class="ctkCollapsibleButton" name="ActionsCollapsibleButton">
+   <item>
+    <widget class="ctkCollapsibleButton" name="ActionsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Actions</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayoutCuts">
+      <item row="0" column="0">
+       <widget class="QLabel" name="CutLabel">
         <property name="text">
-          <string>Actions</string>
+         <string>Bone Cutting</string>
         </property>
-        <property name="contentsFrameShape">
-          <enum>QFrame::StyledPanel</enum>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="CurrentCutNodeComboBox" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-        <layout class="QGridLayout" name="gridLayoutCuts">
-          <item row="0" column="0">
-            <widget class="QLabel" name="CutLabel">
-              <property name="text">
-                <string>Bone Cutting</string>
-              </property>
-            </widget>
-          </item>
-          <item row="0" column="1">
-            <widget class="qMRMLNodeComboBox" name="CurrentCutNodeComboBox">
-              <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                </sizepolicy>
-              </property>
-              <property name="nodeTypes">
-                <stringlist>
-                  <string>vtkMRMLModelNode</string>
-                </stringlist>
-              </property>
-              <property name="noneEnabled">
-                <bool>true</bool>
-              </property>
-              <property name="addEnabled">
-                <bool>false</bool>
-              </property>
-              <property name="renameEnabled">
-                <bool>true</bool>
-              </property>
-            </widget>
-          </item>
-          <item row="0" column="2">
-            <widget class="QPushButton" name="CutPreviewButton">
-              <property name="text">
-                <string>Preview Cut</string>
-              </property>
-            </widget>
-          </item>
-          <item row="0" column="3">
-            <widget class="QPushButton" name="CutConfirmButton">
-              <property name="text">
-                <string>Confirm</string>
-              </property>
-            </widget>
-          </item>
-          <item row="0" column="4">
-            <widget class="QPushButton" name="CutCancelButton">
-              <property name="text">
-                <string>Cancel</string>
-              </property>
-            </widget>
-          </item>
-        </layout>
-        
-      </widget>
-    </item>
-    <item>
-      <widget class="ctkCollapsibleButton" name="MetricsCollapsibleButton">
+        <property name="nodeTypes" stdset="0">
+         <stringlist>
+          <string>vtkMRMLModelNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled" stdset="0">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled" stdset="0">
+         <bool>false</bool>
+        </property>
+        <property name="renameEnabled" stdset="0">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="CutPreviewButton">
         <property name="text">
-          <string>Surgical Metrics</string>
+         <string>Preview Cut</string>
         </property>
-        <property name="contentsFrameShape">
-          <enum>QFrame::StyledPanel</enum>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QPushButton" name="CutConfirmButton">
+        <property name="text">
+         <string>Confirm</string>
         </property>
-        <layout class="QGridLayout" name="verticalLayoutMetrics">
-          <item row="0" column="0" colspan="2">
-            <widget class="QPushButton" name="ComputeMetricsButton">
-              <property name="text">
-                <string>Compute Surgical Metrics</string>
-              </property>
-            </widget>
-          </item>
-          <item row="1" column="0" colspan="2">
-
-            <widget class="qSlicerCLIProgressBar" name="MetricsProgress">
-              
-            </widget>
-          </item>
-          <item row="2" column="0" colspan="2">
-            <widget class="ctkFittedTextBrowser" name="MetricsOutput">
-              <property name="sizePolicy">
-                <sizepolicy hsizetype="Ignored" vsizetype="Minimum">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                </sizepolicy>
-              </property>
-              <property name="text">
-                <string>Load a model hierarchy and press "Compute Metrics" button to see basic info</string>
-              </property>
-            </widget>
-          </item >
-        
-            <item row="3" column="0">
-              <widget class="qMRMLTableView" name ="PlateMetrics">
-              
-              </widget>
-            
-            </item>
-            <item row="3" column="1">
-              <widget class="qMRMLTableView" name ="ModelMetrics">
-
-              </widget>
-
-            </item>
-          </layout>
-      </widget>
-    </item>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QPushButton" name="CutCancelButton">
+        <property name="text">
+         <string>Cancel</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="MetricsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>Surgical Metrics</string>
+     </property>
+     <layout class="QGridLayout" name="verticalLayoutMetrics">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="ComputeMetricsButton">
+        <property name="text">
+         <string>Compute Surgical Metrics</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="qMRMLTableView" name="PlateMetrics" native="true"/>
+      </item>
+      <item row="2" column="0">
+       <widget class="qMRMLTableView" name="ModelMetrics" native="true"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="qSlicerCLIProgressBar" name="MetricsProgress" native="true"/>
+   </item>
    <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
@@ -412,11 +388,6 @@
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qMRMLNodeComboBox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLSliderWidget</class>
-   <extends>ctkSliderWidget</extends>
-   <header>qMRMLSliderWidget.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLTreeView</class>
@@ -447,6 +418,26 @@
    <class>ctkSliderWidget</class>
    <extends>QWidget</extends>
    <header>ctkSliderWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLSliderWidget</class>
+   <extends>ctkSliderWidget</extends>
+   <header>qMRMLSliderWidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ctkFittedTextBrowser</class>
+   <extends>QWidget</extends>
+   <header>ctkfittedtextbrowser.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLTableView</class>
+   <extends>QWidget</extends>
+   <header>qmrmltableview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qSlicerCLIProgressBar</class>
+   <extends>QWidget</extends>
+   <header>qslicercliprogressbar.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
@@ -499,22 +490,22 @@
     </hint>
    </hints>
   </connection>
-   <connection>
-     <sender>qSlicerPlannerModuleWidget</sender>
-     <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-     <receiver>CurrentCutNodeComboBox</receiver>
-     <slot>setMRMLScene(vtkMRMLScene*)</slot>
-     <hints>
-       <hint type="sourcelabel">
-         <x>334</x>
-         <y>159</y>
-       </hint>
-       <hint type="destinationlabel">
-         <x>374</x>
-         <y>243</y>
-       </hint>
-     </hints>
-   </connection>
+  <connection>
+   <sender>qSlicerPlannerModuleWidget</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>CurrentCutNodeComboBox</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>159</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>374</x>
+     <y>243</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>qSlicerPlannerModuleWidget</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>

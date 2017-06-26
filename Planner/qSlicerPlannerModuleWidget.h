@@ -23,6 +23,8 @@
 
 #include "qSlicerPlannerModuleExport.h"
 
+#include "vtkMRMLCommandLineModuleNode.h"
+
 class qSlicerPlannerModuleWidgetPrivate;
 class vtkMRMLNode;
 class vtkSlicerPlannerLogic;
@@ -72,6 +74,10 @@ protected slots:
   // Metrics slots
   void onComputeButton();
   void onSetPreOP();
+
+  //CLI slots
+  void finishWrap();
+  void launchMetrics();
 
   
 protected:
