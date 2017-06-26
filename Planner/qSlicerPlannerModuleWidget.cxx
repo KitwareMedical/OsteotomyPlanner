@@ -123,6 +123,7 @@ public:
   bool cuttingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerPlannerLogic* logic;
+  vtkMRMLCommandLineModuleNode* cmdNode;
 };
 
 //-----------------------------------------------------------------------------
@@ -143,6 +144,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->plateMetricsTable = NULL;
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
+  this->cmdNode = NULL;
 
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
@@ -627,11 +629,10 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
   double brainVolume;
   if (this->HierarchyNode)
   {
-    this->hardenTransforms();
     areas = this->logic->computeBoneAreas(this->HierarchyNode);
     preOpVolume = this->logic->getPreOPICV();
     brainVolume = this->logic->getHealthyBrainICV();
-    currentVolume = this->logic->getCurrentICV(this->HierarchyNode);
+    currentVolume = this->logic->getCurrentICV();
 
     this->plateMetricsTable->RemoveAllColumns();
     this->modelMetricsTable->RemoveAllColumns();
@@ -1050,12 +1051,22 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
   
   if (node && node != d->BrainReferenceNode)
     {
-      std::cout << "attempt create model" << std::endl;
-
-    this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
+    d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
   d->BrainReferenceNode = node;
   this->updateMRMLFromWidget();
+}
+
+void qSlicerPlannerModuleWidget::finishWrap()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+    {
+    this->plannerLogic()->finishWrap(d->cmdNode);
+    this->updateWidgetFromMRML();
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1177,7 +1188,21 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     this->mrmlScene()->AddNode(d->modelMetricsTable);
     d->ModelMetrics->setMRMLTableNode(d->modelMetricsTable);
   }
-  d->generateMetricsText();
+
+  if (d->HierarchyNode)
+  {
+    std::vector<vtkMRMLHierarchyNode*> children;
+
+    d->HierarchyNode->GetAllChildrenNodes(children);
+    if (children.size() > 0)
+    {
+      d->hardenTransforms();
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
+      qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
+      d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+    }
+  }
+  
   this->updateWidgetFromMRML();
 }
 
@@ -1190,13 +1215,24 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
       std::vector<vtkMRMLHierarchyNode*> children;
 
       d->HierarchyNode->GetAllChildrenNodes(children);
-      std::cout << children.size() << std::endl;
       if (children.size() > 0)
-        {
-        this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+        { 
+        d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+        qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+        d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
         }
     }
   this->updateWidgetFromMRML();
+}
 
-
+void qSlicerPlannerModuleWidget::launchMetrics()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+  {
+    this->plannerLogic()->finishWrap(d->cmdNode);
+    d->generateMetricsText();
+    this->updateWidgetFromMRML();
+  }
+  
 }

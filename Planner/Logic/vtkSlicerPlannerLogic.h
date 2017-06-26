@@ -59,11 +59,13 @@ public:
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
   void setMergeLogic(vtkSlicerCLIModuleLogic* logic);
   std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
-  void createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
-  void createHealthyBrainModel(vtkMRMLModelNode* brain);
+  vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
+  vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
   double getPreOPICV();
   double getHealthyBrainICV();
-  double getCurrentICV(vtkMRMLModelHierarchyNode* HierarchyNode);
+  double getCurrentICV();
+  vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
+  void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
 
 
 protected:
@@ -80,15 +82,28 @@ private:
   vtkSlicerCLIModuleLogic* mergeLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
-  vtkMRMLModelNode* wrapModel(vtkMRMLModelNode* model, std::string Name);
+  vtkMRMLCommandLineModuleNode* wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
   vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
   double computeICV(vtkMRMLModelNode* model);
-  vtkMRMLModelNode* SkullBonesPreOP;
   vtkMRMLModelNode* SkullWrappedPreOP;
   vtkMRMLModelNode* HealthyBrain;
+  vtkMRMLModelNode* CurrentModel;
+  vtkMRMLModelNode* TempMerged;
+  vtkMRMLModelNode* TempWrapped;
+
   double preOPICV;
   double healthyBrainICV;
+  double currentICV;
   void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
+
+  enum ModelType
+  {
+    Current,
+    PreOP,
+    Template,
+    Brain
+  };
+  
 };
 
 #endif
