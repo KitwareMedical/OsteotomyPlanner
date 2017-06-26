@@ -643,41 +643,38 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
 
     std::string modelTableName = "Model Metrics - ";
     modelTableName += this->HierarchyNode->GetName();
-    this->modelMetricsTable->SetName(modelTableName.c_str());
-
-    auto col1 = this->plateMetricsTable->AddColumn();
-    col1->SetName("Bone Plate");
-    auto col2 = this->plateMetricsTable->AddColumn();
-    col2->SetName("Surface Area, cm^2");
-    this->plateMetricsTable->SetColumnUnitLabel(col2->GetName(), "cm^2");
+    this->modelMetricsTable->SetName(modelTableName.c_str());  
+    
+    
     this->plateMetricsTable->SetUseColumnNameAsColumnHeader(true);
+    this->plateMetricsTable->SetUseFirstColumnAsRowHeader(true);
     this->plateMetricsTable->SetLocked(true);
 
-        
+    this->plateMetricsTable->AddEmptyRow();
     for (it = areas.begin(); it != areas.end(); it++) {
-      int r = this->plateMetricsTable->AddEmptyRow();
-      this->plateMetricsTable->SetCellText(r,0,it->first.c_str());
-      this->plateMetricsTable->SetCellText(r, 1, std::to_string(it->second).c_str());
+      auto col = this->plateMetricsTable->AddColumn();
+      col->SetName(it->first.c_str());
+      int c = this->plateMetricsTable->GetColumnIndex(it->first.c_str());
+      this->plateMetricsTable->SetCellText(0, c, std::to_string(it->second).c_str());
     }
+    this->plateMetricsTable->SetCellText(0, 0, "Surf. Area\n cm^2");
 
+    auto col0 = this->modelMetricsTable->AddColumn();
+    auto col1 = this->modelMetricsTable->AddColumn();
+    col1->SetName("Healthy Brain");
+    auto col2 = this->modelMetricsTable->AddColumn();
+    col2->SetName("Pre Op");
     auto col3 = this->modelMetricsTable->AddColumn();
-    col3->SetName("Skull Model");
-    auto col4 = this->modelMetricsTable->AddColumn();
-    col4->SetName("ICV, cm^3");
+    col3->SetName("Current");
     this->modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
+    this->modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
     this->modelMetricsTable->SetLocked(true);
 
     int r1 = this->modelMetricsTable->AddEmptyRow();
-    this->modelMetricsTable->SetCellText(r1, 0, "Healthy Brain");
-    this->modelMetricsTable->SetCellText(r1, 1, std::to_string(brainVolume).c_str());
-
-    int r2 = this->modelMetricsTable->AddEmptyRow();
-    this->modelMetricsTable->SetCellText(r2, 0, "Pre Op");
-    this->modelMetricsTable->SetCellText(r2, 1, std::to_string(preOpVolume).c_str());
-
-    int r3 = this->modelMetricsTable->AddEmptyRow();
-    this->modelMetricsTable->SetCellText(r3, 0, "Current");
-    this->modelMetricsTable->SetCellText(r3, 1, std::to_string(currentVolume).c_str());
+    this->modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
+    this->modelMetricsTable->SetCellText(0, 1, std::to_string(brainVolume).c_str());
+    this->modelMetricsTable->SetCellText(0, 2, std::to_string(preOpVolume).c_str());    
+    this->modelMetricsTable->SetCellText(0, 3, std::to_string(currentVolume).c_str());
        
     output = QString(outputStream.str().c_str());
   }
@@ -685,7 +682,6 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
   {
     output = QString("No models available!!!");
   }
-  this->MetricsOutput->setText(output);
   return output;
 }
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
