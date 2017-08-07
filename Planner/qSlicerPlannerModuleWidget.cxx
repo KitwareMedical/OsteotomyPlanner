@@ -756,7 +756,7 @@ void qSlicerPlannerModuleWidget::setup()
 
   d->logic = this->plannerLogic();
   qSlicerAbstractCoreModule* wrapperModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("Wrapper");
+    qSlicerCoreApplication::application()->moduleManager()->module("ShrinkWrap");
 
   vtkSlicerCLIModuleLogic* wrapperLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());

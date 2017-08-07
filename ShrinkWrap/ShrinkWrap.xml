@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Surface Models</category>
+  <title>ShrinkWrap</title>
+  <description><![CDATA[Create a watertight version of a model.]]></description>
+  <version>$Revision$</version>
+  <documentation-url>http://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Modules/SplitModel</documentation-url>
+  <license/>
+  <contributor>Sam Horvath (Kitware Inc.)</contributor>
+  <acknowledgements><![CDATA[\todo]]></acknowledgements>
+  <parameters>
+    <label>IO</label>
+    <description><![CDATA[Input/output]]></description>
+    <geometry type="model">
+      <name>inputModel</name>
+      <label>InputModel</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description><![CDATA[Input model]]></description>
+    </geometry>
+    <geometry type="model">
+      <name>outputModel</name>
+      <label>Output Model </label>
+      <channel>output</channel>
+      <index>2</index>
+      <description><![CDATA[Output model]]></description>
+    </geometry>
+    <label>Parameters</label>
+    <description><![CDATA[Sphere parameters]]></description>
+    <double>
+      <name>phires</name>
+      <flag>p</flag>
+      <longflag>--phi</longflag>
+      <description><![CDATA[Resolution of sphere]]></description>
+      <label>Phi resolution</label>
+      <default>20</default>
+    </double>
+    <double>
+      <name>thetares</name>
+      <flag>t</flag>
+      <longflag>--theta</longflag>
+      <description><![CDATA[theta resolution]]></description>
+      <label>Theta resolution</label>
+      <default>20</default>
+    </double>
+  </parameters>
+</executable>
