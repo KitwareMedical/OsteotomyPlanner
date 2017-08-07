@@ -21,37 +21,19 @@
 #include "ShrinkWrapCLP.h"
 
 // VTK includes
-#include <vtkAppendPolyData.h>
-#include <vtkClipPolyData.h>
-#include <vtkDebugLeaks.h>
-#include <vtkExtractSurface.h>
-#include <vtkFeatureEdges.h>
-#include <vtkNew.h>
-#include <vtkPlane.h>
-#include <vtkPlaneCollection.h>
-#include <vtkPolyDataNormals.h>
-#include <vtkPolyDataReader.h>
-#include <vtkPolyDataWriter.h>
-#include <vtkStripper.h>
-#include <vtkTriangleFilter.h>
+
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLPolyDataWriter.h>
-#include <vtkVersion.h>
-#include <vtksys/SystemTools.hxx>
-#include <vtkFillHolesFilter.h>
-#include <vtkPolyDataNormals.h>
-#include <vtkPointData.h>
-
 #include <vtkSphereSource.h>
 #include <vtkSmoothPolyDataFilter.h>
 
-
+//Code adapted from http://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/ConvexHullShrinkWrap
 int main( int argc, char * argv[] )
 {
   PARSE_ARGS;
   vtkSmartPointer<vtkSphereSource> sphereSource =
     vtkSmartPointer<vtkSphereSource>::New();
-  sphereSource->SetRadius(350);
+  sphereSource->SetRadius(1000);
   sphereSource->SetPhiResolution(phires);
   sphereSource->SetThetaResolution(thetares);
   sphereSource->Update();
