@@ -67,9 +67,12 @@ protected slots:
 
   //Actions slots
   void updateCurrentCutNode(vtkMRMLNode* node);
+  void updateCurrentBendNode(vtkMRMLNode* node);
   void previewButtonClicked();
   void confirmButtonClicked();
   void cancelButtonClicked();
+  void placeFiducialButtonClicked();
+  void cancelFiducialButtonClicked();
 
   // Metrics slots
   void onComputeButton();

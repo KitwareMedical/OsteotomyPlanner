@@ -51,6 +51,9 @@
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelStorageNode.h"
 #include "vtkMRMLTableNode.h"
+#include "vtkMRMLMarkupsFiducialNode.h"
+#include "vtkMRMLInteractionNode.h"
+#include "vtkMRMLSelectionNode.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -110,6 +113,7 @@ public:
     vtkMRMLNode* node, QColor color, double opacity) const;
   vtkMRMLNode* openReferenceDialog() const;
 
+  //Cutting Stuff
   vtkMRMLModelHierarchyNode* HierarchyNode;
   vtkMRMLModelHierarchyNode* StagedHierarchyNode;
   QStringList HideChildNodeTypes;
@@ -121,9 +125,20 @@ public:
   vtkMRMLTableNode* plateMetricsTable;
   vtkMRMLTableNode* modelMetricsTable;
   bool cuttingActive;
+  bool bendingActive;
+  bool placingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerPlannerLogic* logic;
   vtkMRMLCommandLineModuleNode* cmdNode;
+
+  //Bending Stuff
+  vtkMRMLMarkupsFiducialNode* FixedPointA;
+  vtkMRMLMarkupsFiducialNode* FixedPointB;
+  vtkMRMLMarkupsFiducialNode* MovingPoint;
+  vtkMRMLMarkupsFiducialNode* PlacingNode;
+  vtkMRMLNode* CurrentBendNode;
+  void beginPlacement(vtkMRMLScene* scene, int id);
+  
 };
 
 //-----------------------------------------------------------------------------
@@ -144,7 +159,14 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->plateMetricsTable = NULL;
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
+  this->bendingActive = false;
+  this->placingActive = false;
   this->cmdNode = NULL;
+
+  this->FixedPointA = NULL;
+  this->FixedPointB = NULL;
+  this->MovingPoint = NULL;
+  this->PlacingNode = NULL;
 
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
@@ -153,6 +175,64 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
 
   //this->logic->setSplitLogic(this->splitLogic);
+}
+
+void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int id)
+{
+  if (this->placingActive)
+  {
+    if (this->PlacingNode->GetNumberOfFiducials() == 0)
+    {
+      return;
+    }
+
+    //deactivate placement
+    vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
+    interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Select);
+    vtkMRMLSelectionNode* selection = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
+    selection->SetActivePlaceNodeID(NULL);
+
+    this->PlacingNode = NULL;
+    this->placingActive = false;
+    return;
+  }
+  
+  vtkNew<vtkMRMLMarkupsFiducialNode> fiducial;
+  if (id == 0)  //Place fiducial A
+  {
+    //create fiducial node
+    //assign to member variable
+    //set as placing node
+    this->FixedPointA = fiducial.GetPointer();
+    this->PlacingNode = this->FixedPointA;
+    
+  }
+
+  if (id == 1)  //Place fiducial B
+  {
+    this->FixedPointB = fiducial.GetPointer();
+    this->PlacingNode = this->FixedPointB;
+    
+  }
+
+  if (id == 2)  //Place fiducial M
+  {
+    this->MovingPoint = fiducial.GetPointer();
+    this->PlacingNode = this->MovingPoint;
+    
+  }
+  this->placingActive = true;
+  //add new fiducial to scene
+  scene->AddNode(this->PlacingNode);
+  this->PlacingNode->CreateDefaultDisplayNodes();
+
+  //activate placing
+  vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
+  vtkMRMLSelectionNode* selection = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
+  selection->SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsFiducialNode");
+  selection->SetActivePlaceNodeID(this->PlacingNode->GetID());
+  interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Place);
+
 }
 
 //-----------------------------------------------------------------------------
@@ -825,6 +905,9 @@ void qSlicerPlannerModuleWidget::setup()
     d->CurrentCutNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateCurrentCutNode(vtkMRMLNode*)));
   this->connect(
+    d->CurrentBendNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    this, SLOT(updateCurrentBendNode(vtkMRMLNode*)));
+  this->connect(
     d->CutPreviewButton, SIGNAL(clicked()), this, SLOT(previewButtonClicked()));
   this->connect(
     d->CutConfirmButton, SIGNAL(clicked()), this, SLOT(confirmButtonClicked()));
@@ -833,6 +916,13 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
+  this->connect(
+    d->FixedPointAButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->FixedPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->MovingPointButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  
 
 
 
@@ -1005,12 +1095,23 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->CutCancelButton->setEnabled(true);
     d->CurrentCutNodeComboBox->setEnabled(false);
     d->CutPreviewButton->setText("Adjust cut");
+    d->BendingCollapsibleButton->setEnabled(false);
   }
   else
   {
     d->CutConfirmButton->setEnabled(false);
     d->CutCancelButton->setEnabled(false);
     d->CurrentCutNodeComboBox->setEnabled(true);
+    d->BendingCollapsibleButton->setEnabled(true);
+  }
+
+  if (d->bendingActive)
+  {
+    d->CuttingCollapsibleButton->setEnabled(false);
+  }
+  else
+  {
+    d->CuttingCollapsibleButton->setEnabled(true);
   }
 
   if (this->plannerLogic()->getPreOPICV() == 0)
@@ -1140,8 +1241,9 @@ void qSlicerPlannerModuleWidget::previewButtonClicked()
   }
   else
   {
-    d->previewCut(this->mrmlScene());
     d->cuttingActive = true;
+    d->previewCut(this->mrmlScene());
+    
   }
   this->updateWidgetFromMRML();
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
@@ -1231,4 +1333,55 @@ void qSlicerPlannerModuleWidget::launchMetrics()
     this->updateWidgetFromMRML();
   }
   
+}
+
+void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  QObject* obj = sender();
+  
+  if (obj == d->FixedPointAButton)
+  {
+    std::cout << "FixedPointAButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 0);
+    return;
+  }
+  if (obj == d->FixedPointBButton)
+  {
+    std::cout << "FixedPointBButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 1);
+    return;
+  }
+  if (obj == d->MovingPointButton)
+  {
+    std::cout << "MovingPointButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 2);
+    return;
+  }
+}
+
+void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  QObject* obj = sender();
+  if (obj == d->FixedPointACancelButton)
+  {
+    std::cout << "FixedPointACancelButton" << std::endl;
+    return;
+  }
+  if (obj == d->FixedPointBCancelButton)
+  {
+    std::cout << "FixedPointBCancelButton" << std::endl;
+    return;
+  }
+  if (obj == d->MovingPointCancelButton)
+  {
+    std::cout << "MovingPointCancelButton" << std::endl;
+    return;
+  }
+}
+
+void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
+{
+
 }
