@@ -29,6 +29,9 @@
 #include <vtkMatrix4x4.h>
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <vtkGridTransform.h>
+#include <vtkImageGaussianSmooth.h>
 
 
 
@@ -145,6 +148,9 @@ public:
   void computeAndSetSourcePoints();
   void computeTransform(vtkMRMLScene* scene);
   vtkSmartPointer<vtkPoints> SourcePoints;
+  vtkSmartPointer<vtkImageData> transformGrid;
+  vtkSmartPointer<vtkImageData> createTransformGrid(vtkMRMLModelNode*);
+  void fillTransformGrid(vtkPoints* currentPoints);
   
 };
 
@@ -223,19 +229,118 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
   targetPoints->InsertNextPoint(posa[0], posa[1], posa[2]);
   targetPoints->InsertNextPoint(posb[0], posb[1], posb[2]);
   targetPoints->InsertNextPoint(posm[0], posm[1], posm[2]);
-  std::cout << "Attempt thin plate" << std::endl;
-  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
-  vtkNew<vtkThinPlateSplineTransform> transform;
-  transform->SetBasisToR();
-  transform->SetSourceLandmarks(this->SourcePoints);
-  transform->SetTargetLandmarks(targetPoints);
-  transform->Update();
-  std::cout << "thin plate done" << std::endl;
-  vtkNew<vtkMRMLTransformNode> tnode;
-  scene->AddNode(tnode.GetPointer());
-  tnode->CreateDefaultDisplayNodes();
-  tnode->SetAndObserveTransformFromParent(transform.GetPointer());
+  std::cout << "Attempt fill?" << std::endl;
 
+  this->fillTransformGrid(targetPoints);
+  vtkNew<vtkGridTransform> transform;
+  std::cout << "attempt grid set" << std::endl;
+
+  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  vtkNew<vtkMRMLTransformNode> tnodetemp;
+  if (!tnode)
+  {
+    
+    tnode = tnodetemp.GetPointer();
+    scene->AddNode(tnode);
+    tnode->CreateDefaultDisplayNodes();
+
+  }
+
+  transform->SetDisplacementGridData(this->transformGrid);  
+  tnode->SetAndObserveTransformToParent(transform.GetPointer());
+  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  
+
+}
+
+void qSlicerPlannerModuleWidgetPrivate::fillTransformGrid(vtkPoints* currentPoints)
+{
+  //reset to zero
+  int* dims = this->transformGrid->GetDimensions();
+
+  for (int z = 0; z < dims[2]; z++)
+  {
+    for (int y = 0; y < dims[1]; y++)
+    {
+      for (int x = 0; x < dims[0]; x++)
+      {
+        double* pixel = static_cast<double*>(this->transformGrid->GetScalarPointer(x, y, z));
+        pixel[0] = 0;
+        pixel[1] = 0;
+        pixel[2] = 0;
+
+      }
+    }
+  }
+  double originalPosition[3];
+  double newPosition[3];
+  double pcoords[3];
+  this->SourcePoints->GetPoint(2, originalPosition);
+  currentPoints->GetPoint(2, newPosition);
+  int originalIndex[3];
+  int newIndex[3];
+  this->transformGrid->ComputeStructuredCoordinates(originalPosition, originalIndex, pcoords );
+  this->transformGrid->ComputeStructuredCoordinates(newPosition, newIndex, pcoords);
+  double pixel[3];
+  pixel[0] = (newPosition[0] - originalPosition[0])*10;
+  pixel[1] = (newPosition[1] - originalPosition[1])*10;
+  pixel[2] = (newPosition[2] - originalPosition[2])*10;
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 0, pixel[0]);
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 1, pixel[1]);
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 2, pixel[2]);
+  //vtkNew<vtkImageGaussianSmooth> filter;
+  //filter->SetInputData(this->transformGrid);
+  //filter->SetDimensionality(3);
+  //filter->SetStandardDeviations(0.1,0.1, 0.1);
+  //filter->SetRadiusFactors(10, 10, 10);
+  //filter->Update();
+  //this->transformGrid = filter->GetOutput();
+}
+
+vtkSmartPointer<vtkImageData> qSlicerPlannerModuleWidgetPrivate::createTransformGrid(vtkMRMLModelNode* model)
+{
+  vtkSmartPointer<vtkImageData> transformGrid = vtkSmartPointer<vtkImageData>::New();
+  double spacing[3]; // desired volume spacing
+  spacing[0] = 1;
+  spacing[1] = 1;
+  spacing[2] = 1;
+  transformGrid->SetSpacing(spacing);
+  double bounds[6];
+  model->GetBounds(bounds);
+
+  // compute dimensions
+  int dim[3];
+  for (int i = 0; i < 3; i++)
+  {
+    dim[i] = static_cast<int>(ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]));
+  }
+  transformGrid->SetDimensions(dim);
+  transformGrid->SetExtent(0, dim[0] - 1, 0, dim[1] - 1, 0, dim[2] - 1);
+
+  double origin[3];
+  origin[0] = bounds[0] + spacing[0] / 2;
+  origin[1] = bounds[2] + spacing[1] / 2;
+  origin[2] = bounds[4] + spacing[2] / 2;
+  transformGrid->SetOrigin(origin);
+  transformGrid->AllocateScalars(VTK_DOUBLE, 3);
+  int* dims = transformGrid->GetDimensions();
+
+  for (int z = 0; z < dims[2]; z++)
+  {
+    for (int y = 0; y < dims[1]; y++)
+    {
+      for (int x = 0; x < dims[0]; x++)
+      {
+        double* pixel = static_cast<double*>(transformGrid->GetScalarPointer(x, y, z));
+        pixel[0] = 0;
+        pixel[1] = 0;
+        pixel[2] = 0;
+
+      }
+    }
+  }
+
+  return transformGrid;
 }
 
 void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int id)
@@ -1448,7 +1553,21 @@ void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
 
 void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 {
+  Q_D(qSlicerPlannerModuleWidget);
+  this->qvtkReconnect(d->CurrentBendNode, node,
+    vtkCommand::ModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  this->qvtkReconnect(d->CurrentBendNode, node,
+    vtkMRMLDisplayableNode::DisplayModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
 
+  if (node && node != d->CurrentBendNode)
+  {
+    d->transformGrid = d->createTransformGrid(vtkMRMLModelNode::SafeDownCast(node));
+  }
+  d->CurrentBendNode = node;
+
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::initButtonClicked()
