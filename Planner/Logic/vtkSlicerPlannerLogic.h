@@ -66,6 +66,8 @@ public:
   double getCurrentICV();
   vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
+  void setSourcePoints(double* posa, double* posb, double* posm);
+  vtkMRMLTransformNode* computeThinPlate(double* posa, double* posb, double* posm);
 
 
 protected:
@@ -90,6 +92,8 @@ private:
   vtkMRMLModelNode* CurrentModel;
   vtkMRMLModelNode* TempMerged;
   vtkMRMLModelNode* TempWrapped;
+  vtkPoints* SourcePoints;
+  
 
   double preOPICV;
   double healthyBrainICV;

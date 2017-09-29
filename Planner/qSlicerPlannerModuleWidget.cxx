@@ -27,6 +27,8 @@
 #include "vtkNew.h"
 #include <vtkMath.h>
 #include <vtkMatrix4x4.h>
+#include <vtkPoints.h>
+#include <vtkSmartPointer.h>
 
 
 
@@ -54,6 +56,7 @@
 #include "vtkMRMLMarkupsFiducialNode.h"
 #include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLSelectionNode.h"
+#include "vtkThinPlateSplineTransform.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -138,6 +141,10 @@ public:
   vtkMRMLMarkupsFiducialNode* PlacingNode;
   vtkMRMLNode* CurrentBendNode;
   void beginPlacement(vtkMRMLScene* scene, int id);
+  void endPlacement();
+  void computeAndSetSourcePoints();
+  void computeTransform(vtkMRMLScene* scene);
+  vtkSmartPointer<vtkPoints> SourcePoints;
   
 };
 
@@ -167,6 +174,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->FixedPointB = NULL;
   this->MovingPoint = NULL;
   this->PlacingNode = NULL;
+  this->SourcePoints = NULL;
+
 
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
@@ -176,55 +185,108 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   //this->logic->setSplitLogic(this->splitLogic);
 }
+void qSlicerPlannerModuleWidgetPrivate::endPlacement()
+{
+  this->FixedPointAButton->setEnabled(true);
+  this->FixedPointBButton->setEnabled(true);
+  this->MovingPointButton->setEnabled(true);
+  this->placingActive = false;
+  this->PlacingNode = NULL;
+}
+
+void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints()
+{
+  this->SourcePoints = vtkSmartPointer<vtkPoints>::New();
+  double posa[3];
+  double posb[3];
+  double posm[3];
+  this->FixedPointA->GetNthFiducialPosition(0, posa);
+  this->FixedPointB->GetNthFiducialPosition(0, posb);
+  this->MovingPoint->GetNthFiducialPosition(0, posm);
+  this->SourcePoints->InsertNextPoint(posa[0], posa[1], posa[2]);
+  this->SourcePoints->InsertNextPoint(posb[0], posb[1], posb[2]);
+  this->SourcePoints->InsertNextPoint(posm[0], posm[1], posm[2]);
+  std::cout << "How may points?" << std::endl;
+  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
+
+}
+
+void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
+{
+  vtkSmartPointer<vtkPoints> targetPoints = vtkSmartPointer<vtkPoints>::New();
+  double posa[3];
+  double posb[3];
+  double posm[3];
+  this->FixedPointA->GetNthFiducialPosition(0, posa);
+  this->FixedPointB->GetNthFiducialPosition(0, posb);
+  this->MovingPoint->GetNthFiducialPosition(0, posm);
+  targetPoints->InsertNextPoint(posa[0], posa[1], posa[2]);
+  targetPoints->InsertNextPoint(posb[0], posb[1], posb[2]);
+  targetPoints->InsertNextPoint(posm[0], posm[1], posm[2]);
+  std::cout << "Attempt thin plate" << std::endl;
+  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
+  vtkNew<vtkThinPlateSplineTransform> transform;
+  transform->SetBasisToR();
+  transform->SetSourceLandmarks(this->SourcePoints);
+  transform->SetTargetLandmarks(targetPoints);
+  transform->Update();
+  std::cout << "thin plate done" << std::endl;
+  vtkNew<vtkMRMLTransformNode> tnode;
+  scene->AddNode(tnode.GetPointer());
+  tnode->CreateDefaultDisplayNodes();
+  tnode->SetAndObserveTransformFromParent(transform.GetPointer());
+
+}
 
 void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int id)
 {
-  if (this->placingActive)
-  {
-    if (this->PlacingNode->GetNumberOfFiducials() == 0)
-    {
-      return;
-    }
-
-    //deactivate placement
-    vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
-    interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Select);
-    vtkMRMLSelectionNode* selection = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
-    selection->SetActivePlaceNodeID(NULL);
-
-    this->PlacingNode = NULL;
-    this->placingActive = false;
-    return;
-  }
-  
+    
   vtkNew<vtkMRMLMarkupsFiducialNode> fiducial;
   if (id == 0)  //Place fiducial A
   {
     //create fiducial node
     //assign to member variable
     //set as placing node
+    if (this->FixedPointA)
+    {
+      scene->RemoveNode(this->FixedPointA);
+      FixedPointA = NULL;
+    }
     this->FixedPointA = fiducial.GetPointer();
+    this->FixedPointA->SetName("FixedPointA");
     this->PlacingNode = this->FixedPointA;
     
   }
 
   if (id == 1)  //Place fiducial B
   {
+    if (this->FixedPointB)
+    {
+      scene->RemoveNode(this->FixedPointB);
+      FixedPointB = NULL;
+    }
     this->FixedPointB = fiducial.GetPointer();
+    this->FixedPointB->SetName("FixedPointB");
     this->PlacingNode = this->FixedPointB;
     
   }
 
   if (id == 2)  //Place fiducial M
   {
+    if (this->MovingPoint)
+    {
+      scene->RemoveNode(this->MovingPoint);
+      MovingPoint = NULL;
+    }
     this->MovingPoint = fiducial.GetPointer();
+    this->MovingPoint->SetName("MovingPoint");
     this->PlacingNode = this->MovingPoint;
     
   }
-  this->placingActive = true;
   //add new fiducial to scene
   scene->AddNode(this->PlacingNode);
   this->PlacingNode->CreateDefaultDisplayNodes();
+  this->placingActive = true;
 
   //activate placing
   vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
@@ -233,6 +295,10 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
   selection->SetActivePlaceNodeID(this->PlacingNode->GetID());
   interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Place);
 
+  //deactivate buttons
+  this->FixedPointAButton->setEnabled(false);
+  this->FixedPointBButton->setEnabled(false);
+  this->MovingPointButton->setEnabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -922,6 +988,11 @@ void qSlicerPlannerModuleWidget::setup()
     d->FixedPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
   this->connect(
     d->MovingPointButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->InitButton, SIGNAL(clicked()), this, SLOT(initButtonClicked()));
+  this->connect(
+    d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
+
   
 
 
@@ -1133,6 +1204,12 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceColorPickerButton,
     d->TemplateReferenceOpacitySliderWidget);
 
+  //activate Init button if able
+  if (d->FixedPointA && d->FixedPointB && d->MovingPoint)
+  {
+    d->InitButton->setEnabled(true);
+  }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1317,6 +1394,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
         { 
         d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
         qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+        
         d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
         }
     }
@@ -1344,44 +1422,45 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
   {
     std::cout << "FixedPointAButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 0);
-    return;
   }
   if (obj == d->FixedPointBButton)
   {
     std::cout << "FixedPointBButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 1);
-    return;
   }
   if (obj == d->MovingPointButton)
   {
     std::cout << "MovingPointButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 2);
-    return;
   }
+
+  qvtkConnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  return;
 }
 
 void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  QObject* obj = sender();
-  if (obj == d->FixedPointACancelButton)
-  {
-    std::cout << "FixedPointACancelButton" << std::endl;
-    return;
-  }
-  if (obj == d->FixedPointBCancelButton)
-  {
-    std::cout << "FixedPointBCancelButton" << std::endl;
-    return;
-  }
-  if (obj == d->MovingPointCancelButton)
-  {
-    std::cout << "MovingPointCancelButton" << std::endl;
-    return;
-  }
+  d->endPlacement();
+  this->updateWidgetFromMRML();
+  
 }
 
 void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 {
 
+}
+
+void qSlicerPlannerModuleWidget::initButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->computeAndSetSourcePoints();
+  d->UpdateBendButton->setEnabled(true);
+}
+
+void qSlicerPlannerModuleWidget::updateBendButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->computeTransform(this->mrmlScene());
+  
 }

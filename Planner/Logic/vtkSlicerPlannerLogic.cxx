@@ -41,6 +41,8 @@
 #include <vtkTriangleFilter.h>
 #include <vtkAppendPolyData.h>
 #include <vtkCommand.h>
+#include <vtkThinPlateSplineTransform.h>
+#include "vtkMRMLMarkupsFiducialNode.h"
 
 
 // STD includes
@@ -63,6 +65,7 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
   this->TempMerged = NULL;
   this->TempWrapped = NULL;
   this->CurrentModel = NULL;
+  this->SourcePoints = NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -389,5 +392,34 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
     this->GetMRMLScene()->RemoveNode(this->TempWrapped);
     this->TempWrapped = NULL;
   }
+}
+
+void vtkSlicerPlannerLogic::setSourcePoints(double* posa, double* posb, double* posm)
+{
+  vtkNew<vtkPoints> points;
+  points->InsertNextPoint(posa[0], posa[1], posa[2]);
+  points->InsertNextPoint(posb[0], posb[1], posb[2]);
+  points->InsertNextPoint(posm[0], posm[1], posm[2]);
+  this->SourcePoints = points.GetPointer();
+  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
+}
+
+
+vtkMRMLTransformNode* vtkSlicerPlannerLogic::computeThinPlate(double* posa, double* posb, double* posm)
+{
+  vtkNew<vtkThinPlateSplineTransform> transform;
+  transform->SetBasisToR();
+  std::cout << "sources" << std::endl;
+  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
+  /**transform->SetSourceLandmarks(this->SourcePoints);
+  std::cout << "targets" << std::endl;
+  transform->SetTargetLandmarks(controlPoints);
+  std::cout << "Attempt update" << std::endl;
+  transform->Update();
+  std::cout << "update done" << std::endl;
+  **/
+  vtkNew<vtkMRMLTransformNode> tnode;
+  //tnode->SetAndObserveTransformFromParent(transform.GetPointer());
+  return tnode.GetPointer();
 }
 

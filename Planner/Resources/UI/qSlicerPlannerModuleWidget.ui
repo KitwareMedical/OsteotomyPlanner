@@ -352,7 +352,7 @@
       <string>Bending</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayoutBends">
       <item row="0" column="0">
@@ -387,20 +387,10 @@
          <bool>true</bool>
         </property>
         <property name="addEnabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="renameEnabled">
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="FixedPointBCancelButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Cancel</string>
         </property>
        </widget>
       </item>
@@ -415,16 +405,6 @@
        <widget class="QLabel" name="FixedPointALabel">
         <property name="text">
          <string>Fixed Point A</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="FixedPointACancelButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Cancel</string>
         </property>
        </widget>
       </item>
@@ -466,16 +446,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="MovingPointCancelButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Cancel</string>
-        </property>
-       </widget>
-      </item>
       <item row="5" column="2">
        <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
         <property name="enabled">
@@ -502,16 +472,6 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QPushButton" name="BendInitializeButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Initialize</string>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
@@ -519,7 +479,17 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="2">
+      <item row="3" column="3">
+       <widget class="QPushButton" name="UpdateBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Update Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
        <widget class="QPushButton" name="HardenBendButton">
         <property name="enabled">
          <bool>false</bool>
@@ -529,23 +499,30 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="3">
+      <item row="5" column="3">
        <widget class="QPushButton" name="CancelBendButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Cancel</string>
+         <string>Cancel and Reset</string>
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
-       <widget class="QPushButton" name="SaveBendButton">
+      <item row="1" column="3">
+       <widget class="QPushButton" name="ClearPointsButton">
+        <property name="text">
+         <string>Clear Points</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="InitButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Save Bend</string>
+         <string>Init Bend</string>
         </property>
        </widget>
       </item>
@@ -558,6 +535,9 @@
       <string>Surgical Metrics</string>
      </property>
      <layout class="QGridLayout" name="verticalLayoutMetrics">
+      <item row="2" column="0">
+       <widget class="qMRMLTableView" name="ModelMetrics"/>
+      </item>
       <item row="0" column="0">
        <widget class="QPushButton" name="ComputeMetricsButton">
         <property name="text">
@@ -567,9 +547,6 @@
       </item>
       <item row="1" column="0">
        <widget class="qMRMLTableView" name="PlateMetrics"/>
-      </item>
-      <item row="2" column="0">
-       <widget class="qMRMLTableView" name="ModelMetrics"/>
       </item>
      </layout>
     </widget>
