@@ -156,11 +156,48 @@ public:
   vtkSmartPointer<vtkImageData> transformGrid;
   vtkSmartPointer<vtkImageData> createTransformGrid(vtkMRMLModelNode*);
   void fillTransformGrid(vtkPoints* currentPoints);
+  void clearControlPoints(vtkMRMLScene* scene);
+  void clearBendingData();
   
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
+
+void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
+{
+  if (this->FixedPointA)
+  {
+    scene->RemoveNode(this->FixedPointA);
+    FixedPointA = NULL;
+  }
+  if (this->FixedPointB)
+  {
+    scene->RemoveNode(this->FixedPointB);
+    FixedPointB = NULL;
+  }
+  if (this->MovingPointA)
+  {
+    scene->RemoveNode(this->MovingPointA);
+    MovingPointA = NULL;
+  }
+  if (this->MovingPointB)
+  {
+    scene->RemoveNode(this->MovingPointB);
+    MovingPointB = NULL;
+  }
+  if (this->PlacingNode)
+  {
+    scene->RemoveNode(this->PlacingNode);
+    PlacingNode = NULL;
+  }
+}
+
+void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
+{
+  this->SourcePoints = NULL;
+  this->TargetPoints = NULL;
+}
 
 //-----------------------------------------------------------------------------
 qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
@@ -1003,6 +1040,16 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
         hardeningMatrix->Identity();
         transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
       }
+      else
+      {
+        // non-linear transform hardening
+        this->updatePlanesFromModel(childModel->GetScene(), childModel);        
+        childModel->ApplyTransform(transformNode->GetTransformToParent());
+        transformNode->SetAndObserveTransformToParent(NULL);
+        vtkNew<vtkMatrix4x4> hardeningMatrix;
+        hardeningMatrix->Identity();
+        transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+      }
       planeNode->EndModify(m2);
       childModel->EndModify(m);
     }
@@ -1136,8 +1183,12 @@ void qSlicerPlannerModuleWidget::setup()
     d->InitButton, SIGNAL(clicked()), this, SLOT(initButtonClicked()));
   this->connect(
     d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
-
-  
+  this->connect(
+    d->ClearPointsButton, SIGNAL(clicked()), this, SLOT(clearPointsClicked()));
+  this->connect(
+    d->HardenBendButton, SIGNAL(clicked()), this, SLOT(finshBendClicked()));
+  this->connect(
+    d->CancelBendButton, SIGNAL(clicked()), this, SLOT(cancelBendButtonClicked()));
 
 
 
@@ -1325,10 +1376,19 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if (d->bendingActive)
   {
     d->CuttingCollapsibleButton->setEnabled(false);
+    d->CurrentBendNodeComboBox->setEnabled(false);
+    d->UpdateBendButton->setEnabled(true);
+    d->BendMagnitudeSlider->setEnabled(true);
+    d->CancelBendButton->setEnabled(true);
   }
   else
   {
     d->CuttingCollapsibleButton->setEnabled(true);
+    d->CurrentBendNodeComboBox->setEnabled(true);
+    d->UpdateBendButton->setEnabled(false);
+    d->BendMagnitudeSlider->setEnabled(false);
+    d->HardenBendButton->setEnabled(false);
+    d->CancelBendButton->setEnabled(true);
   }
 
   if (this->plannerLogic()->getPreOPICV() == 0)
@@ -1351,9 +1411,13 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceOpacitySliderWidget);
 
   //activate Init button if able
-  if (d->FixedPointA && d->FixedPointB && d->MovingPointA && d->MovingPointB)
+  if (d->FixedPointA && d->FixedPointB && d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
   {
     d->InitButton->setEnabled(true);
+  }
+  else
+  {
+    d->InitButton->setEnabled(false);
   }
 
 }
@@ -1589,10 +1653,12 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
   return;
 }
 
-void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
+void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  d->endPlacement();
+  d->clearControlPoints(this->mrmlScene());
+  d->clearBendingData();
+  d->bendingActive = false;
   this->updateWidgetFromMRML();
   
 }
@@ -1620,8 +1686,8 @@ void qSlicerPlannerModuleWidget::initButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->computeAndSetSourcePoints();
-  d->UpdateBendButton->setEnabled(true);
-  d->BendMagnitudeSlider->setEnabled(true);
+  d->bendingActive = true;
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::updateBendButtonClicked()
@@ -1629,12 +1695,36 @@ void qSlicerPlannerModuleWidget::updateBendButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->computeTargetPoints();
   d->computeTransform(this->mrmlScene());
-  
+  d->HardenBendButton->setEnabled(true);
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::sliderUpdated()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = d->BendMagnitudeSlider->value();
+  this->updateWidgetFromMRML();
+}
+void qSlicerPlannerModuleWidget::clearPointsClicked()
+{
+  //Q_D(qSlicerPlannerModuleWidget);
+  //d->clearControlPoints(this->mrmlScene());
+  //this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::finshBendClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->hardenTransforms();
+  d->clearBendingData();  
+  d->bendingActive = false;
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->endPlacement();
+  this->updateWidgetFromMRML();
 
 }

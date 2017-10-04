@@ -73,9 +73,12 @@ protected slots:
   void cancelButtonClicked();
   void placeFiducialButtonClicked();
   void cancelFiducialButtonClicked();
+  void cancelBendButtonClicked();
   void initButtonClicked();
   void updateBendButtonClicked();
   void sliderUpdated();
+  void clearPointsClicked();
+  void finshBendClicked();
 
   // Metrics slots
   void onComputeButton();
