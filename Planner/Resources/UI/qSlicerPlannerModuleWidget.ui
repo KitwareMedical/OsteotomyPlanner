@@ -362,21 +362,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="FixedPointBButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Moving Point</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
+      <item row="5" column="2">
        <widget class="qMRMLNodeComboBox" name="TransformNodeComboBox">
         <property name="nodeTypes">
          <stringlist>
@@ -401,6 +387,13 @@
         </property>
        </widget>
       </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="FixedPointBButton">
+        <property name="text">
+         <string>Place</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="FixedPointALabel">
         <property name="text">
@@ -412,6 +405,13 @@
        <widget class="QPushButton" name="FixedPointAButton">
         <property name="text">
          <string>Place</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Moving Point A</string>
         </property>
        </widget>
       </item>
@@ -439,43 +439,70 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="MovingPointButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="2">
-       <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="pageStep">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="minimum">
-         <double>-5.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>5.000000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
+      <item row="6" column="0">
        <widget class="QLabel" name="label_5">
         <property name="text">
          <string>Magnitude Adjustment</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="5" column="0">
        <widget class="QLabel" name="label_4">
         <property name="text">
          <string>Transform Node</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="InitButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Init Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="ClearPointsButton">
+        <property name="text">
+         <string>Clear Points</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="3">
+       <widget class="QPushButton" name="HardenBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Harden Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2">
+       <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="pageStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="minimum">
+         <double>-1.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>0.400000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="MovingPointAButton">
+        <property name="text">
+         <string>Place</string>
         </property>
        </widget>
       </item>
@@ -489,17 +516,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QPushButton" name="HardenBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Harden Bend</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="3">
+      <item row="6" column="3">
        <widget class="QPushButton" name="CancelBendButton">
         <property name="enabled">
          <bool>false</bool>
@@ -509,20 +526,17 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="ClearPointsButton">
+      <item row="4" column="0">
+       <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Clear Points</string>
+         <string>Moving Point B</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="InitButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="4" column="2">
+       <widget class="QPushButton" name="MovingPointBButton">
         <property name="text">
-         <string>Init Bend</string>
+         <string>Place</string>
         </property>
        </widget>
       </item>

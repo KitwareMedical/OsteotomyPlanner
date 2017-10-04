@@ -75,6 +75,7 @@ protected slots:
   void cancelFiducialButtonClicked();
   void initButtonClicked();
   void updateBendButtonClicked();
+  void sliderUpdated();
 
   // Metrics slots
   void onComputeButton();
