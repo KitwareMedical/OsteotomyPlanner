@@ -423,3 +423,4 @@ vtkMRMLTransformNode* vtkSlicerPlannerLogic::computeThinPlate(double* posa, doub
   return tnode.GetPointer();
 }
 
+

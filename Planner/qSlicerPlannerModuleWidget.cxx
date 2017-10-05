@@ -36,6 +36,7 @@
 #include "vtkVectorOperators.h"
 #include "vtkMathUtilities.h"
 #include "vtkDistancePolyDataFilter.h"
+#include "vtkDoubleArray.h"
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -809,6 +810,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   vtkNew<vtkMRMLModelDisplayNode> dnode2;
   vtkNew<vtkMRMLModelStorageNode> snode1;
   vtkNew<vtkMRMLModelStorageNode> snode2;
+  
   //dnode1->SetVisibility(1);
   //dnode2->SetVisibility(1);
   
@@ -951,6 +953,7 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
     {
       int wasModifying = display->StartModify();
       display->SetColor(vtkMath::Random(0.0, 1.0), vtkMath::Random(0.0, 1.0), vtkMath::Random(0.0, 1.0));
+      display->SetScalarVisibility(false);
       display->EndModify(wasModifying);
     }
   }
@@ -1056,8 +1059,9 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
     if (childModel)
     {
-      childModel->GetDisplayNode()->SetActiveScalarName("Normals");
+      childModel->GetDisplayNode()->SetActiveScalarName("Signed");
       childModel->GetDisplayNode()->SetScalarVisibility(visible);
+      childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::ScalarRangeFlagType::UseDataScalarRange);
     }
   }
 }
@@ -1244,7 +1248,8 @@ void qSlicerPlannerModuleWidget::setup()
     d->CancelBendButton, SIGNAL(clicked()), this, SLOT(cancelBendButtonClicked()));
   this->connect(
     d->ComputeScalarsButton, SIGNAL(clicked()), this, SLOT(computeScalarsClicked()));
-
+  this->connect(
+    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
 
   this->connect(
     d->BrainReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
@@ -1812,16 +1817,18 @@ void qSlicerPlannerModuleWidget::finishDistance()
   if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
   {
     vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
-    vtkMRMLModelNode* inputNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile1")));
+    //vtkMRMLModelNode* inputNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile1")));
     this->mrmlScene()->RemoveNode(d->cmdNode);
     //d->cmdNode = NULL;
-    //int m = inputNode->StartModify();
-    inputNode->AddPointScalars(distanceNode->GetPolyData()->GetPointData()->GetScalars("Signed"));
-    //inputNode->EndModify(m);
+    int m = d->modelIterator.back()->StartModify();
+    d->modelIterator.back()->SetAndObservePolyData(distanceNode->GetPolyData());
+    d->modelIterator.back()->EndModify(m);
     //run next module
     this->mrmlScene()->RemoveNode(distanceNode);
+    distanceNode = NULL;
+    d->cmdNode = NULL;
     d->modelIterator.pop_back();
-    //this->runModelDistance();
+    this->runModelDistance();
   }
 }
 void qSlicerPlannerModuleWidget::runModelDistance()
