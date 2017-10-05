@@ -35,6 +35,7 @@
 #include "vtkVector.h"
 #include "vtkVectorOperators.h"
 #include "vtkMathUtilities.h"
+#include "vtkDistancePolyDataFilter.h"
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -61,6 +62,7 @@
 #include "vtkMRMLInteractionNode.h"
 #include "vtkMRMLSelectionNode.h"
 #include "vtkThinPlateSplineTransform.h"
+#include <vtkPointData.h>
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -75,6 +77,7 @@
 
 //STD includes
 #include <map>
+#include <vector>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -110,6 +113,7 @@ public:
   void applyRandomColor(vtkMRMLModelNode* node);
   QString generateMetricsText();
   void hardenTransforms();
+  void setScalarVisibility(bool visible);
 
 
   void updateWidgetFromReferenceNode(
@@ -135,6 +139,7 @@ public:
   bool bendingActive;
   bool placingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerCLIModuleLogic* distanceLogic;
   vtkSlicerPlannerLogic* logic;
   vtkMRMLCommandLineModuleNode* cmdNode;
 
@@ -158,6 +163,10 @@ public:
   void fillTransformGrid(vtkPoints* currentPoints);
   void clearControlPoints(vtkMRMLScene* scene);
   void clearBendingData();
+  vtkMRMLModelNode* DistanceTempModel;
+  std::vector<vtkMRMLCommandLineModuleNode*> DistanceCommandNodes;
+  void prepScalarComputation(vtkMRMLScene* scene);
+  std::vector<vtkMRMLModelNode*> modelIterator;
   
 };
 
@@ -226,14 +235,17 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->SourcePoints = NULL;
   this->TargetPoints = 0;
   this->BendMagnitude = 0;
-
+  
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
 
   this->splitLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
 
-  //this->logic->setSplitLogic(this->splitLogic);
+  qSlicerAbstractCoreModule* distanceModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("ModelToModelDistance");
+  this->distanceLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(distanceModule->logic());
 }
 void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 {
@@ -814,6 +826,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   scene->AddNode(splitNode1.GetPointer());
   scene->AddNode(splitNode2.GetPointer());
 
+  std::cout << "CutNode check: " << vtkMRMLModelNode::SafeDownCast(CurrentCutNode)->GetPolyData()->GetNumberOfPoints() << std::endl;
   this->splitModel(vtkMRMLModelNode::SafeDownCast(CurrentCutNode), splitNode1.GetPointer(), 
     splitNode2.GetPointer(), scene);
 
@@ -1008,7 +1021,49 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
     output = QString("No models available!!!");
   }
   return output;
+
 }
+
+void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scene)
+{
+    
+  std::vector<vtkMRMLHierarchyNode*> children;
+  this->DistanceCommandNodes.clear();
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      this->modelIterator.push_back(childModel);
+    }
+  }
+  
+}
+
+void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      childModel->GetDisplayNode()->SetActiveScalarName("Normals");
+      childModel->GetDisplayNode()->SetScalarVisibility(visible);
+    }
+  }
+}
+
+
+
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
 {
   std::vector<vtkMRMLHierarchyNode*> children;
@@ -1184,12 +1239,11 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
   this->connect(
-    d->ClearPointsButton, SIGNAL(clicked()), this, SLOT(clearPointsClicked()));
-  this->connect(
     d->HardenBendButton, SIGNAL(clicked()), this, SLOT(finshBendClicked()));
   this->connect(
     d->CancelBendButton, SIGNAL(clicked()), this, SLOT(cancelBendButtonClicked()));
-
+  this->connect(
+    d->ComputeScalarsButton, SIGNAL(clicked()), this, SLOT(computeScalarsClicked()));
 
 
   this->connect(
@@ -1494,6 +1548,12 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton->color(),
     d->TemplateReferenceOpacitySliderWidget->value());
+
+  //set visibility on scalars
+  if (d->HierarchyNode)
+  {
+    d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1582,13 +1642,14 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     if (children.size() > 0)
     {
       d->hardenTransforms();
+      std::cout << "Wrapping Current Model" << std::endl;
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
       qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
   }
+
   
-  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::onSetPreOP()
@@ -1619,8 +1680,24 @@ void qSlicerPlannerModuleWidget::launchMetrics()
     this->plannerLogic()->finishWrap(d->cmdNode);
     d->generateMetricsText();
     this->updateWidgetFromMRML();
-  }
+    
+
+   }
   
+}
+
+void qSlicerPlannerModuleWidget::computeScalarsClicked()
+{
+  //launch scalar computation
+  //function runModelToModel
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->HierarchyNode && d->BrainReferenceNode)
+  {
+    //launch scalar computation
+    //function runModelToModel
+    d->prepScalarComputation(this->mrmlScene());
+    this->runModelDistance();
+  }
 }
 
 void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
@@ -1728,3 +1805,52 @@ void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
   this->updateWidgetFromMRML();
 
 }
+
+void qSlicerPlannerModuleWidget::finishDistance()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+  {
+    vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
+    vtkMRMLModelNode* inputNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile1")));
+    this->mrmlScene()->RemoveNode(d->cmdNode);
+    //d->cmdNode = NULL;
+    //int m = inputNode->StartModify();
+    inputNode->AddPointScalars(distanceNode->GetPolyData()->GetPointData()->GetScalars("Signed"));
+    //inputNode->EndModify(m);
+    //run next module
+    this->mrmlScene()->RemoveNode(distanceNode);
+    d->modelIterator.pop_back();
+    //this->runModelDistance();
+  }
+}
+void qSlicerPlannerModuleWidget::runModelDistance()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (!d->modelIterator.empty())
+  {
+    //grab and remove commandline node from thingy
+    //this->mrmlScene()->RemoveNode(d->cmdNode);
+    std::cout << "Grab next cli" << std::endl;
+    d->distanceLogic->SetMRMLScene(this->mrmlScene());
+    vtkSmartPointer<vtkMRMLModelNode> temp = vtkSmartPointer<vtkMRMLModelNode>::New();
+    this->mrmlScene()->AddNode(temp);
+    temp->CreateDefaultDisplayNodes();
+    temp->CreateDefaultStorageNode();
+    d->cmdNode = d->distanceLogic->CreateNodeInScene();
+    d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
+    d->cmdNode->SetParameterAsString("vtkFile2", d->BrainReferenceNode->GetID());
+    d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
+    d->cmdNode->SetParameterAsString("distanceType", "signed_closest_point");
+    d->distanceLogic->Apply(d->cmdNode, true);
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
+    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+
+  }
+  else
+  {
+    this->updateMRMLFromWidget();
+    
+  }
+}
+

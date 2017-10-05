@@ -79,6 +79,7 @@ protected slots:
   void sliderUpdated();
   void clearPointsClicked();
   void finshBendClicked();
+  void computeScalarsClicked();
 
   // Metrics slots
   void onComputeButton();
@@ -87,6 +88,8 @@ protected slots:
   //CLI slots
   void finishWrap();
   void launchMetrics();
+  void finishDistance();
+  void runModelDistance();
 
   
 protected:
