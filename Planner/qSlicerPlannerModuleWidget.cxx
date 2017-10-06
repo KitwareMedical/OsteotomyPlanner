@@ -430,7 +430,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       FixedPointA = NULL;
     }
     this->FixedPointA = fiducial.GetPointer();
-    this->FixedPointA->SetName("FixedPointA");
+    this->FixedPointA->SetName("FA");
     this->PlacingNode = this->FixedPointA;
     
   }
@@ -443,7 +443,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       FixedPointB = NULL;
     }
     this->FixedPointB = fiducial.GetPointer();
-    this->FixedPointB->SetName("FixedPointB");
+    this->FixedPointB->SetName("FB");
     this->PlacingNode = this->FixedPointB;
     
   }
@@ -456,7 +456,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       MovingPointA = NULL;
     }
     this->MovingPointA = fiducial.GetPointer();
-    this->MovingPointA->SetName("MovingPointA");
+    this->MovingPointA->SetName("MA");
     this->PlacingNode = this->MovingPointA;
     
   }
@@ -469,7 +469,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       MovingPointB = NULL;
     }
     this->MovingPointB = fiducial.GetPointer();
-    this->MovingPointB->SetName("MovingPointB");
+    this->MovingPointB->SetName("MB");
     this->PlacingNode = this->MovingPointB;
 
   }
@@ -477,6 +477,9 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
   //add new fiducial to scene
   scene->AddNode(this->PlacingNode);
   this->PlacingNode->CreateDefaultDisplayNodes();
+  vtkMRMLMarkupsDisplayNode* disp = vtkMRMLMarkupsDisplayNode::SafeDownCast( this->PlacingNode->GetDisplayNode());
+  disp->SetTextScale(0.1);
+  //disp->SetVisibility(0);
   this->placingActive = true;
 
   //activate placing
