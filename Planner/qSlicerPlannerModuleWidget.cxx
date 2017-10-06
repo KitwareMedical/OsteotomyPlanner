@@ -27,8 +27,16 @@
 #include "vtkNew.h"
 #include <vtkMath.h>
 #include <vtkMatrix4x4.h>
-
-
+#include <vtkPoints.h>
+#include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <vtkGridTransform.h>
+#include <vtkImageGaussianSmooth.h>
+#include "vtkVector.h"
+#include "vtkVectorOperators.h"
+#include "vtkMathUtilities.h"
+#include "vtkDistancePolyDataFilter.h"
+#include "vtkDoubleArray.h"
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -51,6 +59,11 @@
 #include "vtkMRMLModelDisplayNode.h"
 #include "vtkMRMLModelStorageNode.h"
 #include "vtkMRMLTableNode.h"
+#include "vtkMRMLMarkupsFiducialNode.h"
+#include "vtkMRMLInteractionNode.h"
+#include "vtkMRMLSelectionNode.h"
+#include "vtkThinPlateSplineTransform.h"
+#include <vtkPointData.h>
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -65,6 +78,7 @@
 
 //STD includes
 #include <map>
+#include <vector>
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -100,6 +114,7 @@ public:
   void applyRandomColor(vtkMRMLModelNode* node);
   QString generateMetricsText();
   void hardenTransforms();
+  void setScalarVisibility(bool visible);
 
 
   void updateWidgetFromReferenceNode(
@@ -110,6 +125,7 @@ public:
     vtkMRMLNode* node, QColor color, double opacity) const;
   vtkMRMLNode* openReferenceDialog() const;
 
+  //Cutting Stuff
   vtkMRMLModelHierarchyNode* HierarchyNode;
   vtkMRMLModelHierarchyNode* StagedHierarchyNode;
   QStringList HideChildNodeTypes;
@@ -121,13 +137,75 @@ public:
   vtkMRMLTableNode* plateMetricsTable;
   vtkMRMLTableNode* modelMetricsTable;
   bool cuttingActive;
+  bool bendingActive;
+  bool placingActive;
   vtkSlicerCLIModuleLogic* splitLogic;
+  vtkSlicerCLIModuleLogic* distanceLogic;
   vtkSlicerPlannerLogic* logic;
   vtkMRMLCommandLineModuleNode* cmdNode;
+
+  //Bending Stuff
+  vtkMRMLMarkupsFiducialNode* FixedPointA;
+  vtkMRMLMarkupsFiducialNode* FixedPointB;
+  vtkMRMLMarkupsFiducialNode* MovingPointA;
+  vtkMRMLMarkupsFiducialNode* MovingPointB;
+  vtkMRMLMarkupsFiducialNode* PlacingNode;
+  double BendMagnitude;
+  vtkMRMLNode* CurrentBendNode;
+  void beginPlacement(vtkMRMLScene* scene, int id);
+  void endPlacement();
+  void computeAndSetSourcePoints();
+  void computeTransform(vtkMRMLScene* scene);
+  void computeTargetPoints();
+  vtkSmartPointer<vtkPoints> SourcePoints;
+  vtkSmartPointer<vtkPoints> TargetPoints;
+  vtkSmartPointer<vtkImageData> transformGrid;
+  vtkSmartPointer<vtkImageData> createTransformGrid(vtkMRMLModelNode*);
+  void fillTransformGrid(vtkPoints* currentPoints);
+  void clearControlPoints(vtkMRMLScene* scene);
+  void clearBendingData();
+  void prepScalarComputation(vtkMRMLScene* scene);
+  std::vector<vtkMRMLModelNode*> modelIterator;
+  
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
+
+void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
+{
+  if (this->FixedPointA)
+  {
+    scene->RemoveNode(this->FixedPointA);
+    FixedPointA = NULL;
+  }
+  if (this->FixedPointB)
+  {
+    scene->RemoveNode(this->FixedPointB);
+    FixedPointB = NULL;
+  }
+  if (this->MovingPointA)
+  {
+    scene->RemoveNode(this->MovingPointA);
+    MovingPointA = NULL;
+  }
+  if (this->MovingPointB)
+  {
+    scene->RemoveNode(this->MovingPointB);
+    MovingPointB = NULL;
+  }
+  if (this->PlacingNode)
+  {
+    scene->RemoveNode(this->PlacingNode);
+    PlacingNode = NULL;
+  }
+}
+
+void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
+{
+  this->SourcePoints = NULL;
+  this->TargetPoints = NULL;
+}
 
 //-----------------------------------------------------------------------------
 qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
@@ -144,15 +222,276 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->plateMetricsTable = NULL;
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
+  this->bendingActive = false;
+  this->placingActive = false;
   this->cmdNode = NULL;
 
+  this->FixedPointA = NULL;
+  this->FixedPointB = NULL;
+  this->MovingPointA = NULL;
+  this->MovingPointB = NULL;
+  this->PlacingNode = NULL;
+  this->SourcePoints = NULL;
+  this->TargetPoints = 0;
+  this->BendMagnitude = 0;
+  
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
 
   this->splitLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
 
-  //this->logic->setSplitLogic(this->splitLogic);
+  qSlicerAbstractCoreModule* distanceModule =
+    qSlicerCoreApplication::application()->moduleManager()->module("ModelToModelDistance");
+  this->distanceLogic =
+    vtkSlicerCLIModuleLogic::SafeDownCast(distanceModule->logic());
+}
+void qSlicerPlannerModuleWidgetPrivate::endPlacement()
+{
+  this->FixedPointAButton->setEnabled(true);
+  this->FixedPointBButton->setEnabled(true);
+  this->MovingPointAButton->setEnabled(true);
+  this->MovingPointBButton->setEnabled(true);
+  this->placingActive = false;
+  this->PlacingNode = NULL;
+}
+
+void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints()
+{
+  this->SourcePoints = vtkSmartPointer<vtkPoints>::New();
+  double posfa[3];
+  double posfb[3];
+  double posma[3];
+  double posmb[3];
+  this->FixedPointA->GetNthFiducialPosition(0, posfa);
+  this->FixedPointB->GetNthFiducialPosition(0, posfb);
+  this->MovingPointA->GetNthFiducialPosition(0, posma);
+  this->MovingPointB->GetNthFiducialPosition(0, posmb);
+  this->SourcePoints->InsertNextPoint(posfa[0], posfa[1], posfa[2]);
+  this->SourcePoints->InsertNextPoint(posfb[0], posfb[1], posfb[2]);
+  this->SourcePoints->InsertNextPoint(posma[0], posma[1], posma[2]);
+  this->SourcePoints->InsertNextPoint(posmb[0], posmb[1], posmb[2]);
+  std::cout << "How may points?" << std::endl;
+  std::cout << this->SourcePoints->GetNumberOfPoints() << std::endl;
+
+}
+
+void qSlicerPlannerModuleWidgetPrivate::computeTargetPoints()
+{
+  //
+  this->TargetPoints = vtkSmartPointer<vtkPoints>::New();
+  double pMA[3];
+  double pMB[3];
+  this->SourcePoints->GetPoint(2, pMA);
+  this->SourcePoints->GetPoint(3, pMB);
+  vtkVector3d PointA = (vtkVector3d) pMA;
+  vtkVector3d PointB = (vtkVector3d) pMB;  
+  vtkVector3d AB = PointB - PointA;
+  vtkVector3d BA = PointA - PointB;
+  vtkVector3d PointA2 = PointA + (this->BendMagnitude * AB);
+  vtkVector3d PointB2 = PointB + (this->BendMagnitude * BA);
+  this->TargetPoints->DeepCopy(this->SourcePoints);
+  this->TargetPoints->InsertPoint(2,PointA2.GetData());
+  this->TargetPoints->InsertPoint(3,PointB2.GetData());
+  
+  
+}
+
+void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
+{
+  
+  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  vtkNew<vtkMRMLTransformNode> tnodetemp;
+  if (!tnode)
+  {
+    
+    tnode = tnodetemp.GetPointer();
+    scene->AddNode(tnode);
+    tnode->CreateDefaultDisplayNodes();
+
+  }
+
+  vtkNew<vtkThinPlateSplineTransform> tps;
+  tps->SetBasisToR();
+  tps->SetSourceLandmarks(this->SourcePoints);
+  tps->SetTargetLandmarks(this->TargetPoints);
+  tps->Update();
+
+  tnode->SetAndObserveTransformToParent(tps.GetPointer());
+  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  
+
+}
+
+void qSlicerPlannerModuleWidgetPrivate::fillTransformGrid(vtkPoints* currentPoints)
+{
+  //reset to zero
+  int* dims = this->transformGrid->GetDimensions();
+
+  for (int z = 0; z < dims[2]; z++)
+  {
+    for (int y = 0; y < dims[1]; y++)
+    {
+      for (int x = 0; x < dims[0]; x++)
+      {
+        double* pixel = static_cast<double*>(this->transformGrid->GetScalarPointer(x, y, z));
+        pixel[0] = 0;
+        pixel[1] = 0;
+        pixel[2] = 0;
+
+      }
+    }
+  }
+  double originalPosition[3];
+  double newPosition[3];
+  double pcoords[3];
+  this->SourcePoints->GetPoint(2, originalPosition);
+  currentPoints->GetPoint(2, newPosition);
+  int originalIndex[3];
+  int newIndex[3];
+  this->transformGrid->ComputeStructuredCoordinates(originalPosition, originalIndex, pcoords );
+  this->transformGrid->ComputeStructuredCoordinates(newPosition, newIndex, pcoords);
+  double pixel[3];
+  pixel[0] = (newPosition[0] - originalPosition[0])*10;
+  pixel[1] = (newPosition[1] - originalPosition[1])*10;
+  pixel[2] = (newPosition[2] - originalPosition[2])*10;
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 0, pixel[0]);
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 1, pixel[1]);
+  this->transformGrid->SetScalarComponentFromDouble(originalIndex[0], originalIndex[1], originalIndex[2], 2, pixel[2]);
+  //vtkNew<vtkImageGaussianSmooth> filter;
+  //filter->SetInputData(this->transformGrid);
+  //filter->SetDimensionality(3);
+  //filter->SetStandardDeviations(0.1,0.1, 0.1);
+  //filter->SetRadiusFactors(10, 10, 10);
+  //filter->Update();
+  //this->transformGrid = filter->GetOutput();
+}
+
+vtkSmartPointer<vtkImageData> qSlicerPlannerModuleWidgetPrivate::createTransformGrid(vtkMRMLModelNode* model)
+{
+  vtkSmartPointer<vtkImageData> transformGrid = vtkSmartPointer<vtkImageData>::New();
+  double spacing[3]; // desired volume spacing
+  spacing[0] = 1;
+  spacing[1] = 1;
+  spacing[2] = 1;
+  transformGrid->SetSpacing(spacing);
+  double bounds[6];
+  model->GetBounds(bounds);
+
+  // compute dimensions
+  int dim[3];
+  for (int i = 0; i < 3; i++)
+  {
+    dim[i] = static_cast<int>(ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]));
+  }
+  transformGrid->SetDimensions(dim);
+  transformGrid->SetExtent(0, dim[0] - 1, 0, dim[1] - 1, 0, dim[2] - 1);
+
+  double origin[3];
+  origin[0] = bounds[0] + spacing[0] / 2;
+  origin[1] = bounds[2] + spacing[1] / 2;
+  origin[2] = bounds[4] + spacing[2] / 2;
+  transformGrid->SetOrigin(origin);
+  transformGrid->AllocateScalars(VTK_DOUBLE, 3);
+  int* dims = transformGrid->GetDimensions();
+
+  for (int z = 0; z < dims[2]; z++)
+  {
+    for (int y = 0; y < dims[1]; y++)
+    {
+      for (int x = 0; x < dims[0]; x++)
+      {
+        double* pixel = static_cast<double*>(transformGrid->GetScalarPointer(x, y, z));
+        pixel[0] = 0;
+        pixel[1] = 0;
+        pixel[2] = 0;
+
+      }
+    }
+  }
+
+  return transformGrid;
+}
+
+void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int id)
+{
+    
+  vtkNew<vtkMRMLMarkupsFiducialNode> fiducial;
+  if (id == 0)  //Place fiducial A
+  {
+    //create fiducial node
+    //assign to member variable
+    //set as placing node
+    if (this->FixedPointA)
+    {
+      scene->RemoveNode(this->FixedPointA);
+      FixedPointA = NULL;
+    }
+    this->FixedPointA = fiducial.GetPointer();
+    this->FixedPointA->SetName("FA");
+    this->PlacingNode = this->FixedPointA;
+    
+  }
+
+  if (id == 1)  //Place fiducial B
+  {
+    if (this->FixedPointB)
+    {
+      scene->RemoveNode(this->FixedPointB);
+      FixedPointB = NULL;
+    }
+    this->FixedPointB = fiducial.GetPointer();
+    this->FixedPointB->SetName("FB");
+    this->PlacingNode = this->FixedPointB;
+    
+  }
+
+  if (id == 2)  //Place fiducial MA
+  {
+    if (this->MovingPointA)
+    {
+      scene->RemoveNode(this->MovingPointA);
+      MovingPointA = NULL;
+    }
+    this->MovingPointA = fiducial.GetPointer();
+    this->MovingPointA->SetName("MA");
+    this->PlacingNode = this->MovingPointA;
+    
+  }
+
+  if (id == 3)  //Place fiducial MB
+  {
+    if (this->MovingPointB)
+    {
+      scene->RemoveNode(this->MovingPointB);
+      MovingPointB = NULL;
+    }
+    this->MovingPointB = fiducial.GetPointer();
+    this->MovingPointB->SetName("MB");
+    this->PlacingNode = this->MovingPointB;
+
+  }
+
+  //add new fiducial to scene
+  scene->AddNode(this->PlacingNode);
+  this->PlacingNode->CreateDefaultDisplayNodes();
+  vtkMRMLMarkupsDisplayNode* disp = vtkMRMLMarkupsDisplayNode::SafeDownCast( this->PlacingNode->GetDisplayNode());
+  disp->SetTextScale(0.1);
+  //disp->SetVisibility(0);
+  this->placingActive = true;
+
+  //activate placing
+  vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
+  vtkMRMLSelectionNode* selection = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
+  selection->SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsFiducialNode");
+  selection->SetActivePlaceNodeID(this->PlacingNode->GetID());
+  interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Place);
+
+  //deactivate buttons
+  this->FixedPointAButton->setEnabled(false);
+  this->FixedPointBButton->setEnabled(false);
+  this->MovingPointAButton->setEnabled(false);
+  this->MovingPointBButton->setEnabled(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -472,6 +811,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   vtkNew<vtkMRMLModelDisplayNode> dnode2;
   vtkNew<vtkMRMLModelStorageNode> snode1;
   vtkNew<vtkMRMLModelStorageNode> snode2;
+  
   //dnode1->SetVisibility(1);
   //dnode2->SetVisibility(1);
   
@@ -489,6 +829,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   scene->AddNode(splitNode1.GetPointer());
   scene->AddNode(splitNode2.GetPointer());
 
+  std::cout << "CutNode check: " << vtkMRMLModelNode::SafeDownCast(CurrentCutNode)->GetPolyData()->GetNumberOfPoints() << std::endl;
   this->splitModel(vtkMRMLModelNode::SafeDownCast(CurrentCutNode), splitNode1.GetPointer(), 
     splitNode2.GetPointer(), scene);
 
@@ -613,6 +954,7 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
     {
       int wasModifying = display->StartModify();
       display->SetColor(vtkMath::Random(0.0, 1.0), vtkMath::Random(0.0, 1.0), vtkMath::Random(0.0, 1.0));
+      display->SetScalarVisibility(false);
       display->EndModify(wasModifying);
     }
   }
@@ -683,7 +1025,49 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
     output = QString("No models available!!!");
   }
   return output;
+
 }
+
+void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scene)
+{
+    
+  std::vector<vtkMRMLHierarchyNode*> children;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      this->modelIterator.push_back(childModel);
+    }
+  }
+  
+}
+
+void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      childModel->GetDisplayNode()->SetActiveScalarName("Signed");
+      childModel->GetDisplayNode()->SetScalarVisibility(visible);
+      childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::ScalarRangeFlagType::UseDataScalarRange);
+    }
+  }
+}
+
+
+
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
 {
   std::vector<vtkMRMLHierarchyNode*> children;
@@ -712,6 +1096,16 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
         transformNode->GetMatrixTransformToWorld(hardeningMatrix.GetPointer());
         childModel->ApplyTransformMatrix(hardeningMatrix.GetPointer());
         //planeNode->ApplyTransformMatrix(hardeningMatrix.GetPointer());
+        hardeningMatrix->Identity();
+        transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+      }
+      else
+      {
+        // non-linear transform hardening
+        this->updatePlanesFromModel(childModel->GetScene(), childModel);        
+        childModel->ApplyTransform(transformNode->GetTransformToParent());
+        transformNode->SetAndObserveTransformToParent(NULL);
+        vtkNew<vtkMatrix4x4> hardeningMatrix;
         hardeningMatrix->Identity();
         transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
       }
@@ -825,6 +1219,9 @@ void qSlicerPlannerModuleWidget::setup()
     d->CurrentCutNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateCurrentCutNode(vtkMRMLNode*)));
   this->connect(
+    d->CurrentBendNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    this, SLOT(updateCurrentBendNode(vtkMRMLNode*)));
+  this->connect(
     d->CutPreviewButton, SIGNAL(clicked()), this, SLOT(previewButtonClicked()));
   this->connect(
     d->CutConfirmButton, SIGNAL(clicked()), this, SLOT(confirmButtonClicked()));
@@ -833,8 +1230,26 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
-
-
+  this->connect(
+    d->FixedPointAButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->FixedPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->MovingPointAButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->MovingPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
+  this->connect(
+    d->InitButton, SIGNAL(clicked()), this, SLOT(initButtonClicked()));
+  this->connect(
+    d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
+  this->connect(
+    d->HardenBendButton, SIGNAL(clicked()), this, SLOT(finshBendClicked()));
+  this->connect(
+    d->CancelBendButton, SIGNAL(clicked()), this, SLOT(cancelBendButtonClicked()));
+  this->connect(
+    d->ComputeScalarsButton, SIGNAL(clicked()), this, SLOT(computeScalarsClicked()));
+  this->connect(
+    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
 
   this->connect(
     d->BrainReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
@@ -854,6 +1269,8 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->TemplateReferenceOpenButton, SIGNAL(clicked()),
     this, SLOT(onOpenTemplateReference()));
+
+  this->connect(d->BendMagnitudeSlider, SIGNAL(valueChanged(double)), this, SLOT(sliderUpdated()));
 
 }
 
@@ -1005,12 +1422,32 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->CutCancelButton->setEnabled(true);
     d->CurrentCutNodeComboBox->setEnabled(false);
     d->CutPreviewButton->setText("Adjust cut");
+    d->BendingCollapsibleButton->setEnabled(false);
   }
   else
   {
     d->CutConfirmButton->setEnabled(false);
     d->CutCancelButton->setEnabled(false);
     d->CurrentCutNodeComboBox->setEnabled(true);
+    d->BendingCollapsibleButton->setEnabled(true);
+  }
+
+  if (d->bendingActive)
+  {
+    d->CuttingCollapsibleButton->setEnabled(false);
+    d->CurrentBendNodeComboBox->setEnabled(false);
+    d->UpdateBendButton->setEnabled(true);
+    d->BendMagnitudeSlider->setEnabled(true);
+    d->CancelBendButton->setEnabled(true);
+  }
+  else
+  {
+    d->CuttingCollapsibleButton->setEnabled(true);
+    d->CurrentBendNodeComboBox->setEnabled(true);
+    d->UpdateBendButton->setEnabled(false);
+    d->BendMagnitudeSlider->setEnabled(false);
+    d->HardenBendButton->setEnabled(false);
+    d->CancelBendButton->setEnabled(true);
   }
 
   if (this->plannerLogic()->getPreOPICV() == 0)
@@ -1031,6 +1468,16 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton,
     d->TemplateReferenceOpacitySliderWidget);
+
+  //activate Init button if able
+  if (d->FixedPointA && d->FixedPointB && d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
+  {
+    d->InitButton->setEnabled(true);
+  }
+  else
+  {
+    d->InitButton->setEnabled(false);
+  }
 
 }
 
@@ -1106,6 +1553,12 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton->color(),
     d->TemplateReferenceOpacitySliderWidget->value());
+
+  //set visibility on scalars
+  if (d->HierarchyNode)
+  {
+    d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1140,8 +1593,9 @@ void qSlicerPlannerModuleWidget::previewButtonClicked()
   }
   else
   {
-    d->previewCut(this->mrmlScene());
     d->cuttingActive = true;
+    d->previewCut(this->mrmlScene());
+    
   }
   this->updateWidgetFromMRML();
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
@@ -1193,13 +1647,14 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     if (children.size() > 0)
     {
       d->hardenTransforms();
+      std::cout << "Wrapping Current Model" << std::endl;
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
       qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
   }
+
   
-  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::onSetPreOP()
@@ -1215,6 +1670,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
         { 
         d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
         qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+        
         d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
         }
     }
@@ -1229,6 +1685,181 @@ void qSlicerPlannerModuleWidget::launchMetrics()
     this->plannerLogic()->finishWrap(d->cmdNode);
     d->generateMetricsText();
     this->updateWidgetFromMRML();
-  }
+    
+
+   }
   
 }
+
+void qSlicerPlannerModuleWidget::computeScalarsClicked()
+{
+  //launch scalar computation
+  //function runModelToModel
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->HierarchyNode && d->BrainReferenceNode)
+  {
+    //launch scalar computation
+    //function runModelToModel
+    d->hardenTransforms();
+    d->ComputeScalarsButton->setEnabled(false);
+    d->prepScalarComputation(this->mrmlScene());
+    d->cmdNode = d->distanceLogic->CreateNodeInScene();
+    this->runModelDistance();
+  }
+}
+
+void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  QObject* obj = sender();
+  
+  if (obj == d->FixedPointAButton)
+  {
+    std::cout << "FixedPointAButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 0);
+  }
+  if (obj == d->FixedPointBButton)
+  {
+    std::cout << "FixedPointBButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 1);
+  }
+  if (obj == d->MovingPointAButton)
+  {
+    std::cout << "MovingPointButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 2);
+  }
+  if (obj == d->MovingPointBButton)
+  {
+    std::cout << "MovingPointButton" << std::endl;
+    d->beginPlacement(this->mrmlScene(), 3);
+  }
+
+  qvtkConnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  return;
+}
+
+void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->clearControlPoints(this->mrmlScene());
+  d->clearBendingData();
+  d->bendingActive = false;
+  this->updateWidgetFromMRML();
+  
+}
+
+void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  this->qvtkReconnect(d->CurrentBendNode, node,
+    vtkCommand::ModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+  this->qvtkReconnect(d->CurrentBendNode, node,
+    vtkMRMLDisplayableNode::DisplayModifiedEvent,
+    this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+
+  if (node && node != d->CurrentBendNode)
+  {
+    d->transformGrid = d->createTransformGrid(vtkMRMLModelNode::SafeDownCast(node));
+  }
+  d->CurrentBendNode = node;
+
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::initButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->computeAndSetSourcePoints();
+  d->bendingActive = true;
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::updateBendButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->computeTargetPoints();
+  d->computeTransform(this->mrmlScene());
+  d->HardenBendButton->setEnabled(true);
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::sliderUpdated()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->BendMagnitude = d->BendMagnitudeSlider->value();
+  this->updateWidgetFromMRML();
+}
+void qSlicerPlannerModuleWidget::clearPointsClicked()
+{
+  //Q_D(qSlicerPlannerModuleWidget);
+  //d->clearControlPoints(this->mrmlScene());
+  //this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::finshBendClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->hardenTransforms();
+  d->clearBendingData();  
+  d->bendingActive = false;
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->endPlacement();
+  this->updateWidgetFromMRML();
+
+}
+
+void qSlicerPlannerModuleWidget::finishDistance()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+  {
+    vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
+    //vtkMRMLModelNode* inputNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile1")));
+    //d->cmdNode = NULL;
+    int m = d->modelIterator.back()->StartModify();
+    d->modelIterator.back()->SetAndObservePolyData(distanceNode->GetPolyData());
+    d->modelIterator.back()->EndModify(m);
+    //run next module
+    this->mrmlScene()->RemoveNode(distanceNode);
+    distanceNode = NULL;
+    d->modelIterator.pop_back();
+    this->runModelDistance();
+  }
+}
+void qSlicerPlannerModuleWidget::runModelDistance()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (!d->modelIterator.empty())
+  {
+    //grab and remove commandline node from thingy
+    //this->mrmlScene()->RemoveNode(d->cmdNode);
+    std::cout << "Grab next cli" << std::endl;
+    d->distanceLogic->SetMRMLScene(this->mrmlScene());
+    
+    vtkNew<vtkMRMLModelNode> temp;
+    this->mrmlScene()->AddNode(temp.GetPointer());
+    d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
+    d->cmdNode->SetParameterAsString("vtkFile2", d->BrainReferenceNode->GetID());
+    d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
+    d->cmdNode->SetParameterAsString("distanceType", "signed_closest_point");
+    d->distanceLogic->Apply(d->cmdNode, true);
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
+    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+
+  }
+  else
+  {
+    
+    d->ComputeScalarsButton->setEnabled(true);
+    this->mrmlScene()->RemoveNode(d->cmdNode);
+    this->updateMRMLFromWidget();
+    
+  }
+}
+
