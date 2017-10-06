@@ -164,8 +164,6 @@ public:
   void fillTransformGrid(vtkPoints* currentPoints);
   void clearControlPoints(vtkMRMLScene* scene);
   void clearBendingData();
-  vtkMRMLModelNode* DistanceTempModel;
-  std::vector<vtkMRMLCommandLineModuleNode*> DistanceCommandNodes;
   void prepScalarComputation(vtkMRMLScene* scene);
   std::vector<vtkMRMLModelNode*> modelIterator;
   
@@ -1034,7 +1032,6 @@ void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scen
 {
     
   std::vector<vtkMRMLHierarchyNode*> children;
-  this->DistanceCommandNodes.clear();
   this->HierarchyNode->GetAllChildrenNodes(children);
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   for (it = children.begin(); it != children.end(); ++it)
@@ -1703,9 +1700,10 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   {
     //launch scalar computation
     //function runModelToModel
+    d->hardenTransforms();
     d->ComputeScalarsButton->setEnabled(false);
     d->prepScalarComputation(this->mrmlScene());
-    
+    d->cmdNode = d->distanceLogic->CreateNodeInScene();
     this->runModelDistance();
   }
 }
@@ -1823,7 +1821,6 @@ void qSlicerPlannerModuleWidget::finishDistance()
   {
     vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
     //vtkMRMLModelNode* inputNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile1")));
-    this->mrmlScene()->RemoveNode(d->cmdNode);
     //d->cmdNode = NULL;
     int m = d->modelIterator.back()->StartModify();
     d->modelIterator.back()->SetAndObservePolyData(distanceNode->GetPolyData());
@@ -1831,7 +1828,6 @@ void qSlicerPlannerModuleWidget::finishDistance()
     //run next module
     this->mrmlScene()->RemoveNode(distanceNode);
     distanceNode = NULL;
-    d->cmdNode = NULL;
     d->modelIterator.pop_back();
     this->runModelDistance();
   }
@@ -1845,11 +1841,9 @@ void qSlicerPlannerModuleWidget::runModelDistance()
     //this->mrmlScene()->RemoveNode(d->cmdNode);
     std::cout << "Grab next cli" << std::endl;
     d->distanceLogic->SetMRMLScene(this->mrmlScene());
-    d->cmdNode = d->distanceLogic->CreateNodeInScene();
-    vtkSmartPointer<vtkMRMLModelNode> temp = vtkSmartPointer<vtkMRMLModelNode>::New();
-    this->mrmlScene()->AddNode(temp);
-    temp->CreateDefaultDisplayNodes();
-    temp->CreateDefaultStorageNode();    
+    
+    vtkNew<vtkMRMLModelNode> temp;
+    this->mrmlScene()->AddNode(temp.GetPointer());
     d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
     d->cmdNode->SetParameterAsString("vtkFile2", d->BrainReferenceNode->GetID());
     d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
@@ -1863,6 +1857,7 @@ void qSlicerPlannerModuleWidget::runModelDistance()
   {
     
     d->ComputeScalarsButton->setEnabled(true);
+    this->mrmlScene()->RemoveNode(d->cmdNode);
     this->updateMRMLFromWidget();
     
   }
