@@ -205,6 +205,9 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
 {
   this->SourcePoints = NULL;
   this->TargetPoints = NULL;
+  
+
+  //
 }
 
 //-----------------------------------------------------------------------------
@@ -1741,6 +1744,9 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
 void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
+  d->BendMagnitude = 0;
+  d->computeTargetPoints();
+  d->computeTransform(this->mrmlScene());
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
