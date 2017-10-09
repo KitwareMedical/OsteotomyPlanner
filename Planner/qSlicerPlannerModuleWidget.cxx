@@ -205,6 +205,9 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
 {
   this->SourcePoints = NULL;
   this->TargetPoints = NULL;
+  
+
+  //
 }
 
 //-----------------------------------------------------------------------------
@@ -994,19 +997,19 @@ QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
 
     this->plateMetricsTable->AddEmptyRow();
     for (it = areas.begin(); it != areas.end(); it++) {
-      auto col = this->plateMetricsTable->AddColumn();
+      vtkAbstractArray* col = this->plateMetricsTable->AddColumn();
       col->SetName(it->first.c_str());
       int c = this->plateMetricsTable->GetColumnIndex(it->first.c_str());
       this->plateMetricsTable->SetCellText(0, c, std::to_string(it->second).c_str());
     }
     this->plateMetricsTable->SetCellText(0, 0, "Surf. Area\n cm^2");
 
-    auto col0 = this->modelMetricsTable->AddColumn();
-    auto col1 = this->modelMetricsTable->AddColumn();
+    vtkAbstractArray* col0 = this->modelMetricsTable->AddColumn();
+    vtkAbstractArray* col1 = this->modelMetricsTable->AddColumn();
     col1->SetName("Healthy Brain");
-    auto col2 = this->modelMetricsTable->AddColumn();
+    vtkAbstractArray* col2 = this->modelMetricsTable->AddColumn();
     col2->SetName("Pre Op");
-    auto col3 = this->modelMetricsTable->AddColumn();
+    vtkAbstractArray* col3 = this->modelMetricsTable->AddColumn();
     col3->SetName("Current");
     this->modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
     this->modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
@@ -1741,6 +1744,9 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
 void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
+  d->BendMagnitude = 0;
+  d->computeTargetPoints();
+  d->computeTransform(this->mrmlScene());
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
