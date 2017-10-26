@@ -68,22 +68,21 @@ protected slots:
   //Actions slots
   void updateCurrentCutNode(vtkMRMLNode* node);
   void updateCurrentBendNode(vtkMRMLNode* node);
-  void previewButtonClicked();
-  void confirmButtonClicked();
-  void cancelButtonClicked();
+  void previewCutButtonClicked();
+  void confirmCutButtonClicked();
+  void cancelCutButtonClicked();
   void placeFiducialButtonClicked();
   void cancelFiducialButtonClicked();
   void cancelBendButtonClicked();
-  void initButtonClicked();
+  void initBendButtonClicked();
   void updateBendButtonClicked();
-  void sliderUpdated();
-  void clearPointsClicked();
+  void bendMagnitudeSliderUpdated();
   void finshBendClicked();
-  void computeScalarsClicked();
 
   // Metrics slots
   void onComputeButton();
   void onSetPreOP();
+  void computeScalarsClicked();
 
   //CLI slots
   void finishWrap();
