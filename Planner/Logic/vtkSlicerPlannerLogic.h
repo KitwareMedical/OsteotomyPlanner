@@ -57,7 +57,6 @@ public:
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
   double getPreOPICV();

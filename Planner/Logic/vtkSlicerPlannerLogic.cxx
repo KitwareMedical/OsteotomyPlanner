@@ -136,36 +136,6 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 }
 
 //----------------------------------------------------------------------------
-//Compute surface areas of bones
-std::map<std::string, double> vtkSlicerPlannerLogic::computeBoneAreas(vtkMRMLModelHierarchyNode* hierarchy)
-{
-  std::map<std::string, double> surfaceAreas;
-  
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-
-  vtkNew<vtkMassProperties> areaFilter;
-  vtkNew<vtkTriangleFilter> triFilter;
-
-  hierarchy->GetAllChildrenNodes(children);
-  for (it = children.begin(); it != children.end(); ++it)
-  {
-    vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
-    
-    if (childModel)
-    {
-      triFilter->SetInputData(childModel->GetPolyData());
-      triFilter->Update();
-      areaFilter->SetInputData(triFilter->GetOutput());
-      areaFilter->Update();
-      surfaceAreas[childModel->GetName()] = (areaFilter->GetSurfaceArea()) / 200;  // 2 to get one side of bone.  100 to convert to cm^2
-    }
-  }
-  return surfaceAreas;
-}
-
-//----------------------------------------------------------------------------
 //Create reference model form current hierarhcy state
 vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode)
 {

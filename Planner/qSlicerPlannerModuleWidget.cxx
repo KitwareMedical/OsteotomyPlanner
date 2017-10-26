@@ -870,44 +870,21 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
 QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
 {
   QString output;
-  std::map<std::string, double> areas;
-  std::map<std::string, double>::iterator it;
   std::stringstream outputStream;
   double preOpVolume;
   double currentVolume;
   double brainVolume;
   if (this->HierarchyNode)
   {
-    areas = this->logic->computeBoneAreas(this->HierarchyNode);
     preOpVolume = this->logic->getPreOPICV();
     brainVolume = this->logic->getHealthyBrainICV();
     currentVolume = this->logic->getCurrentICV();
 
-    this->plateMetricsTable->RemoveAllColumns();
     this->modelMetricsTable->RemoveAllColumns();
-
-    std::string plateTableName = "Plate Metrics - ";
-    plateTableName += this->HierarchyNode->GetName();
-    this->plateMetricsTable->SetName(plateTableName.c_str());
-
     std::string modelTableName = "Model Metrics - ";
     modelTableName += this->HierarchyNode->GetName();
     this->modelMetricsTable->SetName(modelTableName.c_str());  
     
-    
-    this->plateMetricsTable->SetUseColumnNameAsColumnHeader(true);
-    this->plateMetricsTable->SetUseFirstColumnAsRowHeader(true);
-    this->plateMetricsTable->SetLocked(true);
-
-    this->plateMetricsTable->AddEmptyRow();
-    for (it = areas.begin(); it != areas.end(); it++) {
-      vtkAbstractArray* col = this->plateMetricsTable->AddColumn();
-      col->SetName(it->first.c_str());
-      int c = this->plateMetricsTable->GetColumnIndex(it->first.c_str());
-      this->plateMetricsTable->SetCellText(0, c, std::to_string(it->second).c_str());
-    }
-    this->plateMetricsTable->SetCellText(0, 0, "Surf. Area\n cm^2");
-
     vtkAbstractArray* col0 = this->modelMetricsTable->AddColumn();
     vtkAbstractArray* col1 = this->modelMetricsTable->AddColumn();
     col1->SetName("Healthy Brain");
