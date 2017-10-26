@@ -27,6 +27,7 @@
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
 #include "vtkMRMLModelNode.h"
+#include <vtkSlicerCLIModuleLogic.h>
 
 // MRML includes
 
@@ -35,8 +36,8 @@
 #include <vector>
 #include <map>
 
+//Self includes
 #include "vtkSlicerPlannerModuleLogicExport.h"
-#include <vtkSlicerCLIModuleLogic.h>
 
 
 
@@ -55,9 +56,7 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
-  //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  void setMergeLogic(vtkSlicerCLIModuleLogic* logic);
   std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
@@ -66,14 +65,10 @@ public:
   double getCurrentICV();
   vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
-  void setSourcePoints(double* posa, double* posb, double* posm);
-  vtkMRMLTransformNode* computeThinPlate(double* posa, double* posb, double* posm);
-
 
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
-
   virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
   virtual void UpdateFromMRMLScene();
 
@@ -81,7 +76,6 @@ private:
   
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerCLIModuleLogic* wrapperLogic;
-  vtkSlicerCLIModuleLogic* mergeLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
   vtkMRMLCommandLineModuleNode* wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
@@ -92,13 +86,10 @@ private:
   vtkMRMLModelNode* CurrentModel;
   vtkMRMLModelNode* TempMerged;
   vtkMRMLModelNode* TempWrapped;
-  vtkPoints* SourcePoints;
-  
 
   double preOPICV;
   double healthyBrainICV;
   double currentICV;
-  void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
 
   enum ModelType
   {

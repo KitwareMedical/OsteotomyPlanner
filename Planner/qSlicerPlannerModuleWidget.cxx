@@ -1065,14 +1065,6 @@ void qSlicerPlannerModuleWidget::setup()
   vtkSlicerCLIModuleLogic* wrapperLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
   this->plannerLogic()->setWrapperLogic(wrapperLogic);
-
-  qSlicerAbstractCoreModule* mergeModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("MergeModels");
-
-  vtkSlicerCLIModuleLogic* mergeLogic =
-    vtkSlicerCLIModuleLogic::SafeDownCast(mergeModule->logic());
-  this->plannerLogic()->setMergeLogic(mergeLogic);
-
   
   d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
   d->ModelHierarchyTreeView->setSceneModelType("Planner");
