@@ -30,6 +30,7 @@
 #include <vtkSlicerCLIModuleLogic.h>
 
 // MRML includes
+#include "vtkMRMLTableNode.h"
 
 // STD includes
 #include <cstdlib>
@@ -64,6 +65,7 @@ public:
   double getCurrentICV();
   vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
+  void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
 
 protected:
   vtkSlicerPlannerLogic();

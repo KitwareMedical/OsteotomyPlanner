@@ -338,5 +338,40 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
     this->TempWrapped = NULL;
   }
 }
+//----------------------------------------------------------------------------
+//Fill table node with metrics
+void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable)
+{
+  double preOpVolume;
+  double currentVolume;
+  double brainVolume;
+  if (HierarchyNode)
+  {
+    preOpVolume = this->getPreOPICV();
+    brainVolume = this->getHealthyBrainICV();
+    currentVolume = this->getCurrentICV();
 
+    modelMetricsTable->RemoveAllColumns();
+    std::string modelTableName = "Model Metrics - ";
+    modelTableName += HierarchyNode->GetName();
+    modelMetricsTable->SetName(modelTableName.c_str());
+
+    vtkAbstractArray* col0 = modelMetricsTable->AddColumn();
+    vtkAbstractArray* col1 = modelMetricsTable->AddColumn();
+    col1->SetName("Healthy Brain");
+    vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
+    col2->SetName("Pre Op");
+    vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
+    col3->SetName("Current");
+    modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
+    modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
+    modelMetricsTable->SetLocked(true);
+
+    int r1 = modelMetricsTable->AddEmptyRow();
+    modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
+    modelMetricsTable->SetCellText(0, 1, std::to_string(brainVolume).c_str());
+    modelMetricsTable->SetCellText(0, 2, std::to_string(preOpVolume).c_str());
+    modelMetricsTable->SetCellText(0, 3, std::to_string(currentVolume).c_str());
+  }
+}
 

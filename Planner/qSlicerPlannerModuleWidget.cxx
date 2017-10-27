@@ -154,12 +154,10 @@ public:
   //Metrics Variables
   std::vector<vtkMRMLModelNode*> modelIterator;
   vtkSlicerCLIModuleLogic* distanceLogic;
-  vtkMRMLTableNode* plateMetricsTable;
   vtkMRMLTableNode* modelMetricsTable;
 
   //Metrics methods
   void prepScalarComputation(vtkMRMLScene* scene);
-  QString generateMetricsText();
   void setScalarVisibility(bool visible);
 };
 
@@ -218,7 +216,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->CurrentCutNode = NULL;
   this->StagedCutNode1 = NULL;
   this->StagedCutNode2 = NULL;
-  this->plateMetricsTable = NULL;
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
   this->bendingActive = false;
@@ -847,7 +844,6 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
   scene->RemoveNode(cmdNode);
 }
 
-
 //-----------------------------------------------------------------------------
 //Apply a random color to a model
 void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model)
@@ -863,53 +859,6 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
       display->EndModify(wasModifying);
     }
   }
-}
-
-//-----------------------------------------------------------------------------
-//Create metrics text to display in Slicer
-QString qSlicerPlannerModuleWidgetPrivate::generateMetricsText()
-{
-  QString output;
-  std::stringstream outputStream;
-  double preOpVolume;
-  double currentVolume;
-  double brainVolume;
-  if (this->HierarchyNode)
-  {
-    preOpVolume = this->logic->getPreOPICV();
-    brainVolume = this->logic->getHealthyBrainICV();
-    currentVolume = this->logic->getCurrentICV();
-
-    this->modelMetricsTable->RemoveAllColumns();
-    std::string modelTableName = "Model Metrics - ";
-    modelTableName += this->HierarchyNode->GetName();
-    this->modelMetricsTable->SetName(modelTableName.c_str());  
-    
-    vtkAbstractArray* col0 = this->modelMetricsTable->AddColumn();
-    vtkAbstractArray* col1 = this->modelMetricsTable->AddColumn();
-    col1->SetName("Healthy Brain");
-    vtkAbstractArray* col2 = this->modelMetricsTable->AddColumn();
-    col2->SetName("Pre Op");
-    vtkAbstractArray* col3 = this->modelMetricsTable->AddColumn();
-    col3->SetName("Current");
-    this->modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
-    this->modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
-    this->modelMetricsTable->SetLocked(true);
-
-    int r1 = this->modelMetricsTable->AddEmptyRow();
-    this->modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
-    this->modelMetricsTable->SetCellText(0, 1, std::to_string(brainVolume).c_str());
-    this->modelMetricsTable->SetCellText(0, 2, std::to_string(preOpVolume).c_str());    
-    this->modelMetricsTable->SetCellText(0, 3, std::to_string(currentVolume).c_str());
-       
-    output = QString(outputStream.str().c_str());
-  }
-  else
-  {
-    output = QString("No models available!!!");
-  }
-  return output;
-
 }
 
 //-----------------------------------------------------------------------------
@@ -1615,13 +1564,6 @@ void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
 void qSlicerPlannerModuleWidget::onComputeButton()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  if (!d->plateMetricsTable)
-  {
-    vtkNew<vtkMRMLTableNode> table1;
-    d->plateMetricsTable = table1.GetPointer();
-    this->mrmlScene()->AddNode(d->plateMetricsTable);
-    d->PlateMetrics->setMRMLTableNode(d->plateMetricsTable);
-  }
 
   if (!d->modelMetricsTable)
   {
@@ -1748,7 +1690,7 @@ void qSlicerPlannerModuleWidget::launchMetrics()
   if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
   {
     this->plannerLogic()->finishWrap(d->cmdNode);
-    d->generateMetricsText();
+    this->plannerLogic()->fillMetricsTable(d->HierarchyNode, d->modelMetricsTable);
     this->updateWidgetFromMRML();
   }
 }

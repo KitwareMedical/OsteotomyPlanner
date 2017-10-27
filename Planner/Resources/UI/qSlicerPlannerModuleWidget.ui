@@ -621,11 +621,8 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0" colspan="3">
-       <widget class="qMRMLTableView" name="ModelMetrics"/>
-      </item>
       <item row="3" column="0" colspan="3">
-       <widget class="qMRMLTableView" name="PlateMetrics"/>
+       <widget class="qMRMLTableView" name="ModelMetrics"/>
       </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="ComputeScalarsButton">
