@@ -31,6 +31,8 @@
 
 // MRML includes
 #include "vtkMRMLTableNode.h"
+#include "vtkPoints.h"
+#include "vtkThinPlateSplineTransform.h"
 
 // STD includes
 #include <cstdlib>
@@ -67,6 +69,17 @@ public:
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
   void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
 
+  enum BendModeType
+  {
+    Single,
+    Double,
+  };
+
+  //Bending functions
+  void initializeBend(vtkPoints* inputFiducials, vtkMRMLModelNode* model);
+  vtkSmartPointer<vtkThinPlateSplineTransform> getBendTransform(double bendMagnitude);
+  void clearBendingData();
+
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
@@ -88,6 +101,15 @@ private:
   vtkMRMLModelNode* TempMerged;
   vtkMRMLModelNode* TempWrapped;
 
+  //Bending member variables
+  vtkMRMLModelNode* ModelToBend;
+  vtkPoints* Fiducials;
+  vtkPoints* SourcePoints;
+  vtkPoints* TargetPoints;
+  bool bendInitialized;
+  BendModeType bendMode;
+
+  
   double preOPICV;
   double healthyBrainICV;
   double currentICV;

@@ -135,10 +135,9 @@ public:
   vtkMRMLMarkupsFiducialNode* MovingPointA;
   vtkMRMLMarkupsFiducialNode* MovingPointB;
   vtkMRMLMarkupsFiducialNode* PlacingNode;
-  double BendMagnitude;
   vtkMRMLNode* CurrentBendNode;
-  vtkSmartPointer<vtkPoints> SourcePoints;
-  vtkSmartPointer<vtkPoints> TargetPoints;
+  vtkSmartPointer<vtkPoints> Fiducials;
+  double BendMagnitude;
   bool bendingActive;
   bool placingActive;
 
@@ -147,7 +146,6 @@ public:
   void endPlacement();
   void computeAndSetSourcePoints();
   void computeTransform(vtkMRMLScene* scene);
-  void computeTargetPoints();
   void clearControlPoints(vtkMRMLScene* scene);
   void clearBendingData();
 
@@ -199,8 +197,8 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
 //Clear data used to compute bending trasforms
 void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
 {
-  this->SourcePoints = NULL;
-  this->TargetPoints = NULL;
+  this->Fiducials = NULL;
+  this->logic->clearBendingData();
 }
 
 //-----------------------------------------------------------------------------
@@ -227,8 +225,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->MovingPointA = NULL;
   this->MovingPointB = NULL;
   this->PlacingNode = NULL;
-  this->SourcePoints = NULL;
-  this->TargetPoints = 0;
+  this->Fiducials = NULL;
   this->BendMagnitude = 0;
   
   qSlicerAbstractCoreModule* splitModule =
@@ -259,7 +256,7 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 //Compute source points from fiducials
 void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints()
 {
-  this->SourcePoints = vtkSmartPointer<vtkPoints>::New();
+  this->Fiducials = vtkSmartPointer<vtkPoints>::New();
   double posfa[3];
   double posfb[3];
   double posma[3];
@@ -268,31 +265,13 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints()
   this->FixedPointB->GetNthFiducialPosition(0, posfb);
   this->MovingPointA->GetNthFiducialPosition(0, posma);
   this->MovingPointB->GetNthFiducialPosition(0, posmb);
-  this->SourcePoints->InsertNextPoint(posfa[0], posfa[1], posfa[2]);
-  this->SourcePoints->InsertNextPoint(posfb[0], posfb[1], posfb[2]);
-  this->SourcePoints->InsertNextPoint(posma[0], posma[1], posma[2]);
-  this->SourcePoints->InsertNextPoint(posmb[0], posmb[1], posmb[2]);
+  this->Fiducials->InsertNextPoint(posfa[0], posfa[1], posfa[2]);
+  this->Fiducials->InsertNextPoint(posfb[0], posfb[1], posfb[2]);
+  this->Fiducials->InsertNextPoint(posma[0], posma[1], posma[2]);
+  this->Fiducials->InsertNextPoint(posmb[0], posmb[1], posmb[2]);
+  this->logic->initializeBend(this->Fiducials, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode));
 }
 
-//-----------------------------------------------------------------------------
-//Compute target points from fiducials and bend magnitude
-void qSlicerPlannerModuleWidgetPrivate::computeTargetPoints()
-{
-  this->TargetPoints = vtkSmartPointer<vtkPoints>::New();
-  double pMA[3];
-  double pMB[3];
-  this->SourcePoints->GetPoint(2, pMA);
-  this->SourcePoints->GetPoint(3, pMB);
-  vtkVector3d PointA = (vtkVector3d) pMA;
-  vtkVector3d PointB = (vtkVector3d) pMB;  
-  vtkVector3d AB = PointB - PointA;
-  vtkVector3d BA = PointA - PointB;
-  vtkVector3d PointA2 = PointA + (this->BendMagnitude * AB);
-  vtkVector3d PointB2 = PointB + (this->BendMagnitude * BA);
-  this->TargetPoints->DeepCopy(this->SourcePoints);
-  this->TargetPoints->InsertPoint(2,PointA2.GetData());
-  this->TargetPoints->InsertPoint(3,PointB2.GetData());
-}
 
 //-----------------------------------------------------------------------------
 //Compute thin plate spline transform based on source and target points
@@ -308,13 +287,8 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
     tnode->CreateDefaultDisplayNodes();
   }
 
-  vtkNew<vtkThinPlateSplineTransform> tps;
-  tps->SetBasisToR();
-  tps->SetSourceLandmarks(this->SourcePoints);
-  tps->SetTargetLandmarks(this->TargetPoints);
-  tps->Update();
-
-  tnode->SetAndObserveTransformToParent(tps.GetPointer());
+  vtkSmartPointer<vtkThinPlateSplineTransform> tps = this->logic->getBendTransform(this->BendMagnitude);
+  tnode->SetAndObserveTransformToParent(tps);
   vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
 }
 
@@ -1483,7 +1457,6 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = 0;
-  d->computeTargetPoints();
   d->computeTransform(this->mrmlScene());
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
@@ -1523,7 +1496,6 @@ void qSlicerPlannerModuleWidget::initBendButtonClicked()
 void qSlicerPlannerModuleWidget::updateBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  d->computeTargetPoints();
   d->computeTransform(this->mrmlScene());
   d->HardenBendButton->setEnabled(true);
   this->updateWidgetFromMRML();

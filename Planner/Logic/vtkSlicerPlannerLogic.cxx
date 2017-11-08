@@ -37,6 +37,8 @@
 #include <vtkMassProperties.h>
 #include <vtkTriangleFilter.h>
 #include <vtkAppendPolyData.h>
+#include "vtkVector.h"
+#include "vtkVectorOperators.h"
 
 // STD includes
 #include <cassert>
@@ -58,6 +60,11 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
   this->TempMerged = NULL;
   this->TempWrapped = NULL;
   this->CurrentModel = NULL;
+  this->SourcePoints = NULL;
+  this->TargetPoints = NULL;
+  this->Fiducials = NULL;
+  this->bendMode = BendModeType::Double;
+  this->bendInitialized = false;
 }
 
 //----------------------------------------------------------------------------
@@ -375,3 +382,48 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
   }
 }
 
+//Initiaize bending
+
+void vtkSlicerPlannerLogic::initializeBend(vtkPoints* inputFiducials, vtkMRMLModelNode* model)
+{
+  //for now, set sourcePoints to the fiducials
+  this->Fiducials = inputFiducials;
+  this->SourcePoints = inputFiducials;
+  this->ModelToBend = model;
+  this->bendInitialized =  true;
+}
+
+vtkSmartPointer<vtkThinPlateSplineTransform> vtkSlicerPlannerLogic::getBendTransform(double magnitude)
+{
+  vtkSmartPointer<vtkThinPlateSplineTransform> transform = vtkSmartPointer<vtkThinPlateSplineTransform>::New();
+  if (this->bendInitialized)
+  {
+    this->TargetPoints = vtkSmartPointer<vtkPoints>::New();
+    double pMA[3];
+    double pMB[3];
+    this->SourcePoints->GetPoint(2, pMA);
+    this->SourcePoints->GetPoint(3, pMB);
+    vtkVector3d PointA = (vtkVector3d)pMA;
+    vtkVector3d PointB = (vtkVector3d)pMB;
+    vtkVector3d AB = PointB - PointA;
+    vtkVector3d BA = PointA - PointB;
+    vtkVector3d PointA2 = PointA + (magnitude * AB);
+    vtkVector3d PointB2 = PointB + (magnitude * BA);
+    this->TargetPoints->DeepCopy(this->SourcePoints);
+    this->TargetPoints->InsertPoint(2, PointA2.GetData());
+    this->TargetPoints->InsertPoint(3, PointB2.GetData());
+
+    transform->SetBasisToR();
+    transform->SetSourceLandmarks(this->SourcePoints);
+    transform->SetTargetLandmarks(this->TargetPoints);
+    transform->Update();
+  }
+  return transform;
+}
+
+void vtkSlicerPlannerLogic::clearBendingData()
+{
+  this->SourcePoints = NULL;
+  this->TargetPoints = NULL;
+  this->Fiducials = NULL;
+}
