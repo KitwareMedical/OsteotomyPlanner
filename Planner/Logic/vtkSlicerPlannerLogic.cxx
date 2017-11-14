@@ -43,6 +43,9 @@
 // STD includes
 #include <cassert>
 
+#define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
+//#define DEBUG(x)
+
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSlicerPlannerLogic);
 
@@ -80,37 +83,37 @@ const char* vtkSlicerPlannerLogic::DeleteChildrenWarningSettingName()
 }
 
 //----------------------------------------------------------------------------
-bool vtkSlicerPlannerLogic::DeleteHierarchyChildren(vtkMRMLNode *node)
+bool vtkSlicerPlannerLogic::DeleteHierarchyChildren(vtkMRMLNode* node)
 {
   vtkMRMLHierarchyNode* hNode = vtkMRMLHierarchyNode::SafeDownCast(node);
-  if (!hNode)
-    {
+  if(!hNode)
+  {
     vtkErrorMacro("DeleteHierarchyChildren: Not a hierarchy node.");
     return false;
-    }
-  if (!this->GetMRMLScene())
-    {
+  }
+  if(!this->GetMRMLScene())
+  {
     vtkErrorMacro("DeleteHierarchyChildren: No scene defined on this class");
     return false;
-    }
+  }
 
   // first off, set up batch processing mode on the scene
   this->GetMRMLScene()->StartState(vtkMRMLScene::BatchProcessState);
 
   // get all the children nodes
-  std::vector< vtkMRMLHierarchyNode *> allChildren;
+  std::vector< vtkMRMLHierarchyNode*> allChildren;
   hNode->GetAllChildrenNodes(allChildren);
 
   // and loop over them
-  for (unsigned int i = 0; i < allChildren.size(); ++i)
+  for(unsigned int i = 0; i < allChildren.size(); ++i)
+  {
+    vtkMRMLNode* associatedNode = allChildren[i]->GetAssociatedNode();
+    if(associatedNode)
     {
-    vtkMRMLNode *associatedNode = allChildren[i]->GetAssociatedNode();
-    if (associatedNode)
-      {
       this->GetMRMLScene()->RemoveNode(associatedNode);
-      }
-    this->GetMRMLScene()->RemoveNode(allChildren[i]);
     }
+    this->GetMRMLScene()->RemoveNode(allChildren[i]);
+  }
   // end batch processing
   this->GetMRMLScene()->EndState(vtkMRMLScene::BatchProcessState);
 
@@ -124,7 +127,7 @@ void vtkSlicerPlannerLogic::PrintSelf(ostream& os, vtkIndent indent)
 }
 
 //---------------------------------------------------------------------------
-void vtkSlicerPlannerLogic::SetMRMLSceneInternal(vtkMRMLScene * newScene)
+void vtkSlicerPlannerLogic::SetMRMLSceneInternal(vtkMRMLScene* newScene)
 {
   Superclass::SetMRMLSceneInternal(newScene);
 }
@@ -146,12 +149,12 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 //Create reference model form current hierarhcy state
 vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode)
 {
-  if (this->SkullWrappedPreOP)
+  if(this->SkullWrappedPreOP)
   {
     this->GetMRMLScene()->RemoveNode(this->SkullWrappedPreOP);
     this->SkullWrappedPreOP = NULL;
   }
-  
+
   std::string name;
   name = HierarchyNode->GetName();
   name += " - Merged";
@@ -166,11 +169,11 @@ vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLMo
 //Get the pre-op ICV
 double vtkSlicerPlannerLogic::getPreOPICV()
 {
-  if (this->SkullWrappedPreOP)
+  if(this->SkullWrappedPreOP)
   {
     this->preOPICV = this->computeICV(this->SkullWrappedPreOP);
   }
-  
+
   return this->preOPICV;
 }
 
@@ -178,7 +181,7 @@ double vtkSlicerPlannerLogic::getPreOPICV()
 //Create wrapped model from current hierarchy
 vtkMRMLCommandLineModuleNode*  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode)
 {
-  if (this->CurrentModel)
+  if(this->CurrentModel)
   {
     this->GetMRMLScene()->RemoveNode(this->CurrentModel);
     this->CurrentModel = NULL;
@@ -197,7 +200,7 @@ vtkMRMLCommandLineModuleNode*  vtkSlicerPlannerLogic::createCurrentModel(vtkMRML
 //Get the current ICV
 double vtkSlicerPlannerLogic::getCurrentICV()
 {
-  if (this->CurrentModel)
+  if(this->CurrentModel)
   {
     this->currentICV = this->computeICV(this->CurrentModel);
   }
@@ -208,7 +211,7 @@ double vtkSlicerPlannerLogic::getCurrentICV()
 //Create wrapped version of brain model input
 vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createHealthyBrainModel(vtkMRMLModelNode* model)
 {
-  if (this->HealthyBrain)
+  if(this->HealthyBrain)
   {
     this->GetMRMLScene()->RemoveNode(this->HealthyBrain);
     this->HealthyBrain = NULL;
@@ -224,7 +227,7 @@ vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createHealthyBrainModel(vtk
 //Get brain ICV
 double vtkSlicerPlannerLogic::getHealthyBrainICV()
 {
-  if (this->HealthyBrain)
+  if(this->HealthyBrain)
   {
     this->healthyBrainICV = this->computeICV(this->HealthyBrain);
   }
@@ -235,7 +238,7 @@ double vtkSlicerPlannerLogic::getHealthyBrainICV()
 //Merge hierarchy into a single model
 vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name)
 {
-  
+
   vtkNew<vtkMRMLModelNode> mergedModel;
   vtkNew<vtkAppendPolyData> filter;
   vtkMRMLScene* scene = this->GetMRMLScene();
@@ -252,15 +255,15 @@ vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* H
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   HierarchyNode->GetAllChildrenNodes(children);
-  for (it = children.begin(); it != children.end(); ++it)
+  for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
       vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
 
-    if (childModel)
+    if(childModel)
     {
       filter->AddInputData(childModel->GetPolyData());
-      
+
     }
   }
 
@@ -281,13 +284,13 @@ double vtkSlicerPlannerLogic::computeICV(vtkMRMLModelNode* model)
   triFilter->Update();
   areaFilter->SetInputData(triFilter->GetOutput());
   areaFilter->Update();
-  return (areaFilter->GetVolume() / 1000 );  //convert to cm^3
+  return (areaFilter->GetVolume() / 1000);   //convert to cm^3
 }
 
 //----------------------------------------------------------------------------
 //Create shrink wrapped version of a model
 vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std::string name, int dest)
-  {
+{
   vtkNew<vtkMRMLModelNode> wrappedModel;
   vtkMRMLScene* scene = this->GetMRMLScene();
   wrappedModel->SetScene(scene);
@@ -299,19 +302,19 @@ vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode*
   scene->AddNode(dnode.GetPointer());
   scene->AddNode(snode.GetPointer());
   scene->AddNode(wrappedModel.GetPointer());
-  
-  switch (dest)
+
+  switch(dest)
   {
-    case vtkSlicerPlannerLogic::Current:
-      this->CurrentModel = wrappedModel.GetPointer();
-      break;
-    case vtkSlicerPlannerLogic::PreOP:
-      this->SkullWrappedPreOP = wrappedModel.GetPointer();
-      break;
-    case vtkSlicerPlannerLogic::Brain:
-      this->HealthyBrain = wrappedModel.GetPointer();
-      break;
-    
+  case vtkSlicerPlannerLogic::Current:
+    this->CurrentModel = wrappedModel.GetPointer();
+    break;
+  case vtkSlicerPlannerLogic::PreOP:
+    this->SkullWrappedPreOP = wrappedModel.GetPointer();
+    break;
+  case vtkSlicerPlannerLogic::Brain:
+    this->HealthyBrain = wrappedModel.GetPointer();
+    break;
+
   }
 
   //CLI setup
@@ -333,13 +336,13 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
   node->GetDisplayNode()->SetVisibility(0);
   this->GetMRMLScene()->RemoveNode(cmdNode);
 
-  if (this->TempMerged)
+  if(this->TempMerged)
   {
     this->GetMRMLScene()->RemoveNode(this->TempMerged);
     this->TempMerged = NULL;
   }
 
-  if (this->TempWrapped)
+  if(this->TempWrapped)
   {
     this->GetMRMLScene()->RemoveNode(this->TempWrapped);
     this->TempWrapped = NULL;
@@ -352,7 +355,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
   double preOpVolume;
   double currentVolume;
   double brainVolume;
-  if (HierarchyNode)
+  if(HierarchyNode)
   {
     preOpVolume = this->getPreOPICV();
     brainVolume = this->getHealthyBrainICV();
@@ -396,26 +399,40 @@ void vtkSlicerPlannerLogic::initializeBend(vtkPoints* inputFiducials, vtkMRMLMod
 vtkSmartPointer<vtkThinPlateSplineTransform> vtkSlicerPlannerLogic::getBendTransform(double magnitude)
 {
   vtkSmartPointer<vtkThinPlateSplineTransform> transform = vtkSmartPointer<vtkThinPlateSplineTransform>::New();
-  if (this->bendInitialized)
+  if(this->bendInitialized)
   {
     this->TargetPoints = vtkSmartPointer<vtkPoints>::New();
     double pMA[3];
     double pMB[3];
+    DEBUG("Acessing source points");
+    DEBUG(this->SourcePoints->GetNumberOfPoints());
+
     this->SourcePoints->GetPoint(2, pMA);
     this->SourcePoints->GetPoint(3, pMB);
+    DEBUG("Accessed source points");
+
     vtkVector3d PointA = (vtkVector3d)pMA;
     vtkVector3d PointB = (vtkVector3d)pMB;
     vtkVector3d AB = PointB - PointA;
     vtkVector3d BA = PointA - PointB;
     vtkVector3d PointA2 = PointA + (magnitude * AB);
     vtkVector3d PointB2 = PointB + (magnitude * BA);
+    DEBUG("Math done");
+
     this->TargetPoints->DeepCopy(this->SourcePoints);
+    DEBUG("Deep copy done");
+
     this->TargetPoints->InsertPoint(2, PointA2.GetData());
+    DEBUG("Here?");
+
     this->TargetPoints->InsertPoint(3, PointB2.GetData());
+    DEBUG("Setting up transform");
+
 
     transform->SetBasisToR();
     transform->SetSourceLandmarks(this->SourcePoints);
     transform->SetTargetLandmarks(this->TargetPoints);
+    DEBUG("Attempt transform update");
     transform->Update();
   }
   return transform;

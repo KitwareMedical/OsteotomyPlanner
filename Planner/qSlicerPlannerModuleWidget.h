@@ -37,7 +37,7 @@ class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :
 
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerPlannerModuleWidget(QWidget *parent=0);
+  qSlicerPlannerModuleWidget(QWidget* parent = 0);
   virtual ~qSlicerPlannerModuleWidget();
 
   // Shorthand
@@ -90,7 +90,7 @@ protected slots:
   void finishDistance();
   void runModelDistance();
 
-  
+
 protected:
   virtual void setup();
 

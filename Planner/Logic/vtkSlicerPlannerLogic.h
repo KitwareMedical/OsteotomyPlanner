@@ -50,7 +50,7 @@ class VTK_SLICER_PLANNER_MODULE_LOGIC_EXPORT vtkSlicerPlannerLogic :
 {
 public:
 
-  static vtkSlicerPlannerLogic *New();
+  static vtkSlicerPlannerLogic* New();
   vtkTypeMacro(vtkSlicerPlannerLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
 
@@ -87,7 +87,7 @@ protected:
   virtual void UpdateFromMRMLScene();
 
 private:
-  
+
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerCLIModuleLogic* wrapperLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
@@ -103,13 +103,13 @@ private:
 
   //Bending member variables
   vtkMRMLModelNode* ModelToBend;
-  vtkPoints* Fiducials;
-  vtkPoints* SourcePoints;
-  vtkPoints* TargetPoints;
+  vtkSmartPointer<vtkPoints> Fiducials;
+  vtkSmartPointer<vtkPoints> SourcePoints;
+  vtkSmartPointer<vtkPoints> TargetPoints;
   bool bendInitialized;
   BendModeType bendMode;
 
-  
+
   double preOPICV;
   double healthyBrainICV;
   double currentICV;
@@ -121,7 +121,7 @@ private:
     Template,
     Brain
   };
-  
+
 };
 
 #endif
