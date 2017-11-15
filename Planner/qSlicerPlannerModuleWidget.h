@@ -37,7 +37,7 @@ class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :
 
 public:
   typedef qSlicerAbstractModuleWidget Superclass;
-  qSlicerPlannerModuleWidget(QWidget *parent=0);
+  qSlicerPlannerModuleWidget(QWidget* parent = 0);
   virtual ~qSlicerPlannerModuleWidget();
 
   // Shorthand
@@ -68,22 +68,21 @@ protected slots:
   //Actions slots
   void updateCurrentCutNode(vtkMRMLNode* node);
   void updateCurrentBendNode(vtkMRMLNode* node);
-  void previewButtonClicked();
-  void confirmButtonClicked();
-  void cancelButtonClicked();
+  void previewCutButtonClicked();
+  void confirmCutButtonClicked();
+  void cancelCutButtonClicked();
   void placeFiducialButtonClicked();
   void cancelFiducialButtonClicked();
   void cancelBendButtonClicked();
-  void initButtonClicked();
+  void initBendButtonClicked();
   void updateBendButtonClicked();
-  void sliderUpdated();
-  void clearPointsClicked();
+  void bendMagnitudeSliderUpdated();
   void finshBendClicked();
-  void computeScalarsClicked();
 
   // Metrics slots
   void onComputeButton();
   void onSetPreOP();
+  void computeScalarsClicked();
 
   //CLI slots
   void finishWrap();
@@ -91,7 +90,7 @@ protected slots:
   void finishDistance();
   void runModelDistance();
 
-  
+
 protected:
   virtual void setup();
 

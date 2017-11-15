@@ -27,16 +27,20 @@
 // Slicer includes
 #include "vtkSlicerModuleLogic.h"
 #include "vtkMRMLModelNode.h"
+#include <vtkSlicerCLIModuleLogic.h>
 
 // MRML includes
+#include "vtkMRMLTableNode.h"
+#include "vtkPoints.h"
+#include "vtkThinPlateSplineTransform.h"
 
 // STD includes
 #include <cstdlib>
 #include <vector>
 #include <map>
 
+//Self includes
 #include "vtkSlicerPlannerModuleLogicExport.h"
-#include <vtkSlicerCLIModuleLogic.h>
 
 
 
@@ -46,7 +50,7 @@ class VTK_SLICER_PLANNER_MODULE_LOGIC_EXPORT vtkSlicerPlannerLogic :
 {
 public:
 
-  static vtkSlicerPlannerLogic *New();
+  static vtkSlicerPlannerLogic* New();
   vtkTypeMacro(vtkSlicerPlannerLogic, vtkSlicerModuleLogic);
   void PrintSelf(ostream& os, vtkIndent indent);
 
@@ -55,10 +59,7 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
-  //void setSplitLogic(vtkSlicerCLIModuleLogic* logic);
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  void setMergeLogic(vtkSlicerCLIModuleLogic* logic);
-  std::map<std::string, double> computeBoneAreas(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
   double getPreOPICV();
@@ -66,22 +67,29 @@ public:
   double getCurrentICV();
   vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
-  void setSourcePoints(double* posa, double* posb, double* posm);
-  vtkMRMLTransformNode* computeThinPlate(double* posa, double* posb, double* posm);
+  void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
 
+  enum BendModeType
+  {
+    Single,
+    Double,
+  };
+
+  //Bending functions
+  void initializeBend(vtkPoints* inputFiducials, vtkMRMLModelNode* model);
+  vtkSmartPointer<vtkThinPlateSplineTransform> getBendTransform(double bendMagnitude);
+  void clearBendingData();
 
 protected:
   vtkSlicerPlannerLogic();
   virtual ~vtkSlicerPlannerLogic();
-
   virtual void SetMRMLSceneInternal(vtkMRMLScene* newScene);
   virtual void UpdateFromMRMLScene();
 
 private:
-  
+
   vtkSlicerCLIModuleLogic* splitLogic;
   vtkSlicerCLIModuleLogic* wrapperLogic;
-  vtkSlicerCLIModuleLogic* mergeLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
   vtkMRMLCommandLineModuleNode* wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
@@ -92,13 +100,19 @@ private:
   vtkMRMLModelNode* CurrentModel;
   vtkMRMLModelNode* TempMerged;
   vtkMRMLModelNode* TempWrapped;
-  vtkPoints* SourcePoints;
-  
+
+  //Bending member variables
+  vtkMRMLModelNode* ModelToBend;
+  vtkSmartPointer<vtkPoints> Fiducials;
+  vtkSmartPointer<vtkPoints> SourcePoints;
+  vtkSmartPointer<vtkPoints> TargetPoints;
+  bool bendInitialized;
+  BendModeType bendMode;
+
 
   double preOPICV;
   double healthyBrainICV;
   double currentICV;
-  void hardenTransforms(vtkMRMLModelHierarchyNode* HierarchyNode);
 
   enum ModelType
   {
@@ -107,7 +121,7 @@ private:
     Template,
     Brain
   };
-  
+
 };
 
 #endif

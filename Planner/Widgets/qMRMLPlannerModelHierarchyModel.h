@@ -21,6 +21,9 @@
 #ifndef __qMRMLPlannerModelHierarchyModel_h
 #define __qMRMLPlannerModelHierarchyModel_h
 
+#define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
+//#define DEBUG(x)
+
 #include "qSlicerPlannerModuleWidgetsExport.h"
 
 // MRMLWidgets includes
@@ -33,17 +36,17 @@ class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
   Q_OBJECT
   /// \todo
   /// A value of -1 (default) hides the column
-  Q_PROPERTY (int transformVisibilityColumn
-    READ transformVisibilityColumn
-    WRITE setTransformVisibilityColumn)
+  Q_PROPERTY(int transformVisibilityColumn
+             READ transformVisibilityColumn
+             WRITE setTransformVisibilityColumn)
 
-  Q_PROPERTY (int planesVisibilityColumn
-    READ planesVisibilityColumn
-    WRITE setPlanesVisibilityColumn)
+  Q_PROPERTY(int planesVisibilityColumn
+             READ planesVisibilityColumn
+             WRITE setPlanesVisibilityColumn)
 
 public:
   typedef qMRMLSceneModelHierarchyModel Superclass;
-  qMRMLPlannerModelHierarchyModel(QObject *parent=0);
+  qMRMLPlannerModelHierarchyModel(QObject* parent = 0);
   virtual ~qMRMLPlannerModelHierarchyModel();
 
   int transformVisibilityColumn()const;
@@ -55,11 +58,12 @@ public:
   static const char* transformDisplayReferenceRole();
   static const char* planesReferenceRole();
 
-  void setPlaneVisibility(vtkMRMLNode* node , bool visible);
+  void setPlaneVisibility(vtkMRMLNode* node, bool visible);
+  void setTransformVisibility(vtkMRMLNode* node, bool visible);
 
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
-                             QObject *parent=0);
+                                  QObject* parent = 0);
 
   /// Reimplemented to listen to the displayable DisplayModifiedEvent event for
   /// visibility check state changes.
