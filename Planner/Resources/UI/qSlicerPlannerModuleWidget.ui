@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>351</width>
+    <width>331</width>
     <height>1366</height>
    </rect>
   </property>
@@ -117,66 +117,30 @@
      <property name="text">
       <string>References</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="BrainReferenceNodeComboBox">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>60</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>150</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLModelNode</string>
-         </stringlist>
-        </property>
-        <property name="noneEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="addEnabled">
+      <item row="4" column="0">
+       <widget class="ctkColorPickerButton" name="TemplateReferenceColorPickerButton">
+        <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="renameEnabled">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="TemplateReferenceLabel">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="text">
-         <string>Template</string>
+        <property name="color">
+         <color>
+          <red>189</red>
+          <green>189</green>
+          <blue>189</blue>
+         </color>
         </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="BrainReferenceLabel">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Brain</string>
+        <property name="displayColorName">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -216,6 +180,83 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="BrainReferenceNodeComboBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>150</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLModelNode</string>
+         </stringlist>
+        </property>
+        <property name="noneEnabled">
+         <bool>true</bool>
+        </property>
+        <property name="addEnabled">
+         <bool>false</bool>
+        </property>
+        <property name="renameEnabled">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="qMRMLSliderWidget" name="TemplateReferenceOpacitySliderWidget">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="decimals">
+         <number>1</number>
+        </property>
+        <property name="singleStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="pageStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>1.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="BrainReferenceLabel">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Brain</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="ctkColorPickerButton" name="BrainReferenceColorPickerButton">
         <property name="enabled">
@@ -239,33 +280,16 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="2">
-       <widget class="QToolButton" name="BrainReferenceOpenButton">
-        <property name="text">
-         <string>...</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="ctkColorPickerButton" name="TemplateReferenceColorPickerButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="3" column="0">
+       <widget class="QLabel" name="TemplateReferenceLabel">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="color">
-         <color>
-          <red>189</red>
-          <green>189</green>
-          <blue>189</blue>
-         </color>
-        </property>
-        <property name="displayColorName">
-         <bool>false</bool>
+        <property name="text">
+         <string>Template</string>
         </property>
        </widget>
       </item>
@@ -276,13 +300,23 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1" colspan="2">
+      <item row="4" column="2">
+       <widget class="QCheckBox" name="TemplateVisibilityCheckbox">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Visible</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
        <widget class="qMRMLSliderWidget" name="BrainReferenceOpacitySliderWidget">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -304,31 +338,20 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="1" colspan="2">
-       <widget class="qMRMLSliderWidget" name="TemplateReferenceOpacitySliderWidget">
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="BrainVisibilityCheckbox">
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+        <property name="text">
+         <string>Visible</string>
         </property>
-        <property name="decimals">
-         <number>1</number>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="pageStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>1.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>1.000000000000000</double>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QToolButton" name="BrainReferenceOpenButton">
+        <property name="text">
+         <string>...</string>
         </property>
        </widget>
       </item>
@@ -341,13 +364,27 @@
       <string>Cutting</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayoutCuts">
       <item row="2" column="2">
        <widget class="QPushButton" name="CutCancelButton">
         <property name="text">
          <string>Cancel</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="CutConfirmButton">
+        <property name="text">
+         <string>Confirm</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="CutPreviewButton">
+        <property name="text">
+         <string>Preview Cut</string>
         </property>
        </widget>
       </item>
@@ -387,20 +424,6 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="CutPreviewButton">
-        <property name="text">
-         <string>Preview Cut</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QPushButton" name="CutConfirmButton">
-        <property name="text">
-         <string>Confirm</string>
-        </property>
-       </widget>
-      </item>
      </layout>
     </widget>
    </item>
@@ -410,7 +433,7 @@
       <string>Bending</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayoutBends">
       <item row="2" column="0">
@@ -528,7 +551,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Cancel/Reset</string>
+         <string>Cancel/Clear</string>
         </property>
        </widget>
       </item>
@@ -591,6 +614,9 @@
     <widget class="ctkCollapsibleButton" name="MetricsCollapsibleButton">
      <property name="text">
       <string>Surgical Metrics</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="verticalLayoutMetrics">
       <item row="0" column="0">

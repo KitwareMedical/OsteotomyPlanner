@@ -443,4 +443,5 @@ void vtkSlicerPlannerLogic::clearBendingData()
   this->SourcePoints = NULL;
   this->TargetPoints = NULL;
   this->Fiducials = NULL;
+  this->bendInitialized = false;
 }

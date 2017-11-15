@@ -47,9 +47,9 @@ public:
   bool hasTransformableNodeChildren(vtkMRMLNode* node) const;
 
   vtkMRMLTransformDisplayNode* transformDisplayNode(
-    vtkMRMLScene* scene,vtkMRMLNode* node) const;
+    vtkMRMLScene* scene, vtkMRMLNode* node) const;
   vtkMRMLMarkupsPlanesNode* planesNode(
-    vtkMRMLScene* scene,vtkMRMLNode* node) const;
+    vtkMRMLScene* scene, vtkMRMLNode* node) const;
 
   int TransformVisibilityColumn;
   int PlanesVisibilityColumn;
@@ -66,19 +66,19 @@ qMRMLPlannerModelHierarchyModelPrivate::qMRMLPlannerModelHierarchyModelPrivate()
 vtkMRMLTransformDisplayNode* qMRMLPlannerModelHierarchyModelPrivate
 ::transformDisplayNode(vtkMRMLScene* scene, vtkMRMLNode* node) const
 {
-  if (!node)
-    {
+  if(!node)
+  {
     return NULL;
-    }
+  }
 
   vtkMRMLTransformDisplayNode* display =
     vtkMRMLTransformDisplayNode::SafeDownCast(node->GetNodeReference(
-      qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()));
-  if (!display)
-    {
+          qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole()));
+  if(!display)
+  {
     node->SetNodeReferenceID(
       qMRMLPlannerModelHierarchyModel::transformDisplayReferenceRole(), NULL);
-    }
+  }
   return display;
 }
 
@@ -86,19 +86,19 @@ vtkMRMLTransformDisplayNode* qMRMLPlannerModelHierarchyModelPrivate
 vtkMRMLMarkupsPlanesNode* qMRMLPlannerModelHierarchyModelPrivate
 ::planesNode(vtkMRMLScene* scene, vtkMRMLNode* node) const
 {
-  if (!node)
-    {
+  if(!node)
+  {
     return NULL;
-    }
+  }
 
   vtkMRMLMarkupsPlanesNode* planes =
     vtkMRMLMarkupsPlanesNode::SafeDownCast(node->GetNodeReference(
-      qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
-  if (!planes)
-    {
+          qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
+  if(!planes)
+  {
     node->SetNodeReferenceID(
       qMRMLPlannerModelHierarchyModel::planesReferenceRole(), NULL);
-    }
+  }
   return planes;
 }
 
@@ -108,27 +108,27 @@ bool qMRMLPlannerModelHierarchyModelPrivate
 {
   vtkMRMLDisplayableHierarchyNode* displayableHierarchyNode
     = vtkMRMLDisplayableHierarchyNode::SafeDownCast(node);
-  if (displayableHierarchyNode)
-    {
+  if(displayableHierarchyNode)
+  {
     std::vector<vtkMRMLHierarchyNode*> children;
     displayableHierarchyNode->GetAllChildrenNodes(children);
     std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-    for (it = children.begin(); it != children.end(); ++it)
+    for(it = children.begin(); it != children.end(); ++it)
+    {
+      if(vtkMRMLTransformableNode::SafeDownCast((*it)->GetAssociatedNode()))
       {
-      if (vtkMRMLTransformableNode::SafeDownCast((*it)->GetAssociatedNode()))
-        {
         return true;
-        }
       }
     }
+  }
   return false;
 }
 
 //----------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-qMRMLPlannerModelHierarchyModel::qMRMLPlannerModelHierarchyModel(QObject *vparent)
+qMRMLPlannerModelHierarchyModel::qMRMLPlannerModelHierarchyModel(QObject* vparent)
   : Superclass(vparent)
-  , d_ptr( new qMRMLPlannerModelHierarchyModelPrivate )
+  , d_ptr(new qMRMLPlannerModelHierarchyModelPrivate)
 {
 }
 
@@ -154,9 +154,9 @@ void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
 {
   this->Superclass::observeNode(node);
   Q_D(const qMRMLPlannerModelHierarchyModel);
-  
-  if (node->IsA("vtkMRMLModelHierarchyNode") || node->IsA("vtkMRMLModelNode"))
-    {
+
+  if(node->IsA("vtkMRMLModelHierarchyNode") || node->IsA("vtkMRMLModelNode"))
+  {
     qvtkConnect(node, vtkMRMLNode::ReferenceAddedEvent,
                 this, SLOT(onReferenceChangedEvent(vtkObject*)));
     qvtkConnect(node, vtkMRMLNode::ReferenceModifiedEvent,
@@ -164,8 +164,8 @@ void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
     qvtkConnect(node, vtkMRMLNode::ReferenceRemovedEvent,
                 this, SLOT(onReferenceChangedEvent(vtkObject*)));
 
-    
-    }
+
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -176,17 +176,17 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
 
   vtkMRMLTransformDisplayNode* display =
     d->transformDisplayNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
-  if (display || (!display && !node))
-    {
+  if(display || (!display && !node))
+  {
     qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
-    }
+  }
   vtkMRMLMarkupsPlanesNode* markup =
     d->planesNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
-  if (markup || (!markup && !node))
-    {
+  if(markup || (!markup && !node))
+  {
     qvtkConnect(markup, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
-        
-    }
+
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -199,15 +199,15 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
   vtkMRMLTransformableNode* transformable = vtkMRMLTransformableNode::SafeDownCast(node);
   vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
 
-  if (column == this->transformVisibilityColumn() &&
-    (transformable || d->hasTransformableNodeChildren(node)))
-    {
+  if(column == this->transformVisibilityColumn() &&
+      (transformable || d->hasTransformableNodeChildren(node)))
+  {
     flags |= Qt::ItemIsUserCheckable;
-    }
-  else if (column == this->planesVisibilityColumn() && model)
-    {
-    flags |= Qt::ItemIsUserCheckable;
-    }
+  }
+  else if(column == this->planesVisibilityColumn() && model)
+  {
+    flags |= Qt::NoItemFlags;
+  }
   return flags;
 }
 
@@ -216,35 +216,35 @@ void qMRMLPlannerModelHierarchyModel
 ::updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  if (column == this->transformVisibilityColumn())
-    {
+  if(column == this->transformVisibilityColumn())
+  {
     vtkMRMLTransformDisplayNode* display =
       d->transformDisplayNode(this->mrmlScene(), node);
-    if (display)
-      {
+    if(display)
+    {
       item->setToolTip("Transform");
       item->setCheckState(
         display->GetEditorVisibility() ? Qt::Checked : Qt::Unchecked);
-      }
     }
-  else if (column == this->planesVisibilityColumn())
-    {
+  }
+  else if(column == this->planesVisibilityColumn())
+  {
     vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
-    if (planes)
-      {
+    if(planes)
+    {
       bool visible = false;
-      for (int i = 0; i < planes->GetNumberOfMarkups(); ++i)
+      for(int i = 0; i < planes->GetNumberOfMarkups(); ++i)
+      {
+        if(planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
         {
-        if (planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
-          {
           visible = planes->GetNthMarkupVisibility(i);
           break;
-          }
         }
+      }
       item->setToolTip("Show cutting plane");
       item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
-      }
     }
+  }
   this->Superclass::updateItemDataFromNode(item, node, column);
 }
 
@@ -253,25 +253,25 @@ void qMRMLPlannerModelHierarchyModel
 ::updateNodeFromItemData(vtkMRMLNode* node, QStandardItem* item)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  if (item->column() == this->transformVisibilityColumn())
-    {
+  if(item->column() == this->transformVisibilityColumn())
+  {
     vtkMRMLTransformDisplayNode* display =
       d->transformDisplayNode(this->mrmlScene(), node);
-    if (display)
-      {
+    if(display)
+    {
       display->SetEditorVisibility(
         item->checkState() == Qt::Checked ? true : false);
       display->UpdateEditorBounds();
-      
+
       vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
-      if (model)
+      if(model)
       {
         vtkMRMLDisplayNode* display = model->GetDisplayNode();
-        if (display)
+        if(display)
         {
           int wasModifying = display->StartModify();
 
-          if (item->checkState() == Qt::Checked ? true : false)
+          if(item->checkState() == Qt::Checked ? true : false)
           {
             display->SetOpacity(0.5);
           }
@@ -283,24 +283,23 @@ void qMRMLPlannerModelHierarchyModel
           display->EndModify(wasModifying);
         }
       }
-      }
     }
-  else if (item->column() == this->planesVisibilityColumn())
-    {
+  }
+  else if(item->column() == this->planesVisibilityColumn())
+  {
     vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
-    if (planes)
+    if(planes)
+    {
+      for(int i = 0; i < planes->GetNumberOfMarkups(); ++i)
       {
-      for (int i = 0; i < planes->GetNumberOfMarkups(); ++i)
+        if(planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
         {
-        if (planes->GetNthMarkupAssociatedNodeID(i).compare(node->GetID()) == 0)
-          {
-          planes->SetNthMarkupVisibility(i,
-            item->checkState() == Qt::Checked ? true : false);
+          planes->SetNthMarkupVisibility(i, item->checkState() == Qt::Checked ? true : false);
           break;
-          }
         }
       }
     }
+  }
   return this->Superclass::updateNodeFromItemData(node, item);
 }
 
@@ -347,8 +346,19 @@ int qMRMLPlannerModelHierarchyModel::maxColumnId()const
 void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
+  DEBUG("Attempting visibility set");
   this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
-  planes->SetNthMarkupVisibility(0,true);
-  
+  planes->SetNthMarkupVisibility(0, visible);
+
+}
+
+void qMRMLPlannerModelHierarchyModel::setTransformVisibility(vtkMRMLNode* node, bool visible)
+{
+  Q_D(qMRMLPlannerModelHierarchyModel);
+  DEBUG("Attempting visibility set");
+  this->itemFromNode(node, d->TransformVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+  vtkMRMLTransformDisplayNode* transform = d->transformDisplayNode(this->mrmlScene(), node);
+  transform->SetVisibility(visible);
+
 }

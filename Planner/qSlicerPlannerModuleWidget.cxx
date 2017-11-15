@@ -117,6 +117,7 @@ public:
   void splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene);
   void applyRandomColor(vtkMRMLModelNode* node);
   void hardenTransforms();
+  void hideTransforms();
 
   //Cutting Variables
   vtkMRMLModelHierarchyNode* HierarchyNode;
@@ -683,6 +684,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
     return;
   }
 
+  this->hideTransforms();
   this->hardenTransforms();
 
   //Create nodes
@@ -886,6 +888,27 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
   }
 }
 
+
+//-----------------------------------------------------------------------------
+//Hide all transforms in the current hierarchy
+void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for(it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if(childModel)
+    {
+      this->sceneModel()->setTransformVisibility(childModel, false);
+    }
+  }
+}
+
+
 //-----------------------------------------------------------------------------
 //Harden all transforms in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms()
@@ -1059,6 +1082,10 @@ void qSlicerPlannerModuleWidget::setup()
     d->CancelBendButton, SIGNAL(clicked()), this, SLOT(cancelBendButtonClicked()));
   this->connect(
     d->ComputeScalarsButton, SIGNAL(clicked()), this, SLOT(computeScalarsClicked()));
+  this->connect(
+    d->BrainVisibilityCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->TemplateVisibilityCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
   this->connect(
     d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
 
@@ -1306,12 +1333,12 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
   this->qvtkReconnect(d->BrainReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
-
   if(node && node != d->BrainReferenceNode)
   {
     d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
     qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+    d->BrainVisibilityCheckbox->setEnabled(true);
   }
   d->BrainReferenceNode = node;
   this->updateMRMLFromWidget();
@@ -1341,6 +1368,11 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
   this->qvtkReconnect(d->TemplateReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+
+  if(node)
+  {
+    d->TemplateVisibilityCheckbox->setEnabled(true);
+  }
   d->TemplateReferenceNode = node;
 
   this->updateMRMLFromWidget();
@@ -1363,6 +1395,16 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
   if(d->HierarchyNode)
   {
     d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
+  }
+
+  //Set visibility on template/brain
+  if(d->BrainReferenceNode)
+  {
+    vtkMRMLModelNode::SafeDownCast(d->BrainReferenceNode)->GetDisplayNode()->SetVisibility(d->BrainVisibilityCheckbox->isChecked());
+  }
+  if(d->TemplateReferenceNode)
+  {
+    vtkMRMLModelNode::SafeDownCast(d->TemplateReferenceNode)->GetDisplayNode()->SetVisibility(d->TemplateVisibilityCheckbox->isChecked());
   }
 }
 
@@ -1425,6 +1467,7 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
+  d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
   this->updateWidgetFromMRML();
 }
 
@@ -1466,7 +1509,11 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = 0;
-  d->computeTransform(this->mrmlScene());
+  d->BendMagnitudeSlider->setValue(0);
+  if(d->bendingActive)
+  {
+    d->computeTransform(this->mrmlScene());
+  }
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
@@ -1487,6 +1534,11 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
 
   d->CurrentBendNode = node;
+  if(node)
+  {
+    d->hideTransforms();
+
+  }
   this->updateWidgetFromMRML();
 }
 
@@ -1495,6 +1547,8 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 void qSlicerPlannerModuleWidget::initBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
+  d->hideTransforms();
+  d->hardenTransforms();
   d->computeAndSetSourcePoints();
   d->bendingActive = true;
   this->updateWidgetFromMRML();
@@ -1524,6 +1578,8 @@ void qSlicerPlannerModuleWidget::bendMagnitudeSliderUpdated()
 void qSlicerPlannerModuleWidget::finshBendClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
+  d->BendMagnitude = 0;
+  d->BendMagnitudeSlider->setValue(0);
   d->hardenTransforms();
   d->clearBendingData();
   d->bendingActive = false;
@@ -1638,7 +1694,7 @@ void qSlicerPlannerModuleWidget::runModelDistance()
     d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
     d->cmdNode->SetParameterAsString("vtkFile2", d->BrainReferenceNode->GetID());
     d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
-    d->cmdNode->SetParameterAsString("distanceType", "closest_point");
+    d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
     d->distanceLogic->Apply(d->cmdNode, true);
     qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
