@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>331</width>
+    <width>690</width>
     <height>1366</height>
    </rect>
   </property>
@@ -433,13 +433,175 @@
       <string>Bending</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayoutBends">
+      <item row="8" column="2">
+       <widget class="QRadioButton" name="ASideButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>A</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">AvsBGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="7" column="2">
+       <widget class="QRadioButton" name="SingleSidedButton">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>Single</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">DoubleVsSingleGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QLabel" name="Radio1Double">
+        <property name="text">
+         <string>Single vs. Double </string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="3">
+       <widget class="QRadioButton" name="BSideButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>B</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">AvsBGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QPushButton" name="InitButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Init Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="QLabel" name="label_5">
+        <property name="text">
+         <string>Magnitude</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>Moving Point A</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="3">
+       <widget class="QPushButton" name="CancelBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Cancel/Clear</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QLabel" name="label_2">
         <property name="text">
          <string>Fixed Point B</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="FixedPointAButton">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>Place</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="MovingPointAButton">
+        <property name="text">
+         <string>Place</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="2">
+       <widget class="QPushButton" name="FixedPointBButton">
+        <property name="text">
+         <string>Place</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="3">
+       <widget class="QPushButton" name="UpdateBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Update Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="2" colspan="2">
+       <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="singleStep">
+         <double>0.010000000000000</double>
+        </property>
+        <property name="pageStep">
+         <double>0.100000000000000</double>
+        </property>
+        <property name="minimum">
+         <double>-1.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>0.800000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="BendLabel">
+        <property name="text">
+         <string>Active Bone</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QPushButton" name="HardenBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Harden Bend</string>
         </property>
        </widget>
       </item>
@@ -473,56 +635,8 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="FixedPointAButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QLabel" name="label_5">
-        <property name="text">
-         <string>Magnitude</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="MovingPointAButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="2">
        <widget class="QPushButton" name="MovingPointBButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Moving Point A</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="FixedPointALabel">
-        <property name="text">
-         <string>Fixed Point A</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="FixedPointBButton">
         <property name="text">
          <string>Place</string>
         </property>
@@ -535,75 +649,44 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="UpdateBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="1" column="0">
+       <widget class="QLabel" name="FixedPointALabel">
         <property name="text">
-         <string>Update Bend</string>
+         <string>Fixed Point A</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="3">
-       <widget class="QPushButton" name="CancelBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="7" column="3">
+       <widget class="QRadioButton" name="DoubleSidedButton">
         <property name="text">
-         <string>Cancel/Clear</string>
+         <string>Double</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">DoubleVsSingleGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="8" column="0">
+       <widget class="QLabel" name="Radio2Label">
+        <property name="text">
+         <string>Sided Bending</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="HardenBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="9" column="2">
+       <widget class="QLabel" name="AreaBeforeBending">
         <property name="text">
-         <string>Harden Bend</string>
+         <string/>
         </property>
        </widget>
       </item>
-      <item row="6" column="2" colspan="2">
-       <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="singleStep">
-         <double>0.010000000000000</double>
-        </property>
-        <property name="pageStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="minimum">
-         <double>-1.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>0.400000000000000</double>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="3">
-       <widget class="QPushButton" name="InitButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
+      <item row="9" column="3">
+       <widget class="QLabel" name="AreaAfterBending">
         <property name="text">
-         <string>Init Bend</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="BendLabel">
-        <property name="text">
-         <string>Active Bone</string>
+         <string/>
         </property>
        </widget>
       </item>
@@ -815,4 +898,8 @@
    </hints>
   </connection>
  </connections>
+ <buttongroups>
+  <buttongroup name="DoubleVsSingleGroup"/>
+  <buttongroup name="AvsBGroup"/>
+ </buttongroups>
 </ui>
