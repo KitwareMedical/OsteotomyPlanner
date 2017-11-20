@@ -79,6 +79,7 @@ protected slots:
   void bendMagnitudeSliderUpdated();
   void finshBendClicked();
 
+
   // Metrics slots
   void onComputeButton();
   void onSetPreOP();

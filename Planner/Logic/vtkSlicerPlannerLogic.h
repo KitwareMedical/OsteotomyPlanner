@@ -33,6 +33,9 @@
 #include "vtkMRMLTableNode.h"
 #include "vtkPoints.h"
 #include "vtkThinPlateSplineTransform.h"
+#include "vtkCellLocator.h"
+#include "vtkPlane.h"
+#include "vtkMatrix4x4.h"
 
 // STD includes
 #include <cstdlib>
@@ -69,16 +72,26 @@ public:
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
   void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
 
+
   enum BendModeType
   {
     Single,
     Double,
   };
 
+  enum BendSide
+  {
+    A,
+    B,
+  };
   //Bending functions
   void initializeBend(vtkPoints* inputFiducials, vtkMRMLModelNode* model);
   vtkSmartPointer<vtkThinPlateSplineTransform> getBendTransform(double bendMagnitude);
   void clearBendingData();
+  vtkSmartPointer<vtkPoints> getSourcePoints() {return this->SourcePoints;}
+  vtkSmartPointer<vtkPoints> getTargetPoints() { return this->TargetPoints; }
+  void setBendType(BendModeType type) {this->bendMode = type;}
+  void setBendSide(BendSide side) { this->bendSide = side; }
 
 protected:
   vtkSlicerPlannerLogic();
@@ -94,6 +107,16 @@ private:
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
   vtkMRMLCommandLineModuleNode* wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
   vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
+  void generateSourcePoints();
+  vtkVector3d projectToModel(vtkVector3d point);
+  vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);
+  vtkVector3d projectToModel(vtkVector3d point, vtkPolyData* model);
+  vtkVector3d projectToModel(vtkVector3d point, vtkCellLocator* locator);
+  vtkSmartPointer<vtkMatrix4x4> createBendingMatrix(vtkVector3d pointV, double angle);
+  vtkSmartPointer<vtkPlane> createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D);
+  void createBendingLocator();
+  vtkVector3d bendPoint(vtkVector3d point, double magnitude);
+  vtkVector3d bendPoint2(vtkVector3d point, double angle);
   double computeICV(vtkMRMLModelNode* model);
   vtkMRMLModelNode* SkullWrappedPreOP;
   vtkMRMLModelNode* HealthyBrain;
@@ -105,9 +128,15 @@ private:
   vtkMRMLModelNode* ModelToBend;
   vtkSmartPointer<vtkPoints> Fiducials;
   vtkSmartPointer<vtkPoints> SourcePoints;
+  vtkSmartPointer<vtkPoints> SourcePointsDense;
   vtkSmartPointer<vtkPoints> TargetPoints;
+  vtkSmartPointer<vtkCellLocator> cellLocator;
+  vtkSmartPointer<vtkCellLocator> BendingPlaneLocator;
+  vtkSmartPointer<vtkPlane> BendingPlane;
+  vtkSmartPointer<vtkPolyData> BendingPolyData;
   bool bendInitialized;
   BendModeType bendMode;
+  BendSide bendSide;
 
 
   double preOPICV;
