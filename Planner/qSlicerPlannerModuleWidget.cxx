@@ -976,7 +976,7 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
     if(childModel)
     {
-      childModel->GetDisplayNode()->SetActiveScalarName("Signed");
+      childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
       childModel->GetDisplayNode()->SetScalarVisibility(visible);
       childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseDataScalarRange);
     }
