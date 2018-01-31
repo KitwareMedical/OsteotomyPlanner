@@ -21,8 +21,6 @@
 #ifndef __qMRMLPlannerModelHierarchyModel_h
 #define __qMRMLPlannerModelHierarchyModel_h
 
-#define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
-//#define DEBUG(x)
 
 #include "qSlicerPlannerModuleWidgetsExport.h"
 

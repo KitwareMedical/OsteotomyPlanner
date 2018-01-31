@@ -77,8 +77,7 @@
 #include <vector>
 #include <sstream>
 
-#define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
-//#define DEBUG(x)
+
 
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -144,7 +143,6 @@ public:
   vtkMRMLMarkupsFiducialNode* MovingPointA;
   vtkMRMLMarkupsFiducialNode* MovingPointB;
   vtkMRMLMarkupsFiducialNode* PlacingNode;
-  vtkMRMLMarkupsFiducialNode* ExtraFixedPoints;
   vtkMRMLNode* CurrentBendNode;
   vtkSmartPointer<vtkPoints> Fiducials;
   vtkSmartPointer<vtkPolyData> BendingData;
@@ -204,12 +202,7 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
     scene->RemoveNode(this->PlacingNode);
     this->PlacingNode = NULL;
   }
-
-  if(this->ExtraFixedPoints)
-  {
-    scene->RemoveNode(this->ExtraFixedPoints);
-    this->ExtraFixedPoints = NULL;
-  }
+    
 }
 
 //-----------------------------------------------------------------------------
@@ -248,7 +241,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->MovingPointB = NULL;
   this->PlacingNode = NULL;
   this->Fiducials = NULL;
-  this->ExtraFixedPoints = NULL;
   this->BendMagnitude = 0;
 
   qSlicerAbstractCoreModule* splitModule =
@@ -310,7 +302,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
   this->FixedPointC->SetNthFiducialPositionFromArray(0, posc);
   this->FixedPointD->SetNthFiducialPositionFromArray(0, posd);
 
-  DEBUG("Try Deep copy");
   vtkNew<vtkCleanPolyData> clean;
   vtkNew<vtkTriangleFilter> triangulate;
   clean->SetInputData(vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
@@ -320,7 +311,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
   this->BendingData = triangulate->GetOutput();
   vtkNew<vtkMassProperties> area;
   area->SetInputData(this->BendingData);
-  DEBUG("Try area");
 
   area->Update();
   
@@ -335,7 +325,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
 //Compute thin plate spline transform based on source and target points
 void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
 {
-  DEBUG("Grabbing transform node");
   vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
   vtkNew<vtkMRMLTransformNode> tnodetemp;
   if(!tnode)
@@ -345,7 +334,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
     tnode->CreateDefaultDisplayNodes();
   }
 
-  DEBUG("Grabbing transform from logic");
   if(this->BendDoubleSide)
   {
     this->logic->setBendType(vtkSlicerPlannerLogic::Double);
@@ -364,7 +352,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
     this->logic->setBendSide(vtkSlicerPlannerLogic::B);
   }
   vtkSmartPointer<vtkThinPlateSplineTransform> tps = this->logic->getBendTransform(this->BendMagnitude);
-  DEBUG("Attach transform to node");
   tnode->SetAndObserveTransformToParent(tps);
   vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
 
@@ -375,23 +362,14 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
   transform->Update();
   vtkNew<vtkMassProperties> area;
   area->SetInputData(transform->GetOutput());
-  DEBUG("Try area");
 
   area->Update();
   
   std::stringstream surfaceAreaSstr;
   surfaceAreaSstr << area->GetSurfaceArea();
   const std::string& surfaceAreaString= surfaceAreaSstr.str();
-  this->AreaAfterBending->setText(surfaceAreaString.c_str());
+  this->AreaAfterBending->setText(surfaceAreaString.c_str());  
   
-  vtkSmartPointer<vtkPoints> targets = this->logic->getTargetPoints();
-  this->ExtraFixedPoints->RemoveAllMarkups();
-  for(int i = 0 ; i < targets->GetNumberOfPoints(); i++)
-  {
-    double p[3];
-    targets->GetPoint(i, p);
-    this->ExtraFixedPoints->AddFiducialFromArray(p, " ");
-  }
 }
 //-----------------------------------------------------------------------------
 //Initialize placement of a fiducial
@@ -1596,22 +1574,18 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
 
   if(obj == d->FixedPointAButton)
   {
-    std::cout << "FixedPointAButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 0);
   }
   if(obj == d->FixedPointBButton)
   {
-    std::cout << "FixedPointBButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 1);
   }
   if(obj == d->MovingPointAButton)
   {
-    std::cout << "MovingPointButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 2);
   }
   if(obj == d->MovingPointBButton)
   {
-    std::cout << "MovingPointButton" << std::endl;
     d->beginPlacement(this->mrmlScene(), 3);
   }
 
@@ -1667,13 +1641,6 @@ void qSlicerPlannerModuleWidget::initBendButtonClicked()
   d->hardenTransforms();
   d->computeAndSetSourcePoints(this->mrmlScene());
   d->bendingActive = true;
-  if(!d->ExtraFixedPoints)
-  {
-    vtkNew<vtkMRMLMarkupsFiducialNode> node;
-    this->mrmlScene()->AddNode(node.GetPointer());
-    node->CreateDefaultDisplayNodes();
-    d->ExtraFixedPoints = node.GetPointer();
-  }
   this->updateWidgetFromMRML();
 }
 
