@@ -346,7 +346,6 @@ int qMRMLPlannerModelHierarchyModel::maxColumnId()const
 void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  DEBUG("Attempting visibility set");
   this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
   planes->SetNthMarkupVisibility(0, visible);
@@ -356,7 +355,6 @@ void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool
 void qMRMLPlannerModelHierarchyModel::setTransformVisibility(vtkMRMLNode* node, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  DEBUG("Attempting visibility set");
   this->itemFromNode(node, d->TransformVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLTransformDisplayNode* transform = d->transformDisplayNode(this->mrmlScene(), node);
   transform->SetVisibility(visible);

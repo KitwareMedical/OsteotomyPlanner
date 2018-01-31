@@ -48,14 +48,12 @@
 #include "vtkPolyDataPointSampler.h"
 #include "vtkDecimatePro.h"
 #include "vtkMatrix4x4.h"
-#include "vtkVertexGlyphFilter.h";
+#include "vtkVertexGlyphFilter.h"
 
 // STD includes
 #include <cassert>
 #include <sstream>
 
-#define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
-//#define DEBUG(x)
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSlicerPlannerLogic);
@@ -428,14 +426,11 @@ void vtkSlicerPlannerLogic::initializeBend(vtkPoints* inputFiducials, vtkMRMLMod
   clean->Update();
   this->BendingPolyData = clean->GetOutput();
 
-  DEBUG("Start locator");
   this->cellLocator = vtkSmartPointer<vtkCellLocator>::New();
   this->cellLocator->SetDataSet(this->BendingPolyData);
   this->cellLocator->BuildLocator();
-  DEBUG("End locator, start source points");
 
   this->generateSourcePoints();
-  DEBUG("Source Points Done");
   this->bendInitialized =  true;
 }
 
@@ -578,27 +573,14 @@ void vtkSlicerPlannerLogic::generateSourcePoints()
   this->SourcePoints->InsertPoint(5, F.GetData());
 
   //Agressively downsample to create source points
-  DEBUG("Attempt downsample");
-  vtkNew<vtkDecimatePro> sampler;
   vtkNew<vtkCleanPolyData> clean;
   vtkNew<vtkVertexGlyphFilter> verts;
   verts->SetInputData(this->BendingPolyData);
   verts->Update();
-  DEBUG(this->BendingPolyData->GetNumberOfPoints());
-  sampler->SetInputData(this->BendingPolyData);
-  sampler->SetTargetReduction(1 - 500.0 / this->BendingPolyData->GetNumberOfPoints());
-  sampler->SetPreserveTopology(0);
-  sampler->SetBoundaryVertexDeletion(1);
-  sampler->SetSplitting(1);
-  DEBUG("Attempt downsample-pre update");
-  //sampler->Update();
-  DEBUG("Attempt downsample-post update");
   clean->SetInputData(verts->GetOutput());
   clean->SetTolerance(0.07);
   clean->Update();
   this->SourcePointsDense = clean->GetOutput()->GetPoints();
-  DEBUG("Number of source points");
-  DEBUG(this->SourcePointsDense->GetNumberOfPoints());
 }
 
 //----------------------------------------------------------------------------
