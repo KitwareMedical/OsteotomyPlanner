@@ -75,6 +75,7 @@
 
 //STD includes
 #include <vector>
+#include <sstream>
 
 #define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
 //#define DEBUG(x)
@@ -322,7 +323,11 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
   DEBUG("Try area");
 
   area->Update();
-  this->AreaBeforeBending->setText(std::to_string(area->GetSurfaceArea()).c_str());
+  
+  std::stringstream surfaceAreaSstr;
+  surfaceAreaSstr << area->GetSurfaceArea();
+  const std::string& surfaceAreaString= surfaceAreaSstr.str();
+  this->AreaBeforeBending->setText(surfaceAreaString.c_str());
 }
 
 
@@ -373,7 +378,12 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
   DEBUG("Try area");
 
   area->Update();
-  this->AreaAfterBending->setText(std::to_string(area->GetSurfaceArea()).c_str());
+  
+  std::stringstream surfaceAreaSstr;
+  surfaceAreaSstr << area->GetSurfaceArea();
+  const std::string& surfaceAreaString= surfaceAreaSstr.str();
+  this->AreaAfterBending->setText(surfaceAreaString.c_str());
+  
   vtkSmartPointer<vtkPoints> targets = this->logic->getTargetPoints();
   this->ExtraFixedPoints->RemoveAllMarkups();
   for(int i = 0 ; i < targets->GetNumberOfPoints(); i++)
@@ -968,7 +978,7 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
     {
       childModel->GetDisplayNode()->SetActiveScalarName("Signed");
       childModel->GetDisplayNode()->SetScalarVisibility(visible);
-      childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::ScalarRangeFlagType::UseDataScalarRange);
+      childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseDataScalarRange);
     }
   }
 }

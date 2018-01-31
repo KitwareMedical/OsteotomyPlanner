@@ -52,6 +52,7 @@
 
 // STD includes
 #include <cassert>
+#include <sstream>
 
 #define DEBUG(x) std::cout << "DEBUG: " << x << std::endl
 //#define DEBUG(x)
@@ -78,8 +79,8 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
   this->TargetPoints = NULL;
   this->Fiducials = NULL;
   this->cellLocator = NULL;
-  this->bendMode = BendModeType::Double;
-  this->bendSide = BendSide::A;
+  this->bendMode = Double;
+  this->bendSide = A;
   this->BendingPlane = NULL;
   this->BendingPlaneLocator = NULL;
   this->bendInitialized = false;
@@ -396,9 +397,22 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
 
     int r1 = modelMetricsTable->AddEmptyRow();
     modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
-    modelMetricsTable->SetCellText(0, 1, std::to_string(brainVolume).c_str());
-    modelMetricsTable->SetCellText(0, 2, std::to_string(preOpVolume).c_str());
-    modelMetricsTable->SetCellText(0, 3, std::to_string(currentVolume).c_str());
+    
+    std::stringstream brainVolumeSstr;
+    brainVolumeSstr << brainVolume;
+    const std::string& brainVolumeString = brainVolumeSstr.str();
+    modelMetricsTable->SetCellText(0, 1, brainVolumeString.c_str());
+    
+    std::stringstream preOpVolumeSstr;
+    preOpVolumeSstr << preOpVolume;
+    const std::string& preOpVolumeString = preOpVolumeSstr.str();
+    modelMetricsTable->SetCellText(0, 2, preOpVolumeString.c_str());
+    
+    std::stringstream currentVolumeSstr;
+    currentVolumeSstr << currentVolume;
+    const std::string& currentVolumeString = currentVolumeSstr.str();
+    modelMetricsTable->SetCellText(0, 3, currentVolumeString.c_str());
+    
   }
 }
 
@@ -440,20 +454,20 @@ vtkSmartPointer<vtkThinPlateSplineTransform> vtkSlicerPlannerLogic::getBendTrans
       this->SourcePointsDense->GetPoint(i, p);
       vtkVector3d point = (vtkVector3d)p;
       vtkVector3d bent = point;
-      if(this->bendMode == BendModeType::Double)
+      if(this->bendMode == Double)
       {
         bent = this->bendPoint2(point, magnitude);
       }
-      if(this->bendMode == BendModeType::Single)
+      if(this->bendMode == Single)
       {
-        if(this->bendSide == BendSide::A)
+        if(this->bendSide == A)
         {
           if(this->BendingPlane->EvaluateFunction(point.GetData())*this->BendingPlane->EvaluateFunction(this->SourcePoints->GetPoint(0)) > 0)
           {
             bent = this->bendPoint2(point, magnitude);
           }
         }
-        if(this->bendSide == BendSide::B)
+        if(this->bendSide == B)
         {
           if(this->BendingPlane->EvaluateFunction(point.GetData())*this->BendingPlane->EvaluateFunction(this->SourcePoints->GetPoint(1)) > 0)
           {
