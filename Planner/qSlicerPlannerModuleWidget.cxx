@@ -250,7 +250,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
     vtkSlicerCLIModuleLogic::SafeDownCast(splitModule->logic());
 
   qSlicerAbstractCoreModule* distanceModule =
-    qSlicerCoreApplication::application()->moduleManager()->module("ModelToModelDistance");
+    qSlicerCoreApplication::application()->moduleManager()->module("OsteotomyModelToModelDistance");
   this->distanceLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(distanceModule->logic());
 

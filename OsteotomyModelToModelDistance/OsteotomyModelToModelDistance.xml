@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<executable>
+  <category>Quantification</category>
+  <title>Osteotomy Model To Model Distance</title>
+  <description>
+   This module computes distance point by point between 2 meshes
+  </description>
+  <version>1.2</version>
+  <documentation-url></documentation-url>
+  <license></license>
+  <contributor>Francois Budin, Juliette Pera</contributor>
+<acknowledgements>
+This work was funded by National Institute of Dental and Craniofacial Research (NIDCR) and the National Institute of Biomedical Imaging and Bioengineering (NIBIB) through the Grant R01 DE024450
+</acknowledgements>
+  <parameters>
+    <label>Input/Output</label>
+    <description>Input/output parameters</description>
+    <geometry fileExtensions=".vtk">
+      <name>vtkFile1</name>
+      <label>Source Model</label>
+      <channel>input</channel>
+      <longflag>source</longflag>
+      <flag>s</flag>
+      <description><![CDATA[Source Model (*.vtk or *.vtp)]]></description>
+    </geometry>
+    <geometry fileExtensions=".vtk">
+      <name>vtkFile2</name>
+      <label>Target Model</label>
+      <channel>input</channel>
+      <longflag>target</longflag>
+      <flag>t</flag>
+      <description><![CDATA[Target Model (*.vtk or *.vtp)]]></description>
+    </geometry>
+    <geometry fileExtensions=".vtk">
+      <name>vtkOutput</name>
+      <label>VTK Output File</label>
+      <channel>output</channel>
+      <longflag>output</longflag>
+      <flag>o</flag>
+      <description><![CDATA[Output Model (*.vtk or *.vtp). The output model will have the content of this file (points and fields) as well as the newly computed distance information. The distance is computed at every point of the source model to the target model.]]></description>
+    </geometry>
+    <string-enumeration>
+      <name>distanceType</name>
+      <flag>d</flag>
+      <longflag>distanceType</longflag>
+      <description>Choose the metric used to compute the distance between the 2 given meshes</description>
+      <label>Distance</label>
+      <element>signed_closest_point</element>
+      <element>absolute_closest_point</element>
+      <default>signed_closest_point</default>
+    </string-enumeration>
+    <boolean>
+      <name>targetInFields</name>
+      <label>Save target name in distance fields</label>
+      <longflag>targetInFields</longflag>
+      <flag>f</flag>
+      <description><![CDATA[Saves the target model name as part of the distance fields saved in the output file. This allows a user to know against which target shape the distances have been computed.]]></description>
+    </boolean>
+  </parameters>
+</executable>
+
