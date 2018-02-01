@@ -64,11 +64,13 @@ vtkSlicerPlannerLogic::vtkSlicerPlannerLogic()
 {
   this->SkullWrappedPreOP = NULL;
   this->HealthyBrain = NULL;
+  this->BoneTemplate = NULL;
   this->splitLogic = NULL;
   this->wrapperLogic = NULL;
   this->preOPICV = 0;
   this->healthyBrainICV = 0;
   this->currentICV = 0;
+  this->templateICV = 0;
   this->TempMerged = NULL;
   this->TempWrapped = NULL;
   this->CurrentModel = NULL;
@@ -250,6 +252,33 @@ double vtkSlicerPlannerLogic::getHealthyBrainICV()
 }
 
 //----------------------------------------------------------------------------
+//Create wrapped version of bone template input
+vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createBoneTemplateModel(vtkMRMLModelNode* model)
+{
+  if (this->BoneTemplate)
+  {
+    this->GetMRMLScene()->RemoveNode(this->BoneTemplate);
+    this->BoneTemplate = NULL;
+  }
+
+  std::string name;
+  name = model->GetName();
+  name += " - Wrapped";
+  return wrapModel(model, name, vtkSlicerPlannerLogic::Template);
+}
+
+//----------------------------------------------------------------------------
+//Get template ICV
+double vtkSlicerPlannerLogic::getTemplateICV()
+{
+  if (this->BoneTemplate)
+  {
+    this->templateICV = this->computeICV(this->BoneTemplate);
+  }
+  return this->templateICV;
+}
+
+//----------------------------------------------------------------------------
 //Merge hierarchy into a single model
 vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name)
 {
@@ -329,6 +358,8 @@ vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode*
   case vtkSlicerPlannerLogic::Brain:
     this->HealthyBrain = wrappedModel.GetPointer();
     break;
+  case vtkSlicerPlannerLogic::Template:
+    this->BoneTemplate = wrappedModel.GetPointer();
 
   }
 

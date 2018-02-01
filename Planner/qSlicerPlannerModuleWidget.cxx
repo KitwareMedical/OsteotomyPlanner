@@ -150,6 +150,7 @@ public:
   bool bendingActive;
   bool placingActive;
   bool BendDoubleSide;
+  bool ScalarsVsBrain;
   bool BendASide;
 
   //Bending methods
@@ -234,6 +235,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   this->BendDoubleSide = true;
   this->BendASide = true;
+  this->ScalarsVsBrain = true;
 
   this->FixedPointC = NULL;
   this->FixedPointD = NULL;
@@ -1420,6 +1422,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
+  d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
 }
 
@@ -1469,8 +1472,11 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
 
-  if(node)
+  if(node && node != d->TemplateReferenceNode)
   {
+    d->cmdNode = this->plannerLogic()->createBoneTemplateModel(vtkMRMLModelNode::SafeDownCast(node));
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     d->TemplateVisibilityCheckbox->setEnabled(true);
   }
   d->TemplateReferenceNode = node;
@@ -1749,13 +1755,23 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
 {
   //launch scalar computation
   Q_D(qSlicerPlannerModuleWidget);
-  if(d->HierarchyNode && d->BrainReferenceNode)
+  vtkMRMLModelNode* distanceReference;
+  if (d->BrainRadioButton->isChecked())
+  {
+    distanceReference = this->plannerLogic()->getWrappedBrainModel();
+  }
+  else
+  {
+    distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
+  }
+  
+  if (d->HierarchyNode && distanceReference)
   {
     d->hardenTransforms(false);
     d->ComputeScalarsButton->setEnabled(false);
     d->prepScalarComputation(this->mrmlScene());
     d->cmdNode = d->distanceLogic->CreateNodeInScene();
-    this->runModelDistance();
+    this->runModelDistance(distanceReference);
   }
 }
 
@@ -1773,13 +1789,13 @@ void qSlicerPlannerModuleWidget::finishDistance()
     this->mrmlScene()->RemoveNode(distanceNode);
     distanceNode = NULL;
     d->modelIterator.pop_back();
-    this->runModelDistance();
+    this->runModelDistance(vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile2"))));
   }
 }
 
 //-----------------------------------------------------------------------------
 //Set up model to model distance CLI for next model in list
-void qSlicerPlannerModuleWidget::runModelDistance()
+void qSlicerPlannerModuleWidget::runModelDistance(vtkMRMLModelNode* distRef)
 {
   Q_D(qSlicerPlannerModuleWidget);
   if(!d->modelIterator.empty())
@@ -1788,7 +1804,7 @@ void qSlicerPlannerModuleWidget::runModelDistance()
     vtkNew<vtkMRMLModelNode> temp;
     this->mrmlScene()->AddNode(temp.GetPointer());
     d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
-    d->cmdNode->SetParameterAsString("vtkFile2", d->BrainReferenceNode->GetID());
+    d->cmdNode->SetParameterAsString("vtkFile2", distRef->GetID());
     d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
     d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
     d->distanceLogic->Apply(d->cmdNode, true);

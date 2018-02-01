@@ -28,6 +28,7 @@
 class qSlicerPlannerModuleWidgetPrivate;
 class vtkMRMLNode;
 class vtkSlicerPlannerLogic;
+class vtkMRMLModelNode;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :
@@ -89,7 +90,7 @@ protected slots:
   void finishWrap();
   void launchMetrics();
   void finishDistance();
-  void runModelDistance();
+  void runModelDistance(vtkMRMLModelNode* distRef);
 
 
 protected:

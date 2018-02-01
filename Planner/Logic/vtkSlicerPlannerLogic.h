@@ -65,13 +65,16 @@ public:
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
   vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
+  vtkMRMLCommandLineModuleNode* createBoneTemplateModel(vtkMRMLModelNode* boneTemplate);
   double getPreOPICV();
   double getHealthyBrainICV();
   double getCurrentICV();
+  double getTemplateICV();
   vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
   void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
-
+  vtkMRMLModelNode* getWrappedBrainModel(){return this->HealthyBrain;}
+  vtkMRMLModelNode* getWrappedBoneTemplateModel(){return this->BoneTemplate;}
 
   enum BendModeType
   {
@@ -121,6 +124,7 @@ private:
   vtkMRMLModelNode* SkullWrappedPreOP;
   vtkMRMLModelNode* HealthyBrain;
   vtkMRMLModelNode* CurrentModel;
+  vtkMRMLModelNode* BoneTemplate;
   vtkMRMLModelNode* TempMerged;
   vtkMRMLModelNode* TempWrapped;
 
@@ -142,6 +146,7 @@ private:
   double preOPICV;
   double healthyBrainICV;
   double currentICV;
+  double templateICV;
 
   enum ModelType
   {
