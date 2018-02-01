@@ -30,6 +30,7 @@ add_subdirectory(Planes)
 add_subdirectory(SplitModel)
 add_subdirectory(Planner)
 add_subdirectory(ShrinkWrap)
+add_subdirectory(OsteotomyModelToModelDistance)
 
 #-----------------------------------------------------------------------------
 set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${CMAKE_BINARY_DIR};${EXTENSION_NAME};ALL;/")
