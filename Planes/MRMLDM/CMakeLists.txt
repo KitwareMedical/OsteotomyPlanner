@@ -9,32 +9,32 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkSlicer${MODULE_NAME}ModuleLogic_BINARY_DIR}
   ${vtkSlicer${MODULE_NAME}ModuleMRML_SOURCE_DIR}
   ${vtkSlicer${MODULE_NAME}ModuleMRML_BINARY_DIR}
-)
+  ${CMAKE_CURRENT_BINARY_DIR}
+  )
 
 set(displayable_manager_SRCS
   vtkMRMLMarkupsPlanesDisplayableManager3D.cxx
   )
 
-include(${VTK_CMAKE_DIR}/vtkMakeInstantiator.cmake)
-VTK_MAKE_INSTANTIATOR3("${MODULE_NAME}Instantiator"
-  displayable_manager_instantiator_SRCS
-  "${displayable_manager_SRCS}"
-  "${${KIT}_EXPORT_DIRECTIVE}"
-  ${CMAKE_CURRENT_BINARY_DIR}
-  "${KIT}Export.h"
-)
+SlicerConfigureDisplayableManagerObjectFactory(
+  TARGET_NAME ${KIT}
+  SRCS "${displayable_manager_SRCS}"
+  EXPORT_MACRO "${${KIT}_EXPORT_DIRECTIVE}"
+  EXPORT_HEADER "${KIT}Export.h"
+  OUTPUT_SRCS_VAR displayable_manager_instantiator_SRCS
+  )
 
 set(${KIT}_SRCS
   ${displayable_manager_instantiator_SRCS}
   ${displayable_manager_SRCS}
-)
+  )
 
 set(${KIT}_TARGET_LIBRARIES
   ${MRML_LIBRARIES}
   vtkSlicer${MODULE_NAME}ModuleMRML
   vtkSlicerMarkupsModuleMRML
   vtkSlicerMarkupsModuleMRMLDisplayableManager
-)
+  )
 
 #-----------------------------------------------------------------------------
 SlicerMacroBuildModuleLogic(
@@ -43,4 +43,4 @@ SlicerMacroBuildModuleLogic(
   INCLUDE_DIRECTORIES ${${KIT}_INCLUDE_DIRECTORIES}
   SRCS ${${KIT}_SRCS}
   TARGET_LIBRARIES ${${KIT}_TARGET_LIBRARIES}
-)
+  )

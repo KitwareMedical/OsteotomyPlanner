@@ -31,6 +31,10 @@
 // Planner includes
 #include "qSlicerPlanesModule.h"
 
+// DisplayableManager Initialization
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkSlicerPlanesModuleMRMLDisplayableManager)
+
 //-----------------------------------------------------------------------------
 Q_EXPORT_PLUGIN2(qSlicerPlanesModule, qSlicerPlanesModule);
 
