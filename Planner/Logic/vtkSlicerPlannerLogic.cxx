@@ -797,3 +797,47 @@ vtkVector3d vtkSlicerPlannerLogic::bendPoint2(vtkVector3d point, double angle)
   bent.SetZ(p_bent[2] / p_bent[3]);
   return bent;
 }
+
+//----------------------------------------------------------------------------
+//Remove models and clear data
+void vtkSlicerPlannerLogic::clearModelsAndData()
+{
+  this->clearBendingData();
+  if (this->SkullWrappedPreOP)
+  {
+    this->GetMRMLScene()->RemoveNode(this->SkullWrappedPreOP);
+    this->SkullWrappedPreOP = NULL;
+  }
+  if (this->HealthyBrain)
+  {
+    this->GetMRMLScene()->RemoveNode(this->HealthyBrain);
+    this->HealthyBrain = NULL;
+  }
+  if (this->CurrentModel)
+  {
+    this->GetMRMLScene()->RemoveNode(this->CurrentModel);
+    this->CurrentModel = NULL;
+  }
+  if (this->BoneTemplate)
+  {
+    this->GetMRMLScene()->RemoveNode(this->BoneTemplate);
+    this->BoneTemplate = NULL;
+  }
+  if (this->TempMerged)
+  {
+    this->GetMRMLScene()->RemoveNode(this->TempMerged);
+    this->TempMerged = NULL;
+  }
+
+  if (this->TempWrapped)
+  {
+    this->GetMRMLScene()->RemoveNode(this->TempWrapped);
+    this->TempWrapped = NULL;
+  }
+
+  this->preOPICV = 0;
+  this->healthyBrainICV = 0;
+  this->currentICV = 0;
+  this->templateICV = 0;
+
+}
