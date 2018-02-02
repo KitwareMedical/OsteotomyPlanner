@@ -765,8 +765,15 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   //Create nodes
   vtkNew<vtkMRMLModelNode> splitNode1;
   vtkNew<vtkMRMLModelNode> splitNode2;
-  splitNode1->SetName("TemporaryBoneA");
-  splitNode2->SetName("TemporaryBoneB");
+
+  std::stringstream name1;
+  std::stringstream name2;
+
+  name1 << this->CurrentCutNode->GetName() << "_cut1";
+  name2 << this->CurrentCutNode->GetName() << "_cut2";
+
+  splitNode1->SetName(name1.str().c_str());
+  splitNode2->SetName(name2.str().c_str());
 
   //Set scene on nodes
   splitNode1->SetScene(scene);
@@ -791,7 +798,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   scene->AddNode(splitNode1.GetPointer());
   scene->AddNode(splitNode2.GetPointer());
 
-  this->splitModel(vtkMRMLModelNode::SafeDownCast(CurrentCutNode), splitNode1.GetPointer(),
+  this->splitModel(vtkMRMLModelNode::SafeDownCast(this->CurrentCutNode), splitNode1.GetPointer(),
                    splitNode2.GetPointer(), scene);
 
   //add to hierarchy
@@ -825,15 +832,6 @@ void qSlicerPlannerModuleWidgetPrivate::adjustCut(vtkMRMLScene* scene)
 //Finish current cut
 void qSlicerPlannerModuleWidgetPrivate::completeCut(vtkMRMLScene* scene)
 {
-  //Rename temp bones
-  std::stringstream rename1;
-  std::stringstream rename2;
-
-  rename1 << this->CurrentCutNode->GetName() << "_cut1";
-  rename2 << this->CurrentCutNode->GetName() << "_cut2";
-  StagedCutNode1->SetName(rename1.str().c_str());
-  StagedCutNode2->SetName(rename2.str().c_str());
-
   //dump refs from staging vars
   StagedCutNode1 = NULL;
   StagedCutNode2 = NULL;
