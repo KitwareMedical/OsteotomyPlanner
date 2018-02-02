@@ -673,6 +673,8 @@ vtkVector3d vtkSlicerPlannerLogic::projectToModel(vtkVector3d point, vtkCellLoca
   return projection;
 }
 
+//----------------------------------------------------------------------------
+//Create Plane from two points in plane and two points on normal vector
 vtkSmartPointer<vtkPlane> vtkSlicerPlannerLogic::createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D)
 {
   //A and B are in the plane
@@ -687,6 +689,8 @@ vtkSmartPointer<vtkPlane> vtkSlicerPlannerLogic::createPlane(vtkVector3d A, vtkV
   return plane;
 }
 
+//----------------------------------------------------------------------------
+//bend point using vector computed from axis
 vtkVector3d vtkSlicerPlannerLogic::bendPoint(vtkVector3d point, double magnitude)
 {
   double ax[3];
@@ -711,7 +715,8 @@ vtkVector3d vtkSlicerPlannerLogic::bendPoint(vtkVector3d point, double magnitude
 
   return point2;
 }
-
+//----------------------------------------------------------------------------
+//Create a point locator constrained to the bending axis
 void vtkSlicerPlannerLogic::createBendingLocator()
 {
   this->BendingPlaneLocator = vtkSmartPointer<vtkCellLocator>::New();
@@ -730,6 +735,8 @@ void vtkSlicerPlannerLogic::createBendingLocator()
   this->BendingPlaneLocator->BuildLocator();
 }
 
+//----------------------------------------------------------------------------
+//Create matrix for rotation around axis
 vtkSmartPointer<vtkMatrix4x4> vtkSlicerPlannerLogic::createBendingMatrix(vtkVector3d pointV, double angle)
 {
   vtkSmartPointer<vtkMatrix4x4> matrix = vtkSmartPointer<vtkMatrix4x4>::New();
@@ -772,6 +779,8 @@ vtkSmartPointer<vtkMatrix4x4> vtkSlicerPlannerLogic::createBendingMatrix(vtkVect
   return matrix;
 }
 
+//----------------------------------------------------------------------------
+//Bend point using bending matrix
 vtkVector3d vtkSlicerPlannerLogic::bendPoint2(vtkVector3d point, double angle)
 {
   if(this->BendingPlane->EvaluateFunction(point.GetData()) < 0)
