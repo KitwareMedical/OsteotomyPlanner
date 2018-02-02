@@ -423,7 +423,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
     col3->SetName("Pre-op");
     vtkAbstractArray* col4 = modelMetricsTable->AddColumn();
-    col3->SetName("Current");
+    col4->SetName("Current");
     modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
     modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
     modelMetricsTable->SetLocked(true);
