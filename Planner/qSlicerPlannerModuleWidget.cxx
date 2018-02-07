@@ -954,12 +954,16 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
     if(childModel)
     {
-      childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
       childModel->GetDisplayNode()->SetScalarVisibility(visible);
-      childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseManualScalarRange);
-      childModel->GetDisplayNode()->SetScalarRange(0, 15);
-      const char *colorNodeID = "vtkMRMLColorTableNodeFileColdToHotRainbow.txt";
-      childModel->GetDisplayNode()->SetAndObserveColorNodeID(colorNodeID);
+
+      if (visible)
+      {
+        childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
+        childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseManualScalarRange);
+        childModel->GetDisplayNode()->SetScalarRange(0, 15);
+        const char *colorNodeID = "vtkMRMLColorTableNodeFileColdToHotRainbow.txt";
+        childModel->GetDisplayNode()->SetAndObserveColorNodeID(colorNodeID);
+      }      
     }
   }
 }

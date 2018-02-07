@@ -380,6 +380,7 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
 {
   vtkMRMLModelNode* node = vtkMRMLModelNode::SafeDownCast(this->GetMRMLScene()->GetNodeByID(cmdNode->GetParameterAsString("outputModel")));
   node->GetDisplayNode()->SetVisibility(0);
+  node->GetDisplayNode()->SetActiveScalarName("Normals");
   this->GetMRMLScene()->RemoveNode(cmdNode);
 
   if(this->TempMerged)
