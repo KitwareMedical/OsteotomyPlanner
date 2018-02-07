@@ -1192,6 +1192,7 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->SingleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
   this->connect(d->ASideButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
   this->connect(d->BSideButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
+  this->connect(d->FinishButton, SIGNAL(clicked()), this, SLOT(finishPlanButtonClicked()));
 
 
 }
@@ -1840,4 +1841,13 @@ void qSlicerPlannerModuleWidget::launchMetrics()
     this->plannerLogic()->fillMetricsTable(d->HierarchyNode, d->modelMetricsTable);
     this->updateWidgetFromMRML();
   }
+}
+
+//-----------------------------------------------------------------------------
+//Call clean up code for module
+void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->hardenTransforms(false);
+  this->plannerLogic()->clearModelsAndData();
 }
