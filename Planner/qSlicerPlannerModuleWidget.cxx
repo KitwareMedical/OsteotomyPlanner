@@ -94,10 +94,12 @@ public:
   vtkMRMLLinearTransformNode* getTransformNode(
     vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
   void removeTransformNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
+  void removeTransforms(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
 
   void createPlanesIfNecessary(
     vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
   void updatePlanesFromModel(vtkMRMLScene* scene, vtkMRMLModelNode*) const;
+  void removePlanes(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
 
   vtkMRMLMarkupsPlanesNode* createPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode);
   void removePlaneNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
@@ -468,6 +470,32 @@ void qSlicerPlannerModuleWidgetPrivate::fireDeleteChildrenWarning() const
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
+::removeTransforms(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+{
+  if (!hierarchy)
+  {
+    return;
+  }
+
+  this->removeTransformNode(scene, hierarchy);
+
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  hierarchy->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+    if (childModel)
+    {
+      this->removeTransformNode(scene, childModel);
+    }
+  }
+
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate
 ::createTransformsIfNecessary(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
 {
   if(!hierarchy)
@@ -623,6 +651,33 @@ void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
         childPlane = this->createPlaneNode(scene, childModel);
         this->updatePlanesFromModel(scene, childModel);
       }
+
+    }
+  }
+
+
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidgetPrivate::removePlanes(
+  vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+{
+  if (!hierarchy)
+  {
+    return;
+  }
+  int count = 0;
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  std::vector<vtkMRMLModelNode*> models;
+  hierarchy->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+    if (childModel)
+    {
+      this->removePlaneNode(scene, childModel);
 
     }
   }
@@ -1116,6 +1171,7 @@ void qSlicerPlannerModuleWidget::setup()
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
   d->BrainReferenceOpenButton->setIcon(loadIcon);
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
+  d->ModelHierarchyNodeComboBox->setNoneEnabled(true);
 
   // Connect
   this->connect(
@@ -1425,6 +1481,16 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {
     d->BSideButton->setEnabled(false);
     d->ASideButton->setEnabled(false);
+  }
+
+  //FinishButton
+  if (d->bendingActive || d->cuttingActive)
+  {
+    d->FinishButton->setEnabled(false);
+  }
+  else
+  {
+    d->FinishButton->setEnabled(true);
   }
 
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
@@ -1856,6 +1922,23 @@ void qSlicerPlannerModuleWidget::launchMetrics()
 void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  d->hardenTransforms(false);
-  this->plannerLogic()->clearModelsAndData();
+
+  
+  if (d->HierarchyNode)
+  {
+    d->hideTransforms();
+    d->hardenTransforms(false);
+    d->clearControlPoints(this->mrmlScene());
+    this->plannerLogic()->clearModelsAndData();
+  }
+
+  //Clear out hierarchy
+  vtkMRMLModelHierarchyNode* tempH = d->HierarchyNode;
+  //d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
+  d->HierarchyNode = NULL;
+  this->updateWidgetFromMRML();
+
+
+  d->removePlanes(this->mrmlScene(), tempH);
+  d->removeTransforms(this->mrmlScene(), tempH);
 }
