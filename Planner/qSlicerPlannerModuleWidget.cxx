@@ -1218,6 +1218,10 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
   this->qvtkReconnect(
     this->mrmlScene(), vtkMRMLScene::NodeRemovedEvent,
     this, SLOT(onNodeRemovedEvent(vtkObject*, vtkObject*)));
+
+  this->qvtkReconnect(
+    this->mrmlScene(), vtkMRMLScene::StartCloseEvent,
+    this, SLOT(finishPlanButtonClicked()));
 }
 
 //-----------------------------------------------------------------------------
