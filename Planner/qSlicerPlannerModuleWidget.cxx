@@ -1378,6 +1378,16 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 {
   Q_D(qSlicerPlannerModuleWidget);
 
+  //activate for non-null hierarchy
+  if (d->HierarchyNode)
+  {
+    d->BendingCollapsibleButton->setEnabled(true);
+    d->CuttingCollapsibleButton->setEnabled(true);
+    d->ReferencesCollapsibleButton->setEnabled(true);
+    d->MetricsCollapsibleButton->setEnabled(true);
+    d->FinishButton->setEnabled(true);
+  }
+  
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
   d->ModelHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
@@ -1496,6 +1506,16 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
+
+  //Deactivate everything for null hierarchy
+  if (!d->HierarchyNode)
+  {
+    d->BendingCollapsibleButton->setEnabled(false);
+    d->CuttingCollapsibleButton->setEnabled(false);
+    d->ReferencesCollapsibleButton->setEnabled(false);
+    d->MetricsCollapsibleButton->setEnabled(false);
+    d->FinishButton->setEnabled(false);
+  }
 
 }
 
