@@ -79,6 +79,7 @@ protected slots:
   void updateBendButtonClicked();
   void bendMagnitudeSliderUpdated();
   void finshBendClicked();
+  void finishPlanButtonClicked();
 
 
   // Metrics slots

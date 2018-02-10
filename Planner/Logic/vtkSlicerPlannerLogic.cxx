@@ -380,7 +380,10 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
 {
   vtkMRMLModelNode* node = vtkMRMLModelNode::SafeDownCast(this->GetMRMLScene()->GetNodeByID(cmdNode->GetParameterAsString("outputModel")));
   node->GetDisplayNode()->SetVisibility(0);
+  node->GetDisplayNode()->SetActiveScalarName("Normals");
   this->GetMRMLScene()->RemoveNode(cmdNode);
+  node->HideFromEditorsOn();
+  node->SetAttribute("PlannerRole", "WrappedModel");
 
   if(this->TempMerged)
   {
@@ -415,7 +418,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     modelTableName += HierarchyNode->GetName();
     modelMetricsTable->SetName(modelTableName.c_str());
 
-    vtkAbstractArray* col0 = modelMetricsTable->AddColumn();
+    modelMetricsTable->AddColumn();
     vtkAbstractArray* col1 = modelMetricsTable->AddColumn();
     col1->SetName("Healthy Brain");
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
@@ -423,12 +426,12 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
     col3->SetName("Pre-op");
     vtkAbstractArray* col4 = modelMetricsTable->AddColumn();
-    col3->SetName("Current");
+    col4->SetName("Current");
     modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
     modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
     modelMetricsTable->SetLocked(true);
 
-    int r1 = modelMetricsTable->AddEmptyRow();
+    modelMetricsTable->AddEmptyRow();
     modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
     
     std::stringstream brainVolumeSstr;
@@ -673,6 +676,8 @@ vtkVector3d vtkSlicerPlannerLogic::projectToModel(vtkVector3d point, vtkCellLoca
   return projection;
 }
 
+//----------------------------------------------------------------------------
+//Create Plane from two points in plane and two points on normal vector
 vtkSmartPointer<vtkPlane> vtkSlicerPlannerLogic::createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D)
 {
   //A and B are in the plane
@@ -687,6 +692,8 @@ vtkSmartPointer<vtkPlane> vtkSlicerPlannerLogic::createPlane(vtkVector3d A, vtkV
   return plane;
 }
 
+//----------------------------------------------------------------------------
+//bend point using vector computed from axis
 vtkVector3d vtkSlicerPlannerLogic::bendPoint(vtkVector3d point, double magnitude)
 {
   double ax[3];
@@ -711,7 +718,8 @@ vtkVector3d vtkSlicerPlannerLogic::bendPoint(vtkVector3d point, double magnitude
 
   return point2;
 }
-
+//----------------------------------------------------------------------------
+//Create a point locator constrained to the bending axis
 void vtkSlicerPlannerLogic::createBendingLocator()
 {
   this->BendingPlaneLocator = vtkSmartPointer<vtkCellLocator>::New();
@@ -730,11 +738,12 @@ void vtkSlicerPlannerLogic::createBendingLocator()
   this->BendingPlaneLocator->BuildLocator();
 }
 
+//----------------------------------------------------------------------------
+//Create matrix for rotation around axis
 vtkSmartPointer<vtkMatrix4x4> vtkSlicerPlannerLogic::createBendingMatrix(vtkVector3d pointV, double angle)
 {
   vtkSmartPointer<vtkMatrix4x4> matrix = vtkSmartPointer<vtkMatrix4x4>::New();
   double axis[3];
-  double point[3];
   double L = 1;
 
   this->SourcePoints->GetPoint(4, axis);
@@ -772,6 +781,8 @@ vtkSmartPointer<vtkMatrix4x4> vtkSlicerPlannerLogic::createBendingMatrix(vtkVect
   return matrix;
 }
 
+//----------------------------------------------------------------------------
+//Bend point using bending matrix
 vtkVector3d vtkSlicerPlannerLogic::bendPoint2(vtkVector3d point, double angle)
 {
   if(this->BendingPlane->EvaluateFunction(point.GetData()) < 0)
@@ -796,4 +807,48 @@ vtkVector3d vtkSlicerPlannerLogic::bendPoint2(vtkVector3d point, double angle)
   bent.SetY(p_bent[1] / p_bent[3]);
   bent.SetZ(p_bent[2] / p_bent[3]);
   return bent;
+}
+
+//----------------------------------------------------------------------------
+//Remove models and clear data
+void vtkSlicerPlannerLogic::clearModelsAndData()
+{
+  this->clearBendingData();
+  if (this->SkullWrappedPreOP)
+  {
+    this->GetMRMLScene()->RemoveNode(this->SkullWrappedPreOP);
+    this->SkullWrappedPreOP = NULL;
+  }
+  if (this->HealthyBrain)
+  {
+    this->GetMRMLScene()->RemoveNode(this->HealthyBrain);
+    this->HealthyBrain = NULL;
+  }
+  if (this->CurrentModel)
+  {
+    this->GetMRMLScene()->RemoveNode(this->CurrentModel);
+    this->CurrentModel = NULL;
+  }
+  if (this->BoneTemplate)
+  {
+    this->GetMRMLScene()->RemoveNode(this->BoneTemplate);
+    this->BoneTemplate = NULL;
+  }
+  if (this->TempMerged)
+  {
+    this->GetMRMLScene()->RemoveNode(this->TempMerged);
+    this->TempMerged = NULL;
+  }
+
+  if (this->TempWrapped)
+  {
+    this->GetMRMLScene()->RemoveNode(this->TempWrapped);
+    this->TempWrapped = NULL;
+  }
+
+  this->preOPICV = 0;
+  this->healthyBrainICV = 0;
+  this->currentICV = 0;
+  this->templateICV = 0;
+
 }

@@ -62,6 +62,8 @@ public:
   // Delete all the children of the given hierarchy node.
   bool DeleteHierarchyChildren(vtkMRMLNode* node);
 
+  void clearModelsAndData();
+
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
   vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
   vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
