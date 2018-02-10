@@ -16,7 +16,6 @@
 ==============================================================================*/
 
 // Qt includes
-#include <QtPlugin>
 
 // VTK includes
 #include <vtkNew.h>
@@ -36,8 +35,11 @@
 VTK_MODULE_INIT(vtkSlicerPlanesModuleMRMLDisplayableManager)
 
 //-----------------------------------------------------------------------------
-Q_EXPORT_PLUGIN2(qSlicerPlanesModule, qSlicerPlanesModule);
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#include <QtPlugin>
+	Q_EXPORT_PLUGIN2(qSlicerPlanesModule, qSlicerPlanesModule);
+#endif
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerPlanesModulePrivate

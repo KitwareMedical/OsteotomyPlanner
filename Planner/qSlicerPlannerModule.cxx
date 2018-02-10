@@ -16,7 +16,6 @@
 ==============================================================================*/
 
 // Qt includes
-#include <QtPlugin>
 
 // VTK includes
 #include <vtkSmartPointer.h>
@@ -30,8 +29,11 @@
 #include "qSlicerPlannerModuleWidget.h"
 
 //-----------------------------------------------------------------------------
-Q_EXPORT_PLUGIN2(qSlicerPlannerModule, qSlicerPlannerModule);
 
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#include <QtPlugin>
+Q_EXPORT_PLUGIN2(qSlicerPlannerModule, qSlicerPlannerModule);
+#endif
 //-----------------------------------------------------------------------------
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerPlannerModulePrivate
