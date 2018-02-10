@@ -418,7 +418,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     modelTableName += HierarchyNode->GetName();
     modelMetricsTable->SetName(modelTableName.c_str());
 
-    vtkAbstractArray* col0 = modelMetricsTable->AddColumn();
+    modelMetricsTable->AddColumn();
     vtkAbstractArray* col1 = modelMetricsTable->AddColumn();
     col1->SetName("Healthy Brain");
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
@@ -431,7 +431,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     modelMetricsTable->SetUseFirstColumnAsRowHeader(true);
     modelMetricsTable->SetLocked(true);
 
-    int r1 = modelMetricsTable->AddEmptyRow();
+    modelMetricsTable->AddEmptyRow();
     modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
     
     std::stringstream brainVolumeSstr;
@@ -744,7 +744,6 @@ vtkSmartPointer<vtkMatrix4x4> vtkSlicerPlannerLogic::createBendingMatrix(vtkVect
 {
   vtkSmartPointer<vtkMatrix4x4> matrix = vtkSmartPointer<vtkMatrix4x4>::New();
   double axis[3];
-  double point[3];
   double L = 1;
 
   this->SourcePoints->GetPoint(4, axis);
