@@ -67,7 +67,7 @@
 #include <qSlicerCoreApplication.h>
 #include <qSlicerModuleManager.h>
 #include "qSlicerAbstractCoreModule.h"
-#include <qSlicerCLIModule.h>
+//#include <qSlicerCLIModule.h>
 #include <vtkSlicerCLIModuleLogic.h>
 
 // Self
@@ -1244,12 +1244,12 @@ void qSlicerPlannerModuleWidget::setup()
 
   d->ModelHierarchyTreeView->setHeaderHidden(false);
   d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->planesVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->planesVisibilityColumn(), QHeaderView::ResizeToContents);
 
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
