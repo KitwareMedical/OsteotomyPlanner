@@ -4,12 +4,12 @@ project(OsteotomyPlanner)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "http://slicer.org/slicerWiki/index.php/Documentation/Nightly/Extensions/OsteotomyPlanner")
-set(EXTENSION_CATEGORY "Planning")
+set(EXTENSION_HOMEPAGE "https://github.com/KitwareMedical/OsteotomyPlanner/wiki")
+set(EXTENSION_CATEGORY "Osteotomy Planner")
 set(EXTENSION_CONTRIBUTORS "Johan Andruejol (Kitware Inc.), Sam Horvath (Kitware Inc.")
-set(EXTENSION_DESCRIPTION "Osteotomy Planner is an extension design to help the planning of bone surgeries.")
-set(EXTENSION_ICONURL "http://www.example.com/Slicer/Extensions/OsteotomyPlanner.png")
-set(EXTENSION_SCREENSHOTURLS "http://www.example.com/Slicer/Extensions/OsteotomyPlanner/Screenshots/1.png")
+set(EXTENSION_DESCRIPTION "Osteotomy Planner is an extension designed to help the planning of bone surgeries.")
+set(EXTENSION_ICONURL "https://raw.githubusercontent.com/KitwareMedical/OsteotomyPlanner/master/Planner/Resources/Icons/Planner.png")
+set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/KitwareMedical/OsteotomyPlanner/master/Planner/Resources/Screenshots/Screenshot.jpg")
 set(EXTENSION_DEPENDS "NA") # Specified as a space separated string, a list or 'NA' if any
 set(EXTENSION_BUILD_SUBDIRECTORY inner-build)
 
