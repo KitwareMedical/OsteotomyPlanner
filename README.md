@@ -2,6 +2,8 @@
 OsteotomyPlanner README:
 ==============================================================================
 
+## Documentation is found [here](https://github.com/KitwareMedical/OsteotomyPlanner/wiki)
+
 ##
 Osteotomy Planner is a Slicer extension. To learn more about Slicer and Slicer
 extensions, please visit the following links:
