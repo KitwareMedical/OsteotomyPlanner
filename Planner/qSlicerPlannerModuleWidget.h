@@ -81,6 +81,8 @@ protected slots:
   void finshBendClicked();
   void finishPlanButtonClicked();
 
+  void modelCallback(const QModelIndex &);
+
 
   // Metrics slots
   void onComputeButton();

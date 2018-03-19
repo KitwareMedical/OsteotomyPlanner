@@ -28,6 +28,7 @@
 #include "qMRMLSceneModelHierarchyModel.h"
 class qMRMLPlannerModelHierarchyModelPrivate;
 
+
 class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
   : public qMRMLSceneModelHierarchyModel
 {
@@ -42,6 +43,14 @@ class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
              READ planesVisibilityColumn
              WRITE setPlanesVisibilityColumn)
 
+  Q_PROPERTY(int cutButtonColumn
+             READ cutButtonColumn
+             WRITE setCutButtonColumn)
+
+  Q_PROPERTY(int bendButtonColumn
+             READ bendButtonColumn
+             WRITE setBendButtonColumn)
+
 public:
   typedef qMRMLSceneModelHierarchyModel Superclass;
   qMRMLPlannerModelHierarchyModel(QObject* parent = 0);
@@ -53,11 +62,22 @@ public:
   int planesVisibilityColumn()const;
   void setPlanesVisibilityColumn(int column);
 
+  int cutButtonColumn()const;
+  void setCutButtonColumn(int column);
+
+  int bendButtonColumn()const;
+  void setBendButtonColumn(int column);
+
   static const char* transformDisplayReferenceRole();
   static const char* planesReferenceRole();
 
   void setPlaneVisibility(vtkMRMLNode* node, bool visible);
   void setTransformVisibility(vtkMRMLNode* node, bool visible);
+
+
+signals:
+    void cutButtonClicked(vtkMRMLNode* node);
+    void bendButtonClicked(vtkMRMLNode* node);
 
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
@@ -77,6 +97,7 @@ protected slots:
 
 protected:
   QScopedPointer<qMRMLPlannerModelHierarchyModelPrivate> d_ptr;
+  vtkMRMLNode* activeNode;
 
 private:
   Q_DECLARE_PRIVATE(qMRMLPlannerModelHierarchyModel);

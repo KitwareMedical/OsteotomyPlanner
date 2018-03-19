@@ -20,6 +20,8 @@
 #include <QMessageBox>
 #include <QSettings>
 
+
+
 // CTK includes
 #include "ctkMessageBox.h"
 
@@ -73,6 +75,8 @@
 // Self
 #include "qMRMLPlannerModelHierarchyModel.h"
 #include "vtkSlicerPlannerLogic.h"
+#include "ButtonItemDelegate.h"
+
 
 //STD includes
 #include <vector>
@@ -198,7 +202,6 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
     scene->RemoveNode(this->PlacingNode);
     this->PlacingNode = NULL;
   }
-    
 }
 
 //-----------------------------------------------------------------------------
@@ -1177,8 +1180,10 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
   sceneModel->setTransformVisibilityColumn(4);
   sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
-  sceneModel->setPlanesVisibilityColumn(5);
-  sceneModel->setHeaderData(5, Qt::Horizontal, "Planes");
+  sceneModel->setCutButtonColumn(5);
+  sceneModel->setHeaderData(5, Qt::Horizontal, "Cut");
+  sceneModel->setBendButtonColumn(6);
+  sceneModel->setHeaderData(6, Qt::Horizontal, "Bend");
   // use lazy update instead of responding to scene import end event
   sceneModel->setLazyUpdate(true);
 
@@ -1190,10 +1195,18 @@ void qSlicerPlannerModuleWidget::setup()
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->planesVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
 
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
+  
+  ButtonItemDelegate* cuts = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
+  ButtonItemDelegate* bends = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
+  
+  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
+  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
+
 
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
@@ -1290,6 +1303,9 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->ASideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->BSideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->FinishButton, SIGNAL(clicked()), this, SLOT(finishPlanButtonClicked()));
+
+  this->connect(cuts, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
+  this->connect(bends, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
 
 
 }
@@ -1997,3 +2013,23 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   d->removeTransforms(this->mrmlScene(), tempH);
   d->untagModels(this->mrmlScene(), tempH);
 }
+
+void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
+{
+    Q_D(qSlicerPlannerModuleWidget);    
+    
+    QModelIndex sourceIndex = d->ModelHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
+    vtkMRMLNode* node = d->ModelHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
+
+    if (sourceIndex.column() == 5)
+    {
+        std::cout << "Cutting model " << node->GetName() << std::endl;
+    }
+    if (sourceIndex.column() == 6)
+    {
+        std::cout << "Bending model " << node->GetName() << std::endl;
+    }
+    
+    
+}
+

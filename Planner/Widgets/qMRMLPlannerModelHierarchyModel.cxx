@@ -53,6 +53,8 @@ public:
 
   int TransformVisibilityColumn;
   int PlanesVisibilityColumn;
+  int CutButtonColumn;
+  int BendButtonColumn;
 };
 
 //------------------------------------------------------------------------------
@@ -60,6 +62,8 @@ qMRMLPlannerModelHierarchyModelPrivate::qMRMLPlannerModelHierarchyModelPrivate()
 {
   this->TransformVisibilityColumn = -1;
   this->PlanesVisibilityColumn = -1;
+  this->CutButtonColumn = -1;
+  this->BendButtonColumn = -1;
 }
 
 //------------------------------------------------------------------------------
@@ -129,6 +133,7 @@ bool qMRMLPlannerModelHierarchyModelPrivate
 qMRMLPlannerModelHierarchyModel::qMRMLPlannerModelHierarchyModel(QObject* vparent)
   : Superclass(vparent)
   , d_ptr(new qMRMLPlannerModelHierarchyModelPrivate)
+  , activeNode(NULL)
 {
 }
 
@@ -208,6 +213,14 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
   {
     flags |= Qt::NoItemFlags;
   }
+  else if (column == this->cutButtonColumn() && model)
+  {
+      flags |= Qt::ItemIsUserCheckable;
+  }
+  else if (column == this->bendButtonColumn() && model)
+  {
+	  flags |= Qt::ItemIsUserCheckable;
+  }
   return flags;
 }
 
@@ -216,6 +229,7 @@ void qMRMLPlannerModelHierarchyModel
 ::updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
+  vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
   if(column == this->transformVisibilityColumn())
   {
     vtkMRMLTransformDisplayNode* display =
@@ -232,6 +246,7 @@ void qMRMLPlannerModelHierarchyModel
     vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
     if(planes)
     {
+      
       bool visible = false;
       for(int i = 0; i < planes->GetNumberOfMarkups(); ++i)
       {
@@ -245,6 +260,7 @@ void qMRMLPlannerModelHierarchyModel
       item->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
     }
   }
+  
   this->Superclass::updateItemDataFromNode(item, node, column);
 }
 
@@ -300,6 +316,7 @@ void qMRMLPlannerModelHierarchyModel
       }
     }
   }
+  
   return this->Superclass::updateNodeFromItemData(node, item);
 }
 
@@ -334,19 +351,51 @@ void qMRMLPlannerModelHierarchyModel::setPlanesVisibilityColumn(int column)
 }
 
 //------------------------------------------------------------------------------
+int qMRMLPlannerModelHierarchyModel::cutButtonColumn() const
+{
+    Q_D(const qMRMLPlannerModelHierarchyModel);
+    return d->CutButtonColumn;
+}
+
+//------------------------------------------------------------------------------
+void qMRMLPlannerModelHierarchyModel::setCutButtonColumn(int column)
+{
+    Q_D(qMRMLPlannerModelHierarchyModel);
+    d->CutButtonColumn = column;
+    this->updateColumnCount();
+}
+
+//------------------------------------------------------------------------------
+int qMRMLPlannerModelHierarchyModel::bendButtonColumn() const
+{
+    Q_D(const qMRMLPlannerModelHierarchyModel);
+    return d->BendButtonColumn;
+}
+
+//------------------------------------------------------------------------------
+void qMRMLPlannerModelHierarchyModel::setBendButtonColumn(int column)
+{
+    Q_D(qMRMLPlannerModelHierarchyModel);
+    d->BendButtonColumn = column;
+    this->updateColumnCount();
+}
+
+//------------------------------------------------------------------------------
 int qMRMLPlannerModelHierarchyModel::maxColumnId()const
 {
   Q_D(const qMRMLPlannerModelHierarchyModel);
   int maxId = this->Superclass::maxColumnId();
   maxId = qMax(maxId, d->TransformVisibilityColumn);
   maxId = qMax(maxId, d->PlanesVisibilityColumn);
+  maxId = qMax(maxId, d->CutButtonColumn);
+  maxId = qMax(maxId, d->BendButtonColumn);
   return maxId;
 }
 
 void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+  //this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
   planes->SetNthMarkupVisibility(0, visible);
 
