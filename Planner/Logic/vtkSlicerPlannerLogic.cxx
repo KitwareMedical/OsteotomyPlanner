@@ -462,10 +462,17 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
 void vtkSlicerPlannerLogic::initializeBend(vtkPoints* inputFiducials, vtkMRMLModelNode* model)
 {
   this->Fiducials = inputFiducials;
+  this->ModelToBend = model;
+
   vtkNew<vtkTriangleFilter> triangulate;
   vtkNew<vtkCleanPolyData> clean;
-  this->ModelToBend = model;
-  clean->SetInputData(this->ModelToBend->GetPolyData());
+  vtkNew<vtkPolyDataNormals> normals;
+  normals->SetComputePointNormals(1);
+  normals->SetComputeCellNormals(1);
+  normals->SetAutoOrientNormals(1);
+  normals->SetInputData(this->ModelToBend->GetPolyData());
+  normals->Update();
+  clean->SetInputData(normals->GetOutput());
   clean->Update();
   this->BendingPolyData = clean->GetOutput();
 
@@ -851,4 +858,22 @@ void vtkSlicerPlannerLogic::clearModelsAndData()
   this->currentICV = 0;
   this->templateICV = 0;
 
+}
+
+vtkVector3d vtkSlicerPlannerLogic::getNormalAtPoint(vtkVector3d point, vtkCellLocator* locator, vtkPolyData* model)
+{
+    double closestPoint[3];//the coordinates of the closest point will be returned here
+    double closestPointDist2; //the squared distance to the closest point will be returned here
+    vtkIdType cellId; //the cell id of the cell containing the closest point will be returned here
+    int subId; //this is rarely used (in triangle strips only, I believe)
+    locator->FindClosestPoint(point.GetData(), closestPoint, cellId, subId, closestPointDist2);
+
+    vtkVector3d normal;
+    double n[3];
+    model->GetCellData()->GetNormals()->GetTuple(cellId, n);
+    normal.SetX(n[0]);
+    normal.SetY(n[1]);
+    normal.SetZ(n[2]);
+
+    return normal;
 }

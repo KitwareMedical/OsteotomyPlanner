@@ -117,6 +117,7 @@ private:
   vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);
   vtkVector3d projectToModel(vtkVector3d point, vtkPolyData* model);
   vtkVector3d projectToModel(vtkVector3d point, vtkCellLocator* locator);
+  vtkVector3d getNormalAtPoint(vtkVector3d point, vtkCellLocator* locator, vtkPolyData* model);
   vtkSmartPointer<vtkMatrix4x4> createBendingMatrix(vtkVector3d pointV, double angle);
   vtkSmartPointer<vtkPlane> createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D);
   void createBendingLocator();
