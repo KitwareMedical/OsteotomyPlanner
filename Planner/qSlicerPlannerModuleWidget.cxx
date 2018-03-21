@@ -1295,10 +1295,10 @@ void qSlicerPlannerModuleWidget::setup()
     this, SLOT(onOpenTemplateReference()));
 
   this->connect(d->BendMagnitudeSlider, SIGNAL(valueChanged(double)), this, SLOT(bendMagnitudeSliderUpdated()));
-  this->connect(d->DoubleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
-  this->connect(d->SingleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
-  this->connect(d->ASideButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
-  this->connect(d->BSideButton, SIGNAL(toggled(bool)), this, SLOT(updateWidgetFromMRML()));
+  this->connect(d->DoubleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
+  this->connect(d->SingleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
+  this->connect(d->ASideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
+  this->connect(d->BSideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->FinishButton, SIGNAL(clicked()), this, SLOT(finishPlanButtonClicked()));
 
 
@@ -1808,6 +1808,7 @@ void qSlicerPlannerModuleWidget::bendMagnitudeSliderUpdated()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = d->BendMagnitudeSlider->value();
+  this->updateBendButtonClicked();
   this->updateWidgetFromMRML();
 }
 
