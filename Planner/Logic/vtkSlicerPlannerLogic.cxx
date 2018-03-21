@@ -501,7 +501,7 @@ vtkSmartPointer<vtkThinPlateSplineTransform> vtkSlicerPlannerLogic::getBendTrans
       vtkVector3d bent = point;
       if(this->bendMode == Double)
       {
-        bent = this->bendPoint2(point, magnitude);
+        bent = this->bendPoint(point, magnitude);
       }
       if(this->bendMode == Single)
       {
@@ -509,14 +509,14 @@ vtkSmartPointer<vtkThinPlateSplineTransform> vtkSlicerPlannerLogic::getBendTrans
         {
           if(this->BendingPlane->EvaluateFunction(point.GetData())*this->BendingPlane->EvaluateFunction(this->SourcePoints->GetPoint(0)) > 0)
           {
-            bent = this->bendPoint2(point, magnitude);
+            bent = this->bendPoint(point, magnitude);
           }
         }
         if(this->bendSide == B)
         {
           if(this->BendingPlane->EvaluateFunction(point.GetData())*this->BendingPlane->EvaluateFunction(this->SourcePoints->GetPoint(1)) > 0)
           {
-            bent = this->bendPoint2(point, magnitude);
+            bent = this->bendPoint(point, magnitude);
           }
         }
 
@@ -553,50 +553,59 @@ void vtkSlicerPlannerLogic::clearBendingData()
 void vtkSlicerPlannerLogic::generateSourcePoints()
 {
   this->SourcePoints = vtkSmartPointer<vtkPoints>::New();
-  double bounds[6];
-  this->ModelToBend->GetBounds(bounds);
-  double xspan = bounds[1] - bounds[0];
-  double yspan = bounds[3] - bounds[2];
-  double zspan = bounds[5] - bounds[4];
+  bool bendingAxis = false;
 
-  double maxspan = vtkMath::Max(xspan, yspan);
-  maxspan = vtkMath::Max(maxspan, zspan);
-
-  
-  double a[3];
-  double b[3];
-  this->Fiducials->GetPoint(0, a);
-  this->Fiducials->GetPoint(1, b);
+  //A and B are on the bending line.  C and D are on the bending axis
+  vtkVector3d A;
+  vtkVector3d B;
+  vtkVector3d C;
+  vtkVector3d D;
+  vtkVector3d CD;
+  vtkVector3d AB;
 
   
+  double firstPoint[3];
+  double secondPoint[3];
 
-  vtkVector3d A = (vtkVector3d)a;
-  vtkVector3d B = (vtkVector3d)b;
+  this->Fiducials->GetPoint(0, firstPoint);
+  this->Fiducials->GetPoint(1, secondPoint);
 
-  vtkVector3d AB = B - A;
-  
-  //Compute C and D
-  vtkVector3d ABMid = A + 0.5*AB;
+  //we are receive the bending axis as input, must derive bending line
+  if (bendingAxis)
+  {
+      C = (vtkVector3d)firstPoint;
+      D = (vtkVector3d)secondPoint;
+      CD = D - C;
+      vtkVector3d CDMid = C + 0.5*CD;
+      vtkVector3d normal = this->getNormalAtPoint(CDMid, this->cellLocator, this->BendingPolyData);
+      vtkVector3d bendLine = normal.Cross(CD);
+      A = CDMid + bendLine;
+      B = CDMid - bendLine;
+      AB = B - A;
+  }
+  else  //we are receiving the bending line as input, must derive bending axis
+  {
+      A = (vtkVector3d)firstPoint;
+      B = (vtkVector3d)secondPoint;
+      AB = B - A;
+      vtkVector3d ABMid = A + 0.5*AB;
+      vtkVector3d normal = this->getNormalAtPoint(ABMid, this->cellLocator, this->BendingPolyData);
+      vtkVector3d bendAxis = normal.Cross(AB);
+      C = ABMid + bendAxis;
+      D = ABMid - bendAxis;
+      CD = D - C;
+  }
+    
   AB.Normalize();
-
-  vtkVector3d normal = this->getNormalAtPoint(ABMid, this->cellLocator, this->BendingPolyData);
-
-  vtkVector3d bendAxis = normal.Cross(AB);
-
-  vtkVector3d C = ABMid + bendAxis;
-  vtkVector3d D = ABMid - bendAxis;
-  vtkVector3d CD = D - C;
   CD.Normalize();
 
   vtkSmartPointer<vtkPlane> fixedPlane = this->createPlane(C, D, A, B);
-  vtkSmartPointer<vtkPlane> movingPlane = this->createPlane(A, B, C, D);
   this->BendingPlane = fixedPlane;
   this->createBendingLocator();
 
-  C = this->projectToModel(C, fixedPlane);
-  D = this->projectToModel(D, fixedPlane);
-  A = this->projectToModel(A, movingPlane);
-  B = this->projectToModel(B, movingPlane);
+  
+  A = this->projectToModel(A);
+  B = this->projectToModel(B);
 
   this->SourcePoints->InsertPoint(0, A.GetData());
   this->SourcePoints->InsertPoint(1, B.GetData());
@@ -619,7 +628,6 @@ void vtkSlicerPlannerLogic::generateSourcePoints()
 
   //Store beding axis in source points
   this->SourcePoints->InsertPoint(4, axis.GetData());
-  this->SourcePoints->InsertPoint(5, F.GetData());
 
   //Agressively downsample to create source points
   vtkNew<vtkCleanPolyData> clean;
@@ -647,7 +655,7 @@ vtkVector3d vtkSlicerPlannerLogic::projectToModel(vtkVector3d point, vtkPlane* p
 {
   vtkNew<vtkCutter> cutter;
   cutter->SetCutFunction(plane);
-  cutter->SetInputData(this->ModelToBend->GetPolyData());
+  cutter->SetInputData(this->BendingPolyData);
   vtkSmartPointer<vtkPolyData> cut;
   cutter->Update();
   cut = cutter->GetOutput();

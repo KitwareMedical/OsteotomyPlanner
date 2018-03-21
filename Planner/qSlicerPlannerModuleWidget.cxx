@@ -276,16 +276,6 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
   
 
   this->logic->initializeBend(this->Fiducials, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode));
-  vtkSmartPointer<vtkPoints> tempPoints = vtkSmartPointer<vtkPoints>::New();
-
-
-
-  //Pull corrected fiducials and display
-  tempPoints = this->logic->getSourcePoints();
-  tempPoints->GetPoint(0, posa);
-  tempPoints->GetPoint(1, posb);
-  this->MovingPointA->SetNthFiducialPositionFromArray(0, posa);
-  this->MovingPointB->SetNthFiducialPositionFromArray(0, posb);
   
   vtkNew<vtkCleanPolyData> clean;
   vtkNew<vtkTriangleFilter> triangulate;
