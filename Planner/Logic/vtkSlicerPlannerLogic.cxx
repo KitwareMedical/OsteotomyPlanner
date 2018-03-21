@@ -562,33 +562,32 @@ void vtkSlicerPlannerLogic::generateSourcePoints()
   double maxspan = vtkMath::Max(xspan, yspan);
   maxspan = vtkMath::Max(maxspan, zspan);
 
-  double c[3];
-  double d[3];
-  this->Fiducials->GetPoint(2, c);
-  this->Fiducials->GetPoint(3, d);
-
+  
   double a[3];
   double b[3];
   this->Fiducials->GetPoint(0, a);
   this->Fiducials->GetPoint(1, b);
 
-  vtkVector3d C = (vtkVector3d)c;
-  vtkVector3d D = (vtkVector3d)d;
-
-  vtkVector3d CD = D - C;
-  CD.Normalize();
-
-  C = C - (maxspan * CD);
-  D = D + (maxspan * CD);
+  
 
   vtkVector3d A = (vtkVector3d)a;
   vtkVector3d B = (vtkVector3d)b;
 
   vtkVector3d AB = B - A;
+  
+  //Compute C and D
+  vtkVector3d ABMid = A + 0.5*AB;
   AB.Normalize();
 
-  A = A - (maxspan * AB);
-  B = B + (maxspan * AB);
+  vtkVector3d normal = this->getNormalAtPoint(ABMid, this->cellLocator, this->ModelToBend->GetPolyData());
+
+  vtkVector3d bendAxis = normal.Cross(AB);
+
+  vtkVector3d C = ABMid + bendAxis;
+  vtkVector3d D = ABMid - bendAxis;
+  vtkVector3d CD = D - C;
+  CD.Normalize();
+
   vtkSmartPointer<vtkPlane> fixedPlane = this->createPlane(C, D, A, B);
   vtkSmartPointer<vtkPlane> movingPlane = this->createPlane(A, B, C, D);
   this->BendingPlane = fixedPlane;
