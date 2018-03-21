@@ -45,6 +45,8 @@
 //Self includes
 #include "vtkSlicerPlannerModuleLogicExport.h"
 
+#define D(x) std::cout << x << std::endl;
+
 
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate

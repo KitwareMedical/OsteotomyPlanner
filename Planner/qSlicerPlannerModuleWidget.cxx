@@ -78,6 +78,8 @@
 #include <vector>
 #include <sstream>
 
+#define D(x) std::cout << x << std::endl;
+
 
 
 //-----------------------------------------------------------------------------
