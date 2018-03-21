@@ -579,7 +579,7 @@ void vtkSlicerPlannerLogic::generateSourcePoints()
   vtkVector3d ABMid = A + 0.5*AB;
   AB.Normalize();
 
-  vtkVector3d normal = this->getNormalAtPoint(ABMid, this->cellLocator, this->ModelToBend->GetPolyData());
+  vtkVector3d normal = this->getNormalAtPoint(ABMid, this->cellLocator, this->BendingPolyData);
 
   vtkVector3d bendAxis = normal.Cross(AB);
 

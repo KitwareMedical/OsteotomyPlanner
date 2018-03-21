@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>690</width>
+    <width>487</width>
     <height>1366</height>
    </rect>
   </property>
@@ -433,7 +433,7 @@
       <string>Bending</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayoutBends">
       <item row="8" column="2">
@@ -502,67 +502,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="text">
-         <string>Moving Point A</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="3">
-       <widget class="QPushButton" name="CancelBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Cancel/Clear</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Fixed Point B</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="2">
-       <widget class="QPushButton" name="FixedPointAButton">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="MovingPointAButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="FixedPointBButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="3">
-       <widget class="QPushButton" name="UpdateBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Update Bend</string>
-        </property>
-       </widget>
-      </item>
       <item row="6" column="2" colspan="2">
        <widget class="qMRMLSliderWidget" name="BendMagnitudeSlider">
         <property name="enabled">
@@ -595,16 +534,6 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="3">
-       <widget class="QPushButton" name="HardenBendButton">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="text">
-         <string>Harden Bend</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="2" colspan="2">
        <widget class="qMRMLNodeComboBox" name="CurrentBendNodeComboBox">
         <property name="sizePolicy">
@@ -632,27 +561,6 @@
         </property>
         <property name="renameEnabled">
          <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="2">
-       <widget class="QPushButton" name="MovingPointBButton">
-        <property name="text">
-         <string>Place</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QLabel" name="label_6">
-        <property name="text">
-         <string>Moving Point B</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="FixedPointALabel">
-        <property name="text">
-         <string>Fixed Point A</string>
         </property>
        </widget>
       </item>
@@ -687,6 +595,50 @@
        <widget class="QLabel" name="AreaAfterBending">
         <property name="text">
          <string/>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="MovingPointAButton">
+        <property name="text">
+         <string>Place Point A</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="2">
+       <widget class="QPushButton" name="MovingPointBButton">
+        <property name="text">
+         <string>Place Point B</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="UpdateBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Update Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="HardenBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Harden Bend</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QPushButton" name="CancelBendButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>Cancel/Clear</string>
         </property>
        </widget>
       </item>

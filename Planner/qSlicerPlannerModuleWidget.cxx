@@ -143,8 +143,6 @@ public:
   vtkMRMLCommandLineModuleNode* cmdNode;
 
   //Bending Variables
-  vtkMRMLMarkupsFiducialNode* FixedPointC;
-  vtkMRMLMarkupsFiducialNode* FixedPointD;
   vtkMRMLMarkupsFiducialNode* MovingPointA;
   vtkMRMLMarkupsFiducialNode* MovingPointB;
   vtkMRMLMarkupsFiducialNode* PlacingNode;
@@ -183,16 +181,6 @@ public:
 //Clear fiducials used for bending
 void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
 {
-  if(this->FixedPointC)
-  {
-    scene->RemoveNode(this->FixedPointC);
-    this->FixedPointC = NULL;
-  }
-  if(this->FixedPointD)
-  {
-    scene->RemoveNode(this->FixedPointD);
-    this->FixedPointD = NULL;
-  }
   if(this->MovingPointA)
   {
     scene->RemoveNode(this->MovingPointA);
@@ -242,8 +230,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->BendASide = true;
   this->ScalarsVsBrain = true;
 
-  this->FixedPointC = NULL;
-  this->FixedPointD = NULL;
   this->MovingPointA = NULL;
   this->MovingPointB = NULL;
   this->PlacingNode = NULL;
@@ -267,8 +253,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 //Complete placement of current fiducial
 void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 {
-  this->FixedPointAButton->setEnabled(true);
-  this->FixedPointBButton->setEnabled(true);
   this->MovingPointAButton->setEnabled(true);
   this->MovingPointBButton->setEnabled(true);
   this->placingActive = false;
@@ -280,18 +264,14 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* scene)
 {
   this->Fiducials = vtkSmartPointer<vtkPoints>::New();
-  double posc[3];
-  double posd[3];
+  
   double posa[3];
   double posb[3];
-  this->FixedPointC->GetNthFiducialPosition(0, posc);
-  this->FixedPointD->GetNthFiducialPosition(0, posd);
   this->MovingPointA->GetNthFiducialPosition(0, posa);
   this->MovingPointB->GetNthFiducialPosition(0, posb);
   this->Fiducials->InsertNextPoint(posa[0], posa[1], posa[2]);
   this->Fiducials->InsertNextPoint(posb[0], posb[1], posb[2]);
-  this->Fiducials->InsertNextPoint(posc[0], posc[1], posc[2]);
-  this->Fiducials->InsertNextPoint(posd[0], posd[1], posd[2]);
+  
 
   this->logic->initializeBend(this->Fiducials, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode));
   vtkSmartPointer<vtkPoints> tempPoints = vtkSmartPointer<vtkPoints>::New();
@@ -302,13 +282,9 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
   tempPoints = this->logic->getSourcePoints();
   tempPoints->GetPoint(0, posa);
   tempPoints->GetPoint(1, posb);
-  tempPoints->GetPoint(2, posc);
-  tempPoints->GetPoint(3, posd);
   this->MovingPointA->SetNthFiducialPositionFromArray(0, posa);
   this->MovingPointB->SetNthFiducialPositionFromArray(0, posb);
-  this->FixedPointC->SetNthFiducialPositionFromArray(0, posc);
-  this->FixedPointD->SetNthFiducialPositionFromArray(0, posd);
-
+  
   vtkNew<vtkCleanPolyData> clean;
   vtkNew<vtkTriangleFilter> triangulate;
   clean->SetInputData(vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
@@ -384,32 +360,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
 {
 
   vtkNew<vtkMRMLMarkupsFiducialNode> fiducial;
-  if(id == 0)   //Place fiducial A
-  {
-    if(this->FixedPointC)
-    {
-      scene->RemoveNode(this->FixedPointC);
-      FixedPointC = NULL;
-    }
-    this->FixedPointC = fiducial.GetPointer();
-    this->FixedPointC->SetName("FA");
-    this->PlacingNode = this->FixedPointC;
-
-  }
-
-  if(id == 1)   //Place fiducial B
-  {
-    if(this->FixedPointD)
-    {
-      scene->RemoveNode(this->FixedPointD);
-      FixedPointD = NULL;
-    }
-    this->FixedPointD = fiducial.GetPointer();
-    this->FixedPointD->SetName("FB");
-    this->PlacingNode = this->FixedPointD;
-
-  }
-
+  
   if(id == 2)   //Place fiducial MA
   {
     if(this->MovingPointA)
@@ -418,7 +369,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       MovingPointA = NULL;
     }
     this->MovingPointA = fiducial.GetPointer();
-    this->MovingPointA->SetName("MA");
+    this->MovingPointA->SetName("A");
     this->PlacingNode = this->MovingPointA;
 
   }
@@ -431,7 +382,7 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
       MovingPointB = NULL;
     }
     this->MovingPointB = fiducial.GetPointer();
-    this->MovingPointB->SetName("MB");
+    this->MovingPointB->SetName("B");
     this->PlacingNode = this->MovingPointB;
 
   }
@@ -451,8 +402,6 @@ void qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int 
   interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::Place);
 
   //deactivate buttons
-  this->FixedPointAButton->setEnabled(false);
-  this->FixedPointBButton->setEnabled(false);
   this->MovingPointAButton->setEnabled(false);
   this->MovingPointBButton->setEnabled(false);
 }
@@ -1304,10 +1253,6 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
   this->connect(
-    d->FixedPointAButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
-  this->connect(
-    d->FixedPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
-  this->connect(
     d->MovingPointAButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
   this->connect(
     d->MovingPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
@@ -1574,7 +1519,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceOpacitySliderWidget);
 
   //Bending init button
-  if(d->FixedPointC && d->FixedPointD && d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
+  if(d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
   {
     d->InitButton->setEnabled(true);
   }
@@ -1781,14 +1726,6 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   QObject* obj = sender();
 
-  if(obj == d->FixedPointAButton)
-  {
-    d->beginPlacement(this->mrmlScene(), 0);
-  }
-  if(obj == d->FixedPointBButton)
-  {
-    d->beginPlacement(this->mrmlScene(), 1);
-  }
   if(obj == d->MovingPointAButton)
   {
     d->beginPlacement(this->mrmlScene(), 2);
