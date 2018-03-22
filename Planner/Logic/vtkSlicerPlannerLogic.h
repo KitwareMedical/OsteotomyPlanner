@@ -45,6 +45,8 @@
 //Self includes
 #include "vtkSlicerPlannerModuleLogicExport.h"
 
+#define D(x) std::cout << x << std::endl;
+
 
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
@@ -117,11 +119,10 @@ private:
   vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);
   vtkVector3d projectToModel(vtkVector3d point, vtkPolyData* model);
   vtkVector3d projectToModel(vtkVector3d point, vtkCellLocator* locator);
-  vtkSmartPointer<vtkMatrix4x4> createBendingMatrix(vtkVector3d pointV, double angle);
+  vtkVector3d getNormalAtPoint(vtkVector3d point, vtkCellLocator* locator, vtkPolyData* model);
   vtkSmartPointer<vtkPlane> createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D);
   void createBendingLocator();
   vtkVector3d bendPoint(vtkVector3d point, double magnitude);
-  vtkVector3d bendPoint2(vtkVector3d point, double angle);
   double computeICV(vtkMRMLModelNode* model);
   vtkMRMLModelNode* SkullWrappedPreOP;
   vtkMRMLModelNode* HealthyBrain;
