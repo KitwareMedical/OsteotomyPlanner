@@ -20,6 +20,8 @@
 #include <QMessageBox>
 #include <QSettings>
 
+
+
 // CTK includes
 #include "ctkMessageBox.h"
 
@@ -73,6 +75,8 @@
 // Self
 #include "qMRMLPlannerModelHierarchyModel.h"
 #include "vtkSlicerPlannerLogic.h"
+#include "ButtonItemDelegate.h"
+
 
 //STD includes
 #include <vector>
@@ -198,7 +202,6 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
     scene->RemoveNode(this->PlacingNode);
     this->PlacingNode = NULL;
   }
-    
 }
 
 //-----------------------------------------------------------------------------
@@ -1177,8 +1180,10 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
   sceneModel->setTransformVisibilityColumn(4);
   sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
-  sceneModel->setPlanesVisibilityColumn(5);
-  sceneModel->setHeaderData(5, Qt::Horizontal, "Planes");
+  sceneModel->setCutButtonColumn(5);
+  sceneModel->setHeaderData(5, Qt::Horizontal, "Cut");
+  sceneModel->setBendButtonColumn(6);
+  sceneModel->setHeaderData(6, Qt::Horizontal, "Bend");
   // use lazy update instead of responding to scene import end event
   sceneModel->setLazyUpdate(true);
 
@@ -1190,10 +1195,18 @@ void qSlicerPlannerModuleWidget::setup()
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->planesVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
 
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
+  
+  ButtonItemDelegate* cuts = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
+  ButtonItemDelegate* bends = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
+  
+  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
+  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
+
 
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
@@ -1286,12 +1299,14 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(d->BendMagnitudeSlider, SIGNAL(valueChanged(double)), this, SLOT(bendMagnitudeSliderUpdated()));
   this->connect(d->DoubleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
-  this->connect(d->SingleSidedButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->ASideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->BSideButton, SIGNAL(toggled(bool)), this, SLOT(updateBendButtonClicked()));
   this->connect(d->FinishButton, SIGNAL(clicked()), this, SLOT(finishPlanButtonClicked()));
 
+  this->connect(cuts, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
+  this->connect(bends, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
 
+  this->updateWidgetFromMRML();
 }
 
 //-----------------------------------------------------------------------------
@@ -1442,53 +1457,60 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   d->tagModels(this->mrmlScene(), d->HierarchyNode);
 
-  //Button enable/disable logic
-  //Cutting Intialization
-  if(d->CurrentCutNode != NULL)
-  {
-    d->CutPreviewButton->setEnabled(true);
-    d->CutPreviewButton->setText("Preview Cut");
+  
 
-  }
-  else
-  {
-    d->CutPreviewButton->setEnabled(false);
-  }
+  //Disabled due to list view button usage
+  //Comboboxes are effectively display only 
+  d->CutPreviewButton->setEnabled(false);
+  d->CurrentBendNodeComboBox->setEnabled(false);
+  d->CurrentCutNodeComboBox->setEnabled(false);  
 
   //Active cutting
   if(d->cuttingActive)
   {
     d->CutConfirmButton->setEnabled(true);
     d->CutCancelButton->setEnabled(true);
-    d->CurrentCutNodeComboBox->setEnabled(false);
+    d->CutPreviewButton->setEnabled(true);
     d->CutPreviewButton->setText("Adjust cut");
     d->BendingCollapsibleButton->setEnabled(false);
+    d->BendingCollapsibleButton->setCollapsed(true);
   }
   else
   {
     d->CutConfirmButton->setEnabled(false);
     d->CutCancelButton->setEnabled(false);
-    d->CurrentCutNodeComboBox->setEnabled(true);
     d->BendingCollapsibleButton->setEnabled(true);
+
   }
 
   //Active bending
   if(d->bendingActive)
   {
     d->CuttingCollapsibleButton->setEnabled(false);
-    d->CurrentBendNodeComboBox->setEnabled(false);
     d->UpdateBendButton->setEnabled(true);
     d->BendMagnitudeSlider->setEnabled(true);
     d->CancelBendButton->setEnabled(true);
+    d->CuttingCollapsibleButton->setCollapsed(true);
   }
   else
   {
     d->CuttingCollapsibleButton->setEnabled(true);
-    d->CurrentBendNodeComboBox->setEnabled(true);
     d->UpdateBendButton->setEnabled(false);
     d->BendMagnitudeSlider->setEnabled(false);
     d->HardenBendButton->setEnabled(false);
     d->CancelBendButton->setEnabled(true);
+
+  }
+
+  //metric
+
+  if (d->cuttingActive || d->bendingActive)
+  {
+      d->MetricsCollapsibleButton->setEnabled(false);
+  }
+  else
+  {
+      d->MetricsCollapsibleButton->setEnabled(true);
   }
 
   //Pre-op state
@@ -1514,25 +1536,24 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if(d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
   {
     d->InitButton->setEnabled(true);
+    d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the \
+        3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
   }
   else
   {
     d->InitButton->setEnabled(false);
+    d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
+  }
+
+  if (d->bendingActive)
+  {
+      d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider.  \
+        You can also select which side of the model you want to bend (or both sides).  Click 'Harden Bend' to finalize");
   }
 
   //Sort out radio buttons
 
-  if(d->SingleSidedButton->isChecked())
-  {
-    d->ASideButton->setEnabled(true);
-    d->BSideButton->setEnabled(true);
-  }
-  else
-  {
-    d->BSideButton->setEnabled(false);
-    d->ASideButton->setEnabled(false);
-  }
-
+  
   //FinishButton
   if (d->bendingActive || d->cuttingActive)
   {
@@ -1697,6 +1718,7 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
+  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1708,6 +1730,7 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
+  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1745,6 +1768,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
+  d->BendingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 
 }
@@ -1810,8 +1834,10 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
   d->hardenTransforms(false);
+  d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
+  d->BendingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1997,3 +2023,39 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   d->removeTransforms(this->mrmlScene(), tempH);
   d->untagModels(this->mrmlScene(), tempH);
 }
+
+void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
+{
+    Q_D(qSlicerPlannerModuleWidget);
+
+    if (d->cuttingActive || d->bendingActive)
+    {
+        std::cout << "Busy!" << std::endl;
+        return;
+    }
+    
+    QModelIndex sourceIndex = d->ModelHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
+    vtkMRMLNode* node = d->ModelHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
+
+    if (sourceIndex.column() == 5)
+    {
+        std::cout << "Cutting model " << node->GetName() << std::endl;
+        d->CuttingCollapsibleButton->setCollapsed(false);
+        d->BendingCollapsibleButton->setCollapsed(true);
+        d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
+        this->updateCurrentCutNode(node);
+        this->previewCutButtonClicked();
+    }
+    if (sourceIndex.column() == 6)
+    {
+        std::cout << "Bending model " << node->GetName() << std::endl;
+        d->BendingCollapsibleButton->setCollapsed(false);
+        d->CuttingCollapsibleButton->setCollapsed(true);
+        d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
+        d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
+        this->updateCurrentBendNode(node);
+    }
+    
+    
+}
+
