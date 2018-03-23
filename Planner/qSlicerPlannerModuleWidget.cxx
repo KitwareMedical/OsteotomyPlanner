@@ -1831,13 +1831,14 @@ void qSlicerPlannerModuleWidget::bendMagnitudeSliderUpdated()
 void qSlicerPlannerModuleWidget::finshBendClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
+  
+  d->hardenTransforms(false);
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
-  d->hardenTransforms(false);
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData();
   d->bendingActive = false;
-  d->BendingCollapsibleButton->setCollapsed(true);
+  d->BendingCollapsibleButton->setCollapsed(true);  
   this->updateWidgetFromMRML();
 }
 
