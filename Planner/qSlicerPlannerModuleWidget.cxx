@@ -64,6 +64,7 @@
 #include "vtkCleanPolyData.h"
 #include "vtkTriangleFilter.h"
 #include "vtkTransformPolyDataFilter.h"
+#include "vtkTransform.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -168,7 +169,7 @@ public:
   void computeAndSetSourcePoints(vtkMRMLScene* scene);
   void computeTransform(vtkMRMLScene* scene);
   void clearControlPoints(vtkMRMLScene* scene);
-  void clearBendingData();
+  void clearBendingData(vtkMRMLScene* scene);
 
   //Metrics Variables
   std::vector<vtkMRMLModelNode*> modelIterator;
@@ -206,10 +207,17 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
 
 //-----------------------------------------------------------------------------
 //Clear data used to compute bending trasforms
-void qSlicerPlannerModuleWidgetPrivate::clearBendingData()
+void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
 {
   this->Fiducials = NULL;
   this->logic->clearBendingData();
+
+  //reset transform to a linear node
+  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
+  tnode->SetAndObserveTransformToParent(transform);
+  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1766,7 +1774,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
     d->computeTransform(this->mrmlScene());
   }
   d->clearControlPoints(this->mrmlScene());
-  d->clearBendingData();
+  d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
   d->BendingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
@@ -1836,7 +1844,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
   d->clearControlPoints(this->mrmlScene());
-  d->clearBendingData();
+  d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
   d->BendingCollapsibleButton->setCollapsed(true);  
   this->updateWidgetFromMRML();
