@@ -117,6 +117,9 @@
      <property name="title">
       <string>Cutting Menu</string>
      </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
        <widget class="qMRMLNodeComboBox" name="CurrentCutNodeComboBox">
@@ -192,6 +195,9 @@
     <widget class="QGroupBox" name="BendingMenu">
      <property name="title">
       <string>Bending Menu</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="3" column="2">

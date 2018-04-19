@@ -1528,8 +1528,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if(d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
   {
     d->InitButton->setEnabled(true);
-    d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the \
-        3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
+    d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the"
+        " 3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
   }
   else
   {
@@ -1539,8 +1539,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   if (d->bendingActive)
   {
-      d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider.  \
-        You can also select which side of the model you want to bend (or both sides).  Click 'Harden Bend' to finalize");
+      d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider."
+        " You can also select which side of the model you want to bend (or both sides).  Click 'Finish Bend' to finalize");
   }
 
   //Sort out radio buttons  
@@ -2006,7 +2006,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
 {
     Q_D(qSlicerPlannerModuleWidget);
 
-    if (d->cuttingActive || d->bendingActive)
+    if (d->cuttingActive || d->bendingOpen)
     {
         std::cout << "Busy!" << std::endl;
         return;
@@ -2017,7 +2017,9 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
 
     if (sourceIndex.column() == 5)
     {
-        std::cout << "Cutting model " << node->GetName() << std::endl;
+        std::stringstream title;
+        title << "Cutting model: " << node->GetName();
+        d->CuttingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
         d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
         this->updateCurrentCutNode(node);
@@ -2025,7 +2027,9 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     }
     if (sourceIndex.column() == 6)
     {
-        std::cout << "Bending model " << node->GetName() << std::endl;
+        std::stringstream title;
+        title << "Bending model: " << node->GetName();
+        d->BendingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
         d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
