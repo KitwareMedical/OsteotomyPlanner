@@ -158,6 +158,7 @@ public:
   vtkSmartPointer<vtkPolyData> BendingData;
   double BendMagnitude;
   bool bendingActive;
+  bool bendingOpen;
   bool placingActive;
   bool BendDoubleSide;
   bool ScalarsVsBrain;
@@ -236,6 +237,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
   this->bendingActive = false;
+  this->bendingOpen = false;
   this->placingActive = false;
   this->cmdNode = NULL;
 
@@ -1450,13 +1452,11 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   //activate for non-null hierarchy
   if (d->HierarchyNode)
-  {
-    d->BendingCollapsibleButton->setEnabled(true);
-    d->CuttingCollapsibleButton->setEnabled(true);
-    d->ReferencesCollapsibleButton->setEnabled(true);
+  {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
     d->ModelHierarchyNodeComboBox->setEnabled(false);
+    d->SetPreOp->setEnabled(true);
   }
   
   // Inputs
@@ -1469,10 +1469,9 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   // Create all the transforms for the current hierarchy node
   //must do first so that there are available for the planes nodes
   d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
-
   // Create the plane node for the current hierarchy node
   d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode);
-
+  //keeps hierarchy models out of other drop down boxes
   d->tagModels(this->mrmlScene(), d->HierarchyNode);
 
   
@@ -1481,55 +1480,33 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Comboboxes are effectively display only 
   d->CutPreviewButton->setEnabled(false);
   d->CurrentBendNodeComboBox->setEnabled(false);
-  d->CurrentCutNodeComboBox->setEnabled(false);  
+  d->CurrentCutNodeComboBox->setEnabled(false);
+  
+  //set based on cutting/bending state
+  d->BendingCollapsibleButton->setEnabled(d->bendingOpen);
+  d->BendingCollapsibleButton->setCollapsed(!d->bendingOpen);
+  d->CuttingCollapsibleButton->setEnabled(d->cuttingActive);
+  d->CuttingCollapsibleButton->setCollapsed(!d->cuttingActive);
+  d->CutConfirmButton->setEnabled(d->cuttingActive);
+  d->CutCancelButton->setEnabled(d->cuttingActive);
+  d->CutPreviewButton->setEnabled(d->cuttingActive);
+  d->UpdateBendButton->setEnabled(d->bendingActive);
+  d->BendMagnitudeSlider->setEnabled(d->bendingActive);
+  d->CancelBendButton->setEnabled(d->bendingOpen);
+  d->HardenBendButton->setEnabled(d->bendingActive);
 
-  //Active cutting
-  if(d->cuttingActive)
-  {
-    d->CutConfirmButton->setEnabled(true);
-    d->CutCancelButton->setEnabled(true);
-    d->CutPreviewButton->setEnabled(true);
-    d->CutPreviewButton->setText("Adjust cut");
-    d->BendingCollapsibleButton->setEnabled(false);
-    d->BendingCollapsibleButton->setCollapsed(true);
-  }
-  else
-  {
-    d->CutConfirmButton->setEnabled(false);
-    d->CutCancelButton->setEnabled(false);
-    d->BendingCollapsibleButton->setEnabled(true);
+  bool performingAction = d->cuttingActive || d->bendingOpen;
 
-  }
-
-  //Active bending
-  if(d->bendingActive)
+  
+  //non action sections
+  d->MetricsCollapsibleButton->setEnabled(!performingAction);
+  d->ReferencesCollapsibleButton->setEnabled(!performingAction);
+  if (performingAction)
   {
-    d->CuttingCollapsibleButton->setEnabled(false);
-    d->UpdateBendButton->setEnabled(true);
-    d->BendMagnitudeSlider->setEnabled(true);
-    d->CancelBendButton->setEnabled(true);
-    d->CuttingCollapsibleButton->setCollapsed(true);
+      d->ReferencesCollapsibleButton->setCollapsed(true);
+      d->MetricsCollapsibleButton->setCollapsed(true);
   }
-  else
-  {
-    d->CuttingCollapsibleButton->setEnabled(true);
-    d->UpdateBendButton->setEnabled(false);
-    d->BendMagnitudeSlider->setEnabled(false);
-    d->HardenBendButton->setEnabled(false);
-    d->CancelBendButton->setEnabled(true);
-
-  }
-
-  //metric
-
-  if (d->cuttingActive || d->bendingActive)
-  {
-      d->MetricsCollapsibleButton->setEnabled(false);
-  }
-  else
-  {
-      d->MetricsCollapsibleButton->setEnabled(true);
-  }
+  d->FinishButton->setEnabled(!performingAction);
 
   //Pre-op state
   if(this->plannerLogic()->getPreOPICV() == 0)
@@ -1569,19 +1546,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
         You can also select which side of the model you want to bend (or both sides).  Click 'Harden Bend' to finalize");
   }
 
-  //Sort out radio buttons
-
-  
-  //FinishButton
-  if (d->bendingActive || d->cuttingActive)
-  {
-    d->FinishButton->setEnabled(false);
-  }
-  else
-  {
-    d->FinishButton->setEnabled(true);
-  }
-
+  //Sort out radio buttons  
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
@@ -1595,6 +1560,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
+    d->SetPreOp->setEnabled(false);
   }
 
 }
@@ -1736,7 +1702,6 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
-  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1748,7 +1713,6 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
-  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1786,7 +1750,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
-  d->BendingCollapsibleButton->setCollapsed(true);
+  d->bendingOpen = false;
   this->updateWidgetFromMRML();
 
 }
@@ -1856,7 +1820,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
-  d->BendingCollapsibleButton->setCollapsed(true);  
+  d->bendingOpen = false;
   this->updateWidgetFromMRML();
 }
 
@@ -2059,8 +2023,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     if (sourceIndex.column() == 5)
     {
         std::cout << "Cutting model " << node->GetName() << std::endl;
-        d->CuttingCollapsibleButton->setCollapsed(false);
-        d->BendingCollapsibleButton->setCollapsed(true);
+        d->hardenTransforms(false);        
         d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
         this->updateCurrentCutNode(node);
         this->previewCutButtonClicked();
@@ -2068,11 +2031,12 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     if (sourceIndex.column() == 6)
     {
         std::cout << "Bending model " << node->GetName() << std::endl;
-        d->BendingCollapsibleButton->setCollapsed(false);
-        d->CuttingCollapsibleButton->setCollapsed(true);
+        d->hardenTransforms(false);        
         d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
+        d->bendingOpen = true;
+        this->updateWidgetFromMRML();
     }
     
     
