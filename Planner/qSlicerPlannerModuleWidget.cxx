@@ -1480,13 +1480,13 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Comboboxes are effectively display only 
   d->CutPreviewButton->setEnabled(false);
   d->CurrentBendNodeComboBox->setEnabled(false);
+  d->CurrentBendNodeComboBox->setVisible(false);
   d->CurrentCutNodeComboBox->setEnabled(false);
+  d->CurrentCutNodeComboBox->setVisible(false);
   
   //set based on cutting/bending state
-  d->BendingCollapsibleButton->setEnabled(d->bendingOpen);
-  d->BendingCollapsibleButton->setCollapsed(!d->bendingOpen);
-  d->CuttingCollapsibleButton->setEnabled(d->cuttingActive);
-  d->CuttingCollapsibleButton->setCollapsed(!d->cuttingActive);
+  d->BendingMenu->setVisible(d->bendingOpen);
+  d->CuttingMenu->setVisible(d->cuttingActive);  
   d->CutConfirmButton->setEnabled(d->cuttingActive);
   d->CutCancelButton->setEnabled(d->cuttingActive);
   d->CutPreviewButton->setEnabled(d->cuttingActive);
@@ -1554,8 +1554,6 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Deactivate everything for null hierarchy
   if (!d->HierarchyNode)
   {
-    d->BendingCollapsibleButton->setEnabled(false);
-    d->CuttingCollapsibleButton->setEnabled(false);
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
