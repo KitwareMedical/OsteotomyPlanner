@@ -176,6 +176,8 @@ public:
   std::vector<vtkMRMLModelNode*> modelIterator;
   vtkSlicerCLIModuleLogic* distanceLogic;
   vtkMRMLTableNode* modelMetricsTable;
+  bool PreOpSet;
+  bool cliFreeze;
 
   //Metrics methods
   void prepScalarComputation(vtkMRMLScene* scene);
@@ -240,6 +242,8 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->bendingOpen = false;
   this->placingActive = false;
   this->cmdNode = NULL;
+  this->PreOpSet = false;
+  this->cliFreeze = false;
 
   this->BendDoubleSide = true;
   this->BendASide = true;
@@ -1506,13 +1510,15 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->FinishButton->setEnabled(!performingAction);
 
   //Pre-op state
-  if(this->plannerLogic()->getPreOPICV() == 0)
+  
+  if(!d->PreOpSet)
   {
     d->SetPreOp->setText(QString("Need to set Pre Op State! - click"));
   }
   else
   {
-    d->SetPreOp->setText("Pre Op State set - click to reset!");
+    d->SetPreOp->setText("Pre Op State set");
+    d->SetPreOp->setDisabled(true);
   }
 
   d->updateWidgetFromReferenceNode(
@@ -1548,6 +1554,15 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->BendASide = d->ASideButton->isChecked();
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
+  //Freeze UI if needed
+  if (!d->PreOpSet || d->cliFreeze)
+  {
+      d->ReferencesCollapsibleButton->setEnabled(false);
+      d->MetricsCollapsibleButton->setEnabled(false);
+      d->FinishButton->setEnabled(false);
+      d->ModelHierarchyTreeView->setEnabled(false);
+  }
+
   //Deactivate everything for null hierarchy
   if (!d->HierarchyNode)
   {
@@ -1572,6 +1587,7 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
   if(node && node != d->BrainReferenceNode)
   {
+    d->cliFreeze = true;
     d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
     qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
@@ -1608,8 +1624,9 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
 
   if(node && node != d->TemplateReferenceNode)
   {
+    d->cliFreeze = true;
     d->cmdNode = this->plannerLogic()->createBoneTemplateModel(vtkMRMLModelNode::SafeDownCast(node));
-    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));    
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     d->TemplateVisibilityCheckbox->setEnabled(true);
   }
@@ -1871,6 +1888,9 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
     d->HierarchyNode->GetAllChildrenNodes(children);
     if(children.size() > 0)
     {
+      d->SetPreOp->setEnabled(false);
+      d->PreOpSet = true;
+      d->cliFreeze = true;
       d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
       qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
@@ -1958,6 +1978,7 @@ void qSlicerPlannerModuleWidget::finishWrap()
   if(d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
   {
     this->plannerLogic()->finishWrap(d->cmdNode);
+    d->cliFreeze = false;
     this->updateWidgetFromMRML();
   }
 }
@@ -1988,6 +2009,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     d->hardenTransforms(false);
     d->clearControlPoints(this->mrmlScene());
     this->plannerLogic()->clearModelsAndData();
+    d->PreOpSet = false;
   }
 
   //Clear out hierarchy
