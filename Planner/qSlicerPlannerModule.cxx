@@ -94,7 +94,7 @@ QIcon qSlicerPlannerModule::icon() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerPlannerModule::categories() const
 {
-  return QStringList() << "Planning";
+  return QStringList() << "Craniosynostosis";
 }
 
 //-----------------------------------------------------------------------------

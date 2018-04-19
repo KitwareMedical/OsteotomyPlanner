@@ -29,6 +29,7 @@ class qSlicerPlannerModuleWidgetPrivate;
 class vtkMRMLNode;
 class vtkSlicerPlannerLogic;
 class vtkMRMLModelNode;
+class QModelIndex;
 
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class Q_SLICER_QTMODULES_PLANNER_EXPORT qSlicerPlannerModuleWidget :

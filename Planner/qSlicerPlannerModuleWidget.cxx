@@ -1198,6 +1198,15 @@ void qSlicerPlannerModuleWidget::setup()
 
   d->ModelHierarchyTreeView->setHeaderHidden(false);
   d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+#else
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
@@ -1205,6 +1214,7 @@ void qSlicerPlannerModuleWidget::setup()
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+#endif
 
   d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
   d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
