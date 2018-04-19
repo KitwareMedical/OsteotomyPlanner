@@ -1605,7 +1605,7 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->BrainReferenceNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->BrainReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
@@ -1626,7 +1626,7 @@ void qSlicerPlannerModuleWidget::updateCurrentCutNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->CurrentCutNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->CurrentCutNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
@@ -1640,7 +1640,7 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->TemplateReferenceNode, node, vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->TemplateReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
@@ -1798,7 +1798,7 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->CurrentBendNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->CurrentBendNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
