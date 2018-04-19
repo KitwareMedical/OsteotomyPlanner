@@ -114,11 +114,23 @@
    </item>
    <item>
     <widget class="QGroupBox" name="CuttingMenu">
+     <property name="font">
+      <font>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
      <property name="title">
       <string>Cutting Menu</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
+     </property>
+     <property name="checkable">
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="0" column="0">
@@ -180,6 +192,11 @@
       </item>
       <item row="1" column="0" colspan="3">
        <widget class="QLabel" name="CuttingInfoLabel">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Adjust the plane in the 3d view and click 'Adjust Cut' to update the split models.  Click 'Confirm' to remove the original model </string>
         </property>
@@ -193,6 +210,12 @@
    </item>
    <item>
     <widget class="QGroupBox" name="BendingMenu">
+     <property name="font">
+      <font>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
      <property name="title">
       <string>Bending Menu</string>
      </property>
@@ -348,6 +371,11 @@
       </item>
       <item row="1" column="0" colspan="3">
        <widget class="QLabel" name="BendingInfoLabel">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+         </font>
+        </property>
         <property name="text">
          <string>Place Point A and Point B to define the bending axis (line you want the model to bend around).</string>
         </property>
