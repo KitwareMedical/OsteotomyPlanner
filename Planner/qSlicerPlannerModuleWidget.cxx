@@ -1282,9 +1282,7 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->MovingPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
   this->connect(
-    d->InitButton, SIGNAL(clicked()), this, SLOT(initBendButtonClicked()));
-  this->connect(
-    d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
+    d->InitButton, SIGNAL(clicked()), this, SLOT(initBendButtonClicked()));  
   this->connect(
     d->HardenBendButton, SIGNAL(clicked()), this, SLOT(finshBendClicked()));
   this->connect(
@@ -1490,7 +1488,6 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->CutConfirmButton->setEnabled(d->cuttingActive);
   d->CutCancelButton->setEnabled(d->cuttingActive);
   d->CutPreviewButton->setEnabled(d->cuttingActive);
-  d->UpdateBendButton->setEnabled(d->bendingActive);
   d->BendMagnitudeSlider->setEnabled(d->bendingActive);
   d->CancelBendButton->setEnabled(d->bendingOpen);
   d->HardenBendButton->setEnabled(d->bendingActive);
