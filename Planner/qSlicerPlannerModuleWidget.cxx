@@ -1556,7 +1556,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
   //Freeze UI if needed
-  if (!d->PreOpSet || d->cliFreeze)
+  if (d->cliFreeze)
   {
       d->ReferencesCollapsibleButton->setEnabled(false);
       d->MetricsCollapsibleButton->setEnabled(false);
@@ -1564,14 +1564,14 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
       d->ModelHierarchyTreeView->setEnabled(false);
   }
 
-  //Deactivate everything for null hierarchy
-  if (!d->HierarchyNode)
+  //Deactivate everything for null hierarchy or for pre op state not set
+  if (!d->HierarchyNode || !d->PreOpSet)
   {
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
-    d->SetPreOp->setEnabled(false);
+    d->ModelHierarchyTreeView->setEnabled(false);
   }
 
 }
