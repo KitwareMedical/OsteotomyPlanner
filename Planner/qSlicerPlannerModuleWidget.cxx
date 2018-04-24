@@ -158,6 +158,7 @@ public:
   vtkSmartPointer<vtkPolyData> BendingData;
   double BendMagnitude;
   bool bendingActive;
+  bool bendingOpen;
   bool placingActive;
   bool BendDoubleSide;
   bool ScalarsVsBrain;
@@ -175,6 +176,8 @@ public:
   std::vector<vtkMRMLModelNode*> modelIterator;
   vtkSlicerCLIModuleLogic* distanceLogic;
   vtkMRMLTableNode* modelMetricsTable;
+  bool PreOpSet;
+  bool cliFreeze;
 
   //Metrics methods
   void prepScalarComputation(vtkMRMLScene* scene);
@@ -236,8 +239,11 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
   this->bendingActive = false;
+  this->bendingOpen = false;
   this->placingActive = false;
   this->cmdNode = NULL;
+  this->PreOpSet = false;
+  this->cliFreeze = false;
 
   this->BendDoubleSide = true;
   this->BendASide = true;
@@ -1280,9 +1286,7 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->MovingPointBButton, SIGNAL(clicked()), this, SLOT(placeFiducialButtonClicked()));
   this->connect(
-    d->InitButton, SIGNAL(clicked()), this, SLOT(initBendButtonClicked()));
-  this->connect(
-    d->UpdateBendButton, SIGNAL(clicked()), this, SLOT(updateBendButtonClicked()));
+    d->InitButton, SIGNAL(clicked()), this, SLOT(initBendButtonClicked()));  
   this->connect(
     d->HardenBendButton, SIGNAL(clicked()), this, SLOT(finshBendClicked()));
   this->connect(
@@ -1450,13 +1454,11 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   //activate for non-null hierarchy
   if (d->HierarchyNode)
-  {
-    d->BendingCollapsibleButton->setEnabled(true);
-    d->CuttingCollapsibleButton->setEnabled(true);
-    d->ReferencesCollapsibleButton->setEnabled(true);
+  {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
     d->ModelHierarchyNodeComboBox->setEnabled(false);
+    d->SetPreOp->setEnabled(true);
   }
   
   // Inputs
@@ -1469,10 +1471,9 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   // Create all the transforms for the current hierarchy node
   //must do first so that there are available for the planes nodes
   d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
-
   // Create the plane node for the current hierarchy node
   d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode);
-
+  //keeps hierarchy models out of other drop down boxes
   d->tagModels(this->mrmlScene(), d->HierarchyNode);
 
   
@@ -1481,64 +1482,43 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Comboboxes are effectively display only 
   d->CutPreviewButton->setEnabled(false);
   d->CurrentBendNodeComboBox->setEnabled(false);
-  d->CurrentCutNodeComboBox->setEnabled(false);  
+  d->CurrentBendNodeComboBox->setVisible(false);
+  d->CurrentCutNodeComboBox->setEnabled(false);
+  d->CurrentCutNodeComboBox->setVisible(false);
+  
+  //set based on cutting/bending state
+  d->BendingMenu->setVisible(d->bendingOpen);
+  d->CuttingMenu->setVisible(d->cuttingActive);  
+  d->CutConfirmButton->setEnabled(d->cuttingActive);
+  d->CutCancelButton->setEnabled(d->cuttingActive);
+  d->CutPreviewButton->setEnabled(d->cuttingActive);
+  d->BendMagnitudeSlider->setEnabled(d->bendingActive);
+  d->CancelBendButton->setEnabled(d->bendingOpen);
+  d->HardenBendButton->setEnabled(d->bendingActive);
 
-  //Active cutting
-  if(d->cuttingActive)
-  {
-    d->CutConfirmButton->setEnabled(true);
-    d->CutCancelButton->setEnabled(true);
-    d->CutPreviewButton->setEnabled(true);
-    d->CutPreviewButton->setText("Adjust cut");
-    d->BendingCollapsibleButton->setEnabled(false);
-    d->BendingCollapsibleButton->setCollapsed(true);
-  }
-  else
-  {
-    d->CutConfirmButton->setEnabled(false);
-    d->CutCancelButton->setEnabled(false);
-    d->BendingCollapsibleButton->setEnabled(true);
+  bool performingAction = d->cuttingActive || d->bendingOpen;
 
-  }
-
-  //Active bending
-  if(d->bendingActive)
+  
+  //non action sections
+  d->MetricsCollapsibleButton->setEnabled(!performingAction);
+  d->ReferencesCollapsibleButton->setEnabled(!performingAction);
+  if (performingAction)
   {
-    d->CuttingCollapsibleButton->setEnabled(false);
-    d->UpdateBendButton->setEnabled(true);
-    d->BendMagnitudeSlider->setEnabled(true);
-    d->CancelBendButton->setEnabled(true);
-    d->CuttingCollapsibleButton->setCollapsed(true);
+      d->ReferencesCollapsibleButton->setCollapsed(true);
+      d->MetricsCollapsibleButton->setCollapsed(true);
   }
-  else
-  {
-    d->CuttingCollapsibleButton->setEnabled(true);
-    d->UpdateBendButton->setEnabled(false);
-    d->BendMagnitudeSlider->setEnabled(false);
-    d->HardenBendButton->setEnabled(false);
-    d->CancelBendButton->setEnabled(true);
-
-  }
-
-  //metric
-
-  if (d->cuttingActive || d->bendingActive)
-  {
-      d->MetricsCollapsibleButton->setEnabled(false);
-  }
-  else
-  {
-      d->MetricsCollapsibleButton->setEnabled(true);
-  }
+  d->FinishButton->setEnabled(!performingAction);
 
   //Pre-op state
-  if(this->plannerLogic()->getPreOPICV() == 0)
+  
+  if(!d->PreOpSet)
   {
     d->SetPreOp->setText(QString("Need to set Pre Op State! - click"));
   }
   else
   {
-    d->SetPreOp->setText("Pre Op State set - click to reset!");
+    d->SetPreOp->setText("Pre Op State set");
+    d->SetPreOp->setDisabled(true);
   }
 
   d->updateWidgetFromReferenceNode(
@@ -1554,8 +1534,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if(d->MovingPointA && d->MovingPointB && d->CurrentBendNode)
   {
     d->InitButton->setEnabled(true);
-    d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the \
-        3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
+    d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the"
+        " 3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
   }
   else
   {
@@ -1565,36 +1545,32 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   if (d->bendingActive)
   {
-      d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider.  \
-        You can also select which side of the model you want to bend (or both sides).  Click 'Harden Bend' to finalize");
+      d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider."
+        " You can also select which side of the model you want to bend (or both sides).  Click 'Finish Bend' to finalize");
   }
 
-  //Sort out radio buttons
-
-  
-  //FinishButton
-  if (d->bendingActive || d->cuttingActive)
-  {
-    d->FinishButton->setEnabled(false);
-  }
-  else
-  {
-    d->FinishButton->setEnabled(true);
-  }
-
+  //Sort out radio buttons  
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
+  //Freeze UI if needed
+  if (!d->PreOpSet || d->cliFreeze)
+  {
+      d->ReferencesCollapsibleButton->setEnabled(false);
+      d->MetricsCollapsibleButton->setEnabled(false);
+      d->FinishButton->setEnabled(false);
+      d->ModelHierarchyTreeView->setEnabled(false);
+  }
+
   //Deactivate everything for null hierarchy
   if (!d->HierarchyNode)
   {
-    d->BendingCollapsibleButton->setEnabled(false);
-    d->CuttingCollapsibleButton->setEnabled(false);
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
+    d->SetPreOp->setEnabled(false);
   }
 
 }
@@ -1605,12 +1581,13 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->BrainReferenceNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->BrainReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
   if(node && node != d->BrainReferenceNode)
   {
+    d->cliFreeze = true;
     d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
     qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
@@ -1626,7 +1603,7 @@ void qSlicerPlannerModuleWidget::updateCurrentCutNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->CurrentCutNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->CurrentCutNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
@@ -1640,15 +1617,16 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->TemplateReferenceNode, node, vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->TemplateReferenceNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
 
   if(node && node != d->TemplateReferenceNode)
   {
+    d->cliFreeze = true;
     d->cmdNode = this->plannerLogic()->createBoneTemplateModel(vtkMRMLModelNode::SafeDownCast(node));
-    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));    
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     d->TemplateVisibilityCheckbox->setEnabled(true);
   }
@@ -1736,7 +1714,6 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
-  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1748,7 +1725,6 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
-  d->CuttingCollapsibleButton->setCollapsed(true);
   this->updateWidgetFromMRML();
 }
 
@@ -1786,7 +1762,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
-  d->BendingCollapsibleButton->setCollapsed(true);
+  d->bendingOpen = false;
   this->updateWidgetFromMRML();
 
 }
@@ -1798,7 +1774,7 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
   Q_D(qSlicerPlannerModuleWidget);
   this->qvtkReconnect(d->CurrentBendNode, node,
                       vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
+                      this, SLOT(updateWidgetFromMRML()));
   this->qvtkReconnect(d->CurrentBendNode, node,
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
@@ -1856,7 +1832,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
-  d->BendingCollapsibleButton->setCollapsed(true);  
+  d->bendingOpen = false;
   this->updateWidgetFromMRML();
 }
 
@@ -1912,6 +1888,9 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
     d->HierarchyNode->GetAllChildrenNodes(children);
     if(children.size() > 0)
     {
+      d->SetPreOp->setEnabled(false);
+      d->PreOpSet = true;
+      d->cliFreeze = true;
       d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
       qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
@@ -1999,6 +1978,7 @@ void qSlicerPlannerModuleWidget::finishWrap()
   if(d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
   {
     this->plannerLogic()->finishWrap(d->cmdNode);
+    d->cliFreeze = false;
     this->updateWidgetFromMRML();
   }
 }
@@ -2029,6 +2009,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     d->hardenTransforms(false);
     d->clearControlPoints(this->mrmlScene());
     this->plannerLogic()->clearModelsAndData();
+    d->PreOpSet = false;
   }
 
   //Clear out hierarchy
@@ -2047,7 +2028,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
 {
     Q_D(qSlicerPlannerModuleWidget);
 
-    if (d->cuttingActive || d->bendingActive)
+    if (d->cuttingActive || d->bendingOpen)
     {
         std::cout << "Busy!" << std::endl;
         return;
@@ -2058,21 +2039,25 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
 
     if (sourceIndex.column() == 5)
     {
-        std::cout << "Cutting model " << node->GetName() << std::endl;
-        d->CuttingCollapsibleButton->setCollapsed(false);
-        d->BendingCollapsibleButton->setCollapsed(true);
+        std::stringstream title;
+        title << "Cutting model: " << node->GetName();
+        d->CuttingMenu->setTitle(title.str().c_str());
+        d->hardenTransforms(false);        
         d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
         this->updateCurrentCutNode(node);
         this->previewCutButtonClicked();
     }
     if (sourceIndex.column() == 6)
     {
-        std::cout << "Bending model " << node->GetName() << std::endl;
-        d->BendingCollapsibleButton->setCollapsed(false);
-        d->CuttingCollapsibleButton->setCollapsed(true);
+        std::stringstream title;
+        title << "Bending model: " << node->GetName();
+        d->BendingMenu->setTitle(title.str().c_str());
+        d->hardenTransforms(false);        
         d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
+        d->bendingOpen = true;
+        this->updateWidgetFromMRML();
     }
     
     
