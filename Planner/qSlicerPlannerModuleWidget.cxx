@@ -745,12 +745,13 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(vtkMRMLScene* scen
   double bounds[6];
   model->GetRASBounds(bounds);
   double min[3], max[3];
-  min[0] = bounds[0];
-  min[1] = bounds[2];
-  min[2] = bounds[4];
-  max[0] = bounds[1];
-  max[1] = bounds[3];
-  max[2] = bounds[5];
+  double boundsPadding = 0.5;
+  min[0] = bounds[0] - boundsPadding * (bounds[1] - bounds[0]);
+  min[1] = bounds[2] - boundsPadding * (bounds[3] - bounds[2]);
+  min[2] = bounds[4] - boundsPadding * (bounds[5] - bounds[4]);
+  max[0] = bounds[1] + boundsPadding * (bounds[1] - bounds[0]);
+  max[1] = bounds[3] + boundsPadding * (bounds[3] - bounds[2]);
+  max[2] = bounds[5] + boundsPadding * (bounds[5] - bounds[4]);
 
   double origin[3];
   for(int i = 0; i < 3; ++i)
