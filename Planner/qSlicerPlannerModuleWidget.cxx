@@ -162,10 +162,12 @@ public:
   bool BendDoubleSide;
   bool ScalarsVsBrain;
   bool BendASide;
+  vtkMRMLScene* scene;
 
   //Bending methods
   int beginPlacement(vtkMRMLScene* scene, int id);
   void endPlacement();
+  int ActivePoint;
   void computeAndSetSourcePoints(vtkMRMLScene* scene);
   void computeTransform(vtkMRMLScene* scene);
   void clearControlPoints(vtkMRMLScene* scene);
@@ -186,6 +188,7 @@ public:
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
 
+
 //-----------------------------------------------------------------------------
 //Clear fiducials used for bending
 void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
@@ -200,6 +203,8 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
     scene->RemoveNode(this->BendPoints[1]);
     this->BendPoints[1] = NULL;
   }
+
+  this->ActivePoint = -1;
   
 }
 
@@ -239,6 +244,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->cmdNode = NULL;
   this->PreOpSet = false;
   this->cliFreeze = false;
+  this->scene = NULL;
 
   this->BendDoubleSide = true;
   this->BendASide = true;
@@ -248,6 +254,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->BendPoints[1] = NULL;
   this->Fiducials = NULL;
   this->BendMagnitude = 0;
+  this->ActivePoint = -1;
 
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
@@ -266,9 +273,35 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 //Complete placement of current fiducial
 void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 {
-  this->MovingPointAButton->setEnabled(true);
-  this->MovingPointBButton->setEnabled(true);
-  this->placingActive = false;
+
+    //check that point in close to (i.e. on surface of) model to bend
+    //if not, retrigger placing and give it another go  
+
+  vtkVector3d point;
+  double posa[3];
+  this->BendPoints[this->ActivePoint]->GetNthFiducialPosition(0, posa);
+  point.SetX(posa[0]);
+  point.SetY(posa[1]);
+  point.SetZ(posa[2]);
+
+  double dist = this->logic->getDistanceToModel(point, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
+  std::cout << "Distance: " << dist << std::endl;
+  if (dist > 1.0)
+  {
+      
+      this->scene->RemoveNode(this->BendPoints[this->ActivePoint]);
+      BendPoints[this->ActivePoint] = NULL;
+      this->beginPlacement(this->scene, this->ActivePoint);
+      
+  }
+  else 
+  {
+      this->MovingPointAButton->setEnabled(true);
+      this->MovingPointBButton->setEnabled(true);
+      this->placingActive = false;
+      this->ActivePoint = -1;
+  } 
+  
 }
 
 //-----------------------------------------------------------------------------
@@ -375,6 +408,8 @@ int qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int i
   this->BendPoints[id]->CreateDefaultDisplayNodes();
   vtkMRMLMarkupsDisplayNode* disp = vtkMRMLMarkupsDisplayNode::SafeDownCast(this->BendPoints[id]->GetDisplayNode());
   disp->SetTextScale(0.1);
+  disp->SetGlyphScale(5);
+  this->placingActive = true;
   vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
   vtkMRMLSelectionNode* selection = qSlicerCoreApplication::application()->applicationLogic()->GetSelectionNode();
   selection->SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsFiducialNode");
@@ -386,6 +421,7 @@ int qSlicerPlannerModuleWidgetPrivate::beginPlacement(vtkMRMLScene* scene, int i
   //deactivate buttons
   this->MovingPointAButton->setEnabled(false);
   this->MovingPointBButton->setEnabled(false);
+  this->ActivePoint = id;
   return EXIT_SUCCESS;
 }
 
@@ -1148,6 +1184,8 @@ void qSlicerPlannerModuleWidget::setup()
   qMRMLPlannerModelHierarchyModel* sceneModel =
     new qMRMLPlannerModelHierarchyModel(this);
 
+  d->scene = this->mrmlScene();
+
   d->logic = this->plannerLogic();
   qSlicerAbstractCoreModule* wrapperModule =
     qSlicerCoreApplication::application()->moduleManager()->module("ShrinkWrap");
@@ -1723,6 +1761,7 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
       return;
   }
 
+  d->scene = this->mrmlScene();
   qvtkConnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   return;
 }

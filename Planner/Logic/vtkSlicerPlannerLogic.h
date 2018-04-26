@@ -99,6 +99,8 @@ public:
   vtkSmartPointer<vtkPoints> getTargetPoints() { return this->TargetPoints; }
   void setBendType(BendModeType type) {this->bendMode = type;}
   void setBendSide(BendSide side) { this->bendSide = side; }
+  double getDistanceToModel(vtkVector3d point, vtkPolyData* model);
+  
 
 protected:
   vtkSlicerPlannerLogic();
@@ -116,9 +118,9 @@ private:
   vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
   void generateSourcePoints();
   vtkVector3d projectToModel(vtkVector3d point);
-  vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);
-  vtkVector3d projectToModel(vtkVector3d point, vtkPolyData* model);
+  vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);  
   vtkVector3d projectToModel(vtkVector3d point, vtkCellLocator* locator);
+  vtkVector3d projectToModel(vtkVector3d point, vtkPolyData* model);
   vtkVector3d getNormalAtPoint(vtkVector3d point, vtkCellLocator* locator, vtkPolyData* model);
   vtkSmartPointer<vtkPlane> createPlane(vtkVector3d A, vtkVector3d B, vtkVector3d C, vtkVector3d D);
   void createBendingLocator();
