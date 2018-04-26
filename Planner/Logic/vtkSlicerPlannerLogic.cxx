@@ -813,3 +813,20 @@ vtkVector3d vtkSlicerPlannerLogic::getNormalAtPoint(vtkVector3d point, vtkCellLo
 
     return normal;
 }
+
+double vtkSlicerPlannerLogic::getDistanceToModel(vtkVector3d point, vtkPolyData* model)
+{
+    vtkNew<vtkCellLocator> locator;
+    vtkNew<vtkTriangleFilter> triangulate;
+    triangulate->SetInputData(model);
+    triangulate->Update();
+    locator->SetDataSet(triangulate->GetOutput());
+    locator->BuildLocator();
+
+    double closestPoint[3];//the coordinates of the closest point will be returned here
+    double closestPointDist2; //the squared distance to the closest point will be returned here
+    vtkIdType cellId; //the cell id of the cell containing the closest point will be returned here
+    int subId; //this is rarely used (in triangle strips only, I believe)
+    locator->FindClosestPoint(point.GetData(), closestPoint, cellId, subId, closestPointDist2);   
+    return std::sqrt(closestPointDist2);
+}
