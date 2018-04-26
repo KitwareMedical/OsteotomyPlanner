@@ -745,12 +745,13 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(vtkMRMLScene* scen
   double bounds[6];
   model->GetRASBounds(bounds);
   double min[3], max[3];
-  min[0] = bounds[0];
-  min[1] = bounds[2];
-  min[2] = bounds[4];
-  max[0] = bounds[1];
-  max[1] = bounds[3];
-  max[2] = bounds[5];
+  double boundsPadding = 0.5;
+  min[0] = bounds[0] - boundsPadding * (bounds[1] - bounds[0]);
+  min[1] = bounds[2] - boundsPadding * (bounds[3] - bounds[2]);
+  min[2] = bounds[4] - boundsPadding * (bounds[5] - bounds[4]);
+  max[0] = bounds[1] + boundsPadding * (bounds[1] - bounds[0]);
+  max[1] = bounds[3] + boundsPadding * (bounds[3] - bounds[2]);
+  max[2] = bounds[5] + boundsPadding * (bounds[5] - bounds[4]);
 
   double origin[3];
   for(int i = 0; i < 3; ++i)
@@ -1555,7 +1556,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
   //Freeze UI if needed
-  if (!d->PreOpSet || d->cliFreeze)
+  if (d->cliFreeze)
   {
       d->ReferencesCollapsibleButton->setEnabled(false);
       d->MetricsCollapsibleButton->setEnabled(false);
@@ -1563,14 +1564,14 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
       d->ModelHierarchyTreeView->setEnabled(false);
   }
 
-  //Deactivate everything for null hierarchy
-  if (!d->HierarchyNode)
+  //Deactivate everything for null hierarchy or for pre op state not set
+  if (!d->HierarchyNode || !d->PreOpSet)
   {
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
-    d->SetPreOp->setEnabled(false);
+    d->ModelHierarchyTreeView->setEnabled(false);
   }
 
 }
