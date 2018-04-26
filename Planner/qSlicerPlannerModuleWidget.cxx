@@ -276,7 +276,7 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 
     //check that point in close to (i.e. on surface of) model to bend
     //if not, retrigger placing and give it another go  
-
+  
   vtkVector3d point;
   double posa[3];
   this->BendPoints[this->ActivePoint]->GetNthFiducialPosition(0, posa);
@@ -285,7 +285,6 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
   point.SetZ(posa[2]);
 
   double dist = this->logic->getDistanceToModel(point, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
-  std::cout << "Distance: " << dist << std::endl;
   if (dist > 1.0)
   {
       
@@ -642,21 +641,14 @@ vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
   QString planesName = refNode->GetName();
   planesName += "Planner_Planes";
   planes->SetName(planesName.toLatin1());
-
   vtkNew<vtkMRMLMarkupsDisplayNode> newDisplay;
   vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
   planes->SetAndObserveDisplayNodeID(display->GetID());
 
   refNode->SetNodeReferenceID(
     this->sceneModel()->planesReferenceRole(), planes->GetID());
-  /**
-  vtkMRMLTransformDisplayNode* display2 =
-    vtkMRMLTransformDisplayNode::SafeDownCast(refNode ?
-    refNode->GetNodeReference(this->sceneModel()->transformDisplayReferenceRole()) : NULL);
-  planes->SetNodeReferenceID(
-    this->sceneModel()->transformDisplayReferenceRole(), display2->GetID());
-    **/
-  //planes->SetAndObserveTransformNodeID(display2->GetID());
+  
+
   return planes;
 }
 
@@ -1781,6 +1773,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
   d->bendingOpen = false;
+  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   this->updateWidgetFromMRML();
 
 }
@@ -1851,6 +1844,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
   d->bendingOpen = false;
+  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   this->updateWidgetFromMRML();
 }
 
@@ -1858,7 +1852,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
 //Cancel placement of current fiducial
 void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
 {
-  Q_D(qSlicerPlannerModuleWidget);
+  Q_D(qSlicerPlannerModuleWidget);  
   d->endPlacement();
   this->updateWidgetFromMRML();
 
