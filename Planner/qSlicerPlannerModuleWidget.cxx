@@ -41,6 +41,7 @@
 #include "qSlicerPlannerModuleWidget.h"
 #include "ui_qSlicerPlannerModuleWidget.h"
 #include "qMRMLSortFilterProxyModel.h"
+#include "qSlicerLayoutManager.h"
 
 // Slicer
 #include "vtkMRMLDisplayableHierarchyLogic.h"
@@ -65,6 +66,7 @@
 #include "vtkTriangleFilter.h"
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkTransform.h"
+#include "vtkMRMLLayoutNode.h";
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -1913,7 +1915,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
   if(d->HierarchyNode)
   {
     std::vector<vtkMRMLHierarchyNode*> children;
-
+    qSlicerApplication::application()->layoutManager()->setLayout(vtkMRMLLayoutNode::SlicerLayoutOneUp3DView);
     d->HierarchyNode->GetAllChildrenNodes(children);
     if(children.size() > 0)
     {
