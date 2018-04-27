@@ -152,6 +152,7 @@ public:
 
   //Bending Variables
   std::array<vtkSmartPointer<vtkMRMLMarkupsFiducialNode>, 2> BendPoints;
+  std::vector<std::string> PointsToRemove;
   vtkWeakPointer<vtkMRMLNode> CurrentBendNode;
   vtkSmartPointer<vtkPoints> Fiducials;
   vtkSmartPointer<vtkPolyData> BendingData;
@@ -204,6 +205,12 @@ void qSlicerPlannerModuleWidgetPrivate::clearControlPoints(vtkMRMLScene* scene)
     this->BendPoints[1] = NULL;
   }
 
+  std::vector<std::string>::iterator it;
+  for (it = this->PointsToRemove.begin(); it != this->PointsToRemove.end(); it++) {
+      vtkMRMLNode * node = this->scene->GetNodeByID(*it);
+      this->scene->RemoveNode(node);
+  }
+  this->PointsToRemove.clear();
   this->ActivePoint = -1;
   
 }
@@ -288,7 +295,9 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
   if (dist > 1.0)
   {
       
-      this->scene->RemoveNode(this->BendPoints[this->ActivePoint]);
+      //this->scene->RemoveNode(this->BendPoints[this->ActivePoint]);
+      this->BendPoints[this->ActivePoint]->GetDisplayNode()->SetVisibility(0);
+      this->PointsToRemove.push_back(this->BendPoints[this->ActivePoint]->GetID());
       BendPoints[this->ActivePoint] = NULL;
       this->beginPlacement(this->scene, this->ActivePoint);
       
@@ -299,6 +308,12 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
       this->MovingPointBButton->setEnabled(true);
       this->placingActive = false;
       this->ActivePoint = -1;
+      std::vector<std::string>::iterator it;
+      for (it = this->PointsToRemove.begin(); it != this->PointsToRemove.end(); it++) {
+          vtkMRMLNode * node = this->scene->GetNodeByID(*it);
+          this->scene->RemoveNode(node);
+      }
+      this->PointsToRemove.clear();
   } 
   
 }
@@ -1853,6 +1868,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
 void qSlicerPlannerModuleWidget::cancelFiducialButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);  
+  //qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   d->endPlacement();
   this->updateWidgetFromMRML();
 
