@@ -164,7 +164,7 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 
 //----------------------------------------------------------------------------
 //Create reference model form current hierarhcy state
-vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode)
 {
   if(this->SkullWrappedPreOP)
   {
@@ -196,7 +196,7 @@ double vtkSlicerPlannerLogic::getPreOPICV()
 
 //----------------------------------------------------------------------------
 //Create wrapped model from current hierarchy
-vtkMRMLCommandLineModuleNode*  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode)
 {
   if(this->CurrentModel)
   {
@@ -226,7 +226,7 @@ double vtkSlicerPlannerLogic::getCurrentICV()
 
 //----------------------------------------------------------------------------
 //Create wrapped version of brain model input
-vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createHealthyBrainModel(vtkMRMLModelNode* model)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createHealthyBrainModel(vtkMRMLModelNode* model)
 {
   if(this->HealthyBrain)
   {
@@ -253,7 +253,7 @@ double vtkSlicerPlannerLogic::getHealthyBrainICV()
 
 //----------------------------------------------------------------------------
 //Create wrapped version of bone template input
-vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::createBoneTemplateModel(vtkMRMLModelNode* model)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createBoneTemplateModel(vtkMRMLModelNode* model)
 {
   if (this->BoneTemplate)
   {
@@ -333,7 +333,7 @@ double vtkSlicerPlannerLogic::computeICV(vtkMRMLModelNode* model)
 
 //----------------------------------------------------------------------------
 //Create shrink wrapped version of a model
-vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std::string name, int dest)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std::string name, int dest)
 {
   vtkNew<vtkMRMLModelNode> wrappedModel;
   vtkMRMLScene* scene = this->GetMRMLScene();
@@ -365,7 +365,7 @@ vtkMRMLCommandLineModuleNode* vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode*
 
   //CLI setup
   this->wrapperLogic->SetMRMLScene(this->GetMRMLScene());
-  vtkMRMLCommandLineModuleNode* cmdNode = this->wrapperLogic->CreateNodeInScene();
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode = this->wrapperLogic->CreateNodeInScene();
   cmdNode->SetParameterAsString("inputModel", model->GetID());
   cmdNode->SetParameterAsString("outputModel", wrappedModel->GetID());
   cmdNode->SetParameterAsString("PhiRes", "20");

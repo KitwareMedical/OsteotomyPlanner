@@ -137,22 +137,22 @@ public:
   void hideTransforms();
 
   //Cutting Variables
-  vtkMRMLModelHierarchyNode* HierarchyNode;
-  vtkMRMLModelHierarchyNode* StagedHierarchyNode;
+  vtkWeakPointer<vtkMRMLModelHierarchyNode> HierarchyNode;
+  vtkWeakPointer<vtkMRMLModelHierarchyNode> StagedHierarchyNode;
   QStringList HideChildNodeTypes;
-  vtkMRMLNode* BrainReferenceNode;
-  vtkMRMLNode* TemplateReferenceNode;
-  vtkMRMLNode* CurrentCutNode;
-  vtkMRMLNode* StagedCutNode1;
-  vtkMRMLNode* StagedCutNode2;
+  vtkWeakPointer<vtkMRMLNode> BrainReferenceNode;
+  vtkWeakPointer<vtkMRMLNode> TemplateReferenceNode;
+  vtkWeakPointer<vtkMRMLNode> CurrentCutNode;
+  vtkSmartPointer<vtkMRMLNode> StagedCutNode1;
+  vtkSmartPointer<vtkMRMLNode> StagedCutNode2;
   bool cuttingActive;
-  vtkSlicerCLIModuleLogic* splitLogic;
-  vtkSlicerPlannerLogic* logic;
-  vtkMRMLCommandLineModuleNode* cmdNode;
+  vtkWeakPointer<vtkSlicerCLIModuleLogic> splitLogic;
+  vtkWeakPointer<vtkSlicerPlannerLogic> logic;
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode;
 
   //Bending Variables
-  std::array<vtkMRMLMarkupsFiducialNode*, 2> BendPoints;
-  vtkMRMLNode* CurrentBendNode;
+  std::array<vtkSmartPointer<vtkMRMLMarkupsFiducialNode>, 2> BendPoints;
+  vtkWeakPointer<vtkMRMLNode> CurrentBendNode;
   vtkSmartPointer<vtkPoints> Fiducials;
   vtkSmartPointer<vtkPolyData> BendingData;
   double BendMagnitude;
@@ -162,7 +162,7 @@ public:
   bool BendDoubleSide;
   bool ScalarsVsBrain;
   bool BendASide;
-  vtkMRMLScene* scene;
+  vtkWeakPointer<vtkMRMLScene> scene;
 
   //Bending methods
   int beginPlacement(vtkMRMLScene* scene, int id);
@@ -174,9 +174,9 @@ public:
   void clearBendingData(vtkMRMLScene* scene);
 
   //Metrics Variables
-  std::vector<vtkMRMLModelNode*> modelIterator;
-  vtkSlicerCLIModuleLogic* distanceLogic;
-  vtkMRMLTableNode* modelMetricsTable;
+  std::vector<vtkSmartPointer<vtkMRMLModelNode>> modelIterator;
+  vtkWeakPointer<vtkSlicerCLIModuleLogic> distanceLogic;
+  vtkSmartPointer<vtkMRMLTableNode> modelMetricsTable;
   bool PreOpSet;
   bool cliFreeze;
 
@@ -866,8 +866,8 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   this->hardenTransforms(false);
 
   //Create nodes
-  vtkNew<vtkMRMLModelNode> splitNode1;
-  vtkNew<vtkMRMLModelNode> splitNode2;
+  vtkSmartPointer<vtkMRMLModelNode> splitNode1 = vtkSmartPointer<vtkMRMLModelNode>::New();
+  vtkSmartPointer<vtkMRMLModelNode> splitNode2 = vtkSmartPointer<vtkMRMLModelNode>::New();
 
   std::stringstream name1;
   std::stringstream name2;
@@ -898,11 +898,11 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   scene->AddNode(dnode2.GetPointer());
   scene->AddNode(snode1.GetPointer());
   scene->AddNode(snode2.GetPointer());
-  scene->AddNode(splitNode1.GetPointer());
-  scene->AddNode(splitNode2.GetPointer());
+  scene->AddNode(splitNode1);
+  scene->AddNode(splitNode2);
 
-  this->splitModel(vtkMRMLModelNode::SafeDownCast(this->CurrentCutNode), splitNode1.GetPointer(),
-                   splitNode2.GetPointer(), scene);
+  this->splitModel(vtkMRMLModelNode::SafeDownCast(this->CurrentCutNode), splitNode1,
+                   splitNode2, scene);
 
   //add to hierarchy
   vtkNew<vtkMRMLModelHierarchyNode> splitNodeH1;
@@ -915,8 +915,8 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   splitNodeH2->SetParentNodeID(this->HierarchyNode->GetID());
   splitNodeH1->SetModelNodeID(splitNode1->GetID());
   splitNodeH2->SetModelNodeID(splitNode2->GetID());
-  this->StagedCutNode1 = splitNode1.GetPointer();
-  this->StagedCutNode2 = splitNode2.GetPointer();
+  this->StagedCutNode1 = splitNode1;
+  this->StagedCutNode2 = splitNode2;
 
   //set random colors on models
   this->applyRandomColor(splitNode1.GetPointer());
@@ -978,7 +978,7 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
 
   this->splitLogic->SetMRMLScene(scene);
 
-  vtkMRMLCommandLineModuleNode* cmdNode = this->splitLogic->CreateNodeInScene();
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode = this->splitLogic->CreateNodeInScene();
   vtkMRMLMarkupsPlanesNode* plane = this->getPlaneNode(scene, inputNode);
 
   double normal[3];
