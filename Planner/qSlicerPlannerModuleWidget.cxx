@@ -1255,12 +1255,6 @@ void qSlicerPlannerModuleWidget::setup()
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
   d->ModelHierarchyNodeComboBox->setNoneEnabled(true);
   
-  qMRMLSortFilterProxyModel* filterModel = d->CurrentCutNodeComboBox->sortFilterProxyModel();
-  filterModel->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");
-
-  qMRMLSortFilterProxyModel* filterModel2 = d->CurrentBendNodeComboBox->sortFilterProxyModel();
-  filterModel2->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");  
-
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
 
@@ -1277,12 +1271,6 @@ void qSlicerPlannerModuleWidget::setup()
     d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateTemplateReferenceNode(vtkMRMLNode*)));
 
-  this->connect(
-    d->CurrentCutNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(updateCurrentCutNode(vtkMRMLNode*)));
-  this->connect(
-    d->CurrentBendNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(updateCurrentBendNode(vtkMRMLNode*)));
   this->connect(
     d->CutPreviewButton, SIGNAL(clicked()), this, SLOT(previewCutButtonClicked()));
   this->connect(
@@ -1480,10 +1468,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Disabled due to list view button usage
   //Comboboxes are effectively display only 
   d->CutPreviewButton->setEnabled(false);
-  d->CurrentBendNodeComboBox->setEnabled(false);
-  d->CurrentBendNodeComboBox->setVisible(false);
-  d->CurrentCutNodeComboBox->setEnabled(false);
-  d->CurrentCutNodeComboBox->setVisible(false);
+  
   
   //set based on cutting/bending state
   d->BendingMenu->setVisible(d->bendingOpen);
@@ -1582,6 +1567,11 @@ void qSlicerPlannerModuleWidget::updateCurrentCutNode(vtkMRMLNode* node)
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
   d->CurrentCutNode = node;
+  if (node)
+  {
+      d->hideTransforms();
+
+  }
 
   this->updateWidgetFromMRML();
 }
@@ -1730,7 +1720,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 }
 
 //-----------------------------------------------------------------------------
-//Update active model for bending from combobox
+//Update active model for bending from hierarchy
 void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
@@ -2001,7 +1991,6 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         title << "Cutting model: " << node->GetName();
         d->CuttingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
-        d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
         this->updateCurrentCutNode(node);
         this->previewCutButtonClicked();
     }
@@ -2011,7 +2000,6 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         title << "Bending model: " << node->GetName();
         d->BendingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
-        d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
         d->bendingOpen = true;
