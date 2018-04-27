@@ -1594,7 +1594,7 @@ void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
   {
     d->cliFreeze = true;
     d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
-    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+    qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     d->BrainVisibilityCheckbox->setEnabled(true);
   }
@@ -1631,7 +1631,7 @@ void qSlicerPlannerModuleWidget::updateTemplateReferenceNode(vtkMRMLNode* node)
   {
     d->cliFreeze = true;
     d->cmdNode = this->plannerLogic()->createBoneTemplateModel(vtkMRMLModelNode::SafeDownCast(node));
-    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));    
+    qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));    
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     d->TemplateVisibilityCheckbox->setEnabled(true);
   }
@@ -1754,7 +1754,7 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
   }
 
   d->scene = this->mrmlScene();
-  qvtkConnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  qvtkReconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   return;
 }
 
@@ -1882,7 +1882,7 @@ void qSlicerPlannerModuleWidget::onComputeButton()
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
-      qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
+      qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
   }
@@ -1904,7 +1904,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
       d->PreOpSet = true;
       d->cliFreeze = true;
       d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
-      qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
+      qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
@@ -1971,7 +1971,7 @@ void qSlicerPlannerModuleWidget::runModelDistance(vtkMRMLModelNode* distRef)
     d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
     d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
     d->distanceLogic->Apply(d->cmdNode, true);
-    qvtkConnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
+    qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
   }
   else
