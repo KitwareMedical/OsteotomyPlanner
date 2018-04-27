@@ -222,11 +222,15 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
   this->Fiducials = NULL;
   this->logic->clearBendingData();
 
-  //reset transform to a linear node
-  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
-  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-  tnode->SetAndObserveTransformToParent(transform);
-  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  //reset parent transform to correct node
+  vtkSmartPointer<vtkMRMLTransformNode> parentTransform = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  if (!parentTransform->IsA("vtkMRMLLinearTransformNode"))
+  {     
+      vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(parentTransform->GetParentTransformNode()->GetID());
+      scene->RemoveNode(parentTransform);
+      parentTransform = NULL;
+  }
+  
 
 }
 
@@ -355,15 +359,24 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
 //Compute thin plate spline transform based on source and target points
 void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
 {
-  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
-  vtkNew<vtkMRMLTransformNode> tnodetemp;
-  if(!tnode)
+  //Get direct parent transform of model
+  //  
+  vtkNew<vtkMRMLTransformNode> bendTemp;
+  vtkSmartPointer<vtkMRMLTransformNode> BendingTransformNode;
+  vtkSmartPointer<vtkMRMLTransformNode> parentTransform = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  if (parentTransform->IsA("vtkMRMLLinearTransformNode"))
   {
-    tnode = tnodetemp.GetPointer();
-    scene->AddNode(tnode);
-    tnode->CreateDefaultDisplayNodes();
+      //Add bending transform node to scene
+      BendingTransformNode = bendTemp.GetPointer();
+      scene->AddNode(BendingTransformNode);
+      //BendingTransformNode->CreateDefaultDisplayNodes();
+      BendingTransformNode->SetAndObserveTransformNodeID(parentTransform->GetID());
   }
-
+  else if (parentTransform->IsA("vtkMRMLTransformNode"))
+  {
+      BendingTransformNode = parentTransform;
+  }  
+  
   if(this->BendDoubleSide)
   {
     this->logic->setBendType(vtkSlicerPlannerLogic::Double);
@@ -382,8 +395,8 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
     this->logic->setBendSide(vtkSlicerPlannerLogic::B);
   }
   vtkSmartPointer<vtkThinPlateSplineTransform> tps = this->logic->getBendTransform(this->BendMagnitude);
-  tnode->SetAndObserveTransformToParent(tps);
-  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  BendingTransformNode->SetAndObserveTransformToParent(tps);
+  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(BendingTransformNode->GetID());
 
   //
   vtkNew<vtkTransformPolyDataFilter> transform;
