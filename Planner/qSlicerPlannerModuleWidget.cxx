@@ -1522,6 +1522,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //non action sections
   d->MetricsCollapsibleButton->setEnabled(!performingAction);
   d->ReferencesCollapsibleButton->setEnabled(!performingAction);
+  d->ModelHierarchyTreeView->setEnabled(!performingAction);
   if (performingAction)
   {
       d->ReferencesCollapsibleButton->setCollapsed(true);
