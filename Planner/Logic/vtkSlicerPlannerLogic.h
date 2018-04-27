@@ -67,18 +67,18 @@ public:
   void clearModelsAndData();
 
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  vtkMRMLCommandLineModuleNode* createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
-  vtkMRMLCommandLineModuleNode* createHealthyBrainModel(vtkMRMLModelNode* brain);
-  vtkMRMLCommandLineModuleNode* createBoneTemplateModel(vtkMRMLModelNode* boneTemplate);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createHealthyBrainModel(vtkMRMLModelNode* brain);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createBoneTemplateModel(vtkMRMLModelNode* boneTemplate);
   double getPreOPICV();
   double getHealthyBrainICV();
   double getCurrentICV();
   double getTemplateICV();
-  vtkMRMLCommandLineModuleNode* createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
   void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
-  vtkMRMLModelNode* getWrappedBrainModel(){return this->HealthyBrain;}
-  vtkMRMLModelNode* getWrappedBoneTemplateModel(){return this->BoneTemplate;}
+  vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
+  vtkSmartPointer<vtkMRMLModelNode> getWrappedBoneTemplateModel(){return this->BoneTemplate;}
 
   enum BendModeType
   {
@@ -110,11 +110,11 @@ protected:
 
 private:
 
-  vtkSlicerCLIModuleLogic* splitLogic;
-  vtkSlicerCLIModuleLogic* wrapperLogic;
+  vtkWeakPointer<vtkSlicerCLIModuleLogic> splitLogic;
+  vtkWeakPointer<vtkSlicerCLIModuleLogic> wrapperLogic;
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
-  vtkMRMLCommandLineModuleNode* wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
   vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
   void generateSourcePoints();
   vtkVector3d projectToModel(vtkVector3d point);
@@ -126,15 +126,15 @@ private:
   void createBendingLocator();
   vtkVector3d bendPoint(vtkVector3d point, double magnitude);
   double computeICV(vtkMRMLModelNode* model);
-  vtkMRMLModelNode* SkullWrappedPreOP;
-  vtkMRMLModelNode* HealthyBrain;
-  vtkMRMLModelNode* CurrentModel;
-  vtkMRMLModelNode* BoneTemplate;
-  vtkMRMLModelNode* TempMerged;
-  vtkMRMLModelNode* TempWrapped;
+  vtkSmartPointer<vtkMRMLModelNode> SkullWrappedPreOP;
+  vtkSmartPointer<vtkMRMLModelNode> HealthyBrain;
+  vtkSmartPointer<vtkMRMLModelNode> CurrentModel;
+  vtkSmartPointer<vtkMRMLModelNode> BoneTemplate;
+  vtkSmartPointer<vtkMRMLModelNode> TempMerged;
+  vtkSmartPointer<vtkMRMLModelNode> TempWrapped;
 
   //Bending member variables
-  vtkMRMLModelNode* ModelToBend;
+  vtkSmartPointer<vtkMRMLModelNode> ModelToBend;
   vtkSmartPointer<vtkPoints> Fiducials;
   vtkSmartPointer<vtkPoints> SourcePoints;
   vtkSmartPointer<vtkPoints> SourcePointsDense;
