@@ -62,9 +62,7 @@ protected slots:
   void updateMRMLFromWidget();
 
   /// References slots
-  void updateBrainReferenceNode(vtkMRMLNode* node);
   void updateTemplateReferenceNode(vtkMRMLNode* node);
-  void onOpenBrainReference();
   void onOpenTemplateReference();
 
   //Actions slots

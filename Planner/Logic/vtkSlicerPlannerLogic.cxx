@@ -409,7 +409,6 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
   if(HierarchyNode)
   {
     preOpVolume = this->getPreOPICV();
-    brainVolume = this->getHealthyBrainICV();
     currentVolume = this->getCurrentICV();
     templateVolume = this->getTemplateICV();
 
@@ -418,9 +417,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     modelTableName += HierarchyNode->GetName();
     modelMetricsTable->SetName(modelTableName.c_str());
 
-    modelMetricsTable->AddColumn();
-    vtkAbstractArray* col1 = modelMetricsTable->AddColumn();
-    col1->SetName("Healthy Brain");
+    modelMetricsTable->AddColumn();    
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
     col2->SetName("Bone Template");
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
@@ -434,25 +431,21 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     modelMetricsTable->AddEmptyRow();
     modelMetricsTable->SetCellText(0, 0, "ICV\n cm^3");
     
-    std::stringstream brainVolumeSstr;
-    brainVolumeSstr << brainVolume;
-    const std::string& brainVolumeString = brainVolumeSstr.str();
-    modelMetricsTable->SetCellText(0, 1, brainVolumeString.c_str());
-
+   
     std::stringstream templateVolumeSstr;
     templateVolumeSstr << templateVolume;
     const std::string& templateVolumeString = templateVolumeSstr.str();
-    modelMetricsTable->SetCellText(0, 2, templateVolumeString.c_str());
+    modelMetricsTable->SetCellText(0, 1, templateVolumeString.c_str());
     
     std::stringstream preOpVolumeSstr;
     preOpVolumeSstr << preOpVolume;
     const std::string& preOpVolumeString = preOpVolumeSstr.str();
-    modelMetricsTable->SetCellText(0, 3, preOpVolumeString.c_str());
+    modelMetricsTable->SetCellText(0, 2, preOpVolumeString.c_str());
     
     std::stringstream currentVolumeSstr;
     currentVolumeSstr << currentVolume;
     const std::string& currentVolumeString = currentVolumeSstr.str();
-    modelMetricsTable->SetCellText(0, 4, currentVolumeString.c_str());
+    modelMetricsTable->SetCellText(0, 3, currentVolumeString.c_str());
     
   }
 }
