@@ -66,7 +66,7 @@
 #include "vtkTriangleFilter.h"
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkTransform.h"
-#include "vtkMRMLLayoutNode.h";
+#include "vtkMRMLLayoutNode.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -142,7 +142,6 @@ public:
   vtkWeakPointer<vtkMRMLModelHierarchyNode> HierarchyNode;
   vtkWeakPointer<vtkMRMLModelHierarchyNode> StagedHierarchyNode;
   QStringList HideChildNodeTypes;
-  vtkWeakPointer<vtkMRMLNode> BrainReferenceNode;
   vtkWeakPointer<vtkMRMLNode> TemplateReferenceNode;
   vtkWeakPointer<vtkMRMLNode> CurrentCutNode;
   vtkSmartPointer<vtkMRMLNode> StagedCutNode1;
@@ -163,7 +162,6 @@ public:
   bool bendingOpen;
   bool placingActive;
   bool BendDoubleSide;
-  bool ScalarsVsBrain;
   bool BendASide;
   vtkWeakPointer<vtkMRMLScene> scene;
 
@@ -240,7 +238,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->StagedHierarchyNode = NULL;
   this->HideChildNodeTypes =
     (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
-  this->BrainReferenceNode = NULL;
   this->TemplateReferenceNode = NULL;
   this->CurrentCutNode = NULL;
   this->StagedCutNode1 = NULL;
@@ -257,7 +254,6 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   this->BendDoubleSide = true;
   this->BendASide = true;
-  this->ScalarsVsBrain = true;
 
   this->BendPoints[0] = NULL;
   this->BendPoints[1] = NULL;
@@ -1256,7 +1252,6 @@ void qSlicerPlannerModuleWidget::setup()
 
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
-  d->BrainReferenceOpenButton->setIcon(loadIcon);
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
   d->ModelHierarchyNodeComboBox->setNoneEnabled(true);
   
@@ -1264,10 +1259,7 @@ void qSlicerPlannerModuleWidget::setup()
   filterModel->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");
 
   qMRMLSortFilterProxyModel* filterModel2 = d->CurrentBendNodeComboBox->sortFilterProxyModel();
-  filterModel2->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");
-
-  qMRMLSortFilterProxyModel* filterModel3 = d->BrainReferenceNodeComboBox->sortFilterProxyModel();
-  filterModel3->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
+  filterModel2->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");  
 
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
@@ -1281,9 +1273,6 @@ void qSlicerPlannerModuleWidget::setup()
     d->ModelHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
     this, SLOT(onCurrentNodeAboutToBeRemoved(vtkMRMLNode*)));
 
-  this->connect(
-    d->BrainReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(updateBrainReferenceNode(vtkMRMLNode*)));
   this->connect(
     d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateTemplateReferenceNode(vtkMRMLNode*)));
@@ -1316,27 +1305,15 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->ComputeScalarsButton, SIGNAL(clicked()), this, SLOT(computeScalarsClicked()));
   this->connect(
-    d->BrainVisibilityCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
-  this->connect(
     d->TemplateVisibilityCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
   this->connect(
-    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
-
-  this->connect(
-    d->BrainReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
-    this, SLOT(updateMRMLFromWidget()));
+    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));  
   this->connect(
     d->TemplateReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
     this, SLOT(updateMRMLFromWidget()));
   this->connect(
-    d->BrainReferenceOpacitySliderWidget, SIGNAL(valueChanged(double)),
-    this, SLOT(updateMRMLFromWidget()));
-  this->connect(
     d->TemplateReferenceOpacitySliderWidget, SIGNAL(valueChanged(double)),
     this, SLOT(updateMRMLFromWidget()));
-  this->connect(
-    d->BrainReferenceOpenButton, SIGNAL(clicked()),
-    this, SLOT(onOpenBrainReference()));
   this->connect(
     d->TemplateReferenceOpenButton, SIGNAL(clicked()),
     this, SLOT(onOpenTemplateReference()));
@@ -1544,10 +1521,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->SetPreOp->setDisabled(true);
   }
 
-  d->updateWidgetFromReferenceNode(
-    d->BrainReferenceNodeComboBox->currentNode(),
-    d->BrainReferenceColorPickerButton,
-    d->BrainReferenceOpacitySliderWidget);
+  
   d->updateWidgetFromReferenceNode(
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton,
@@ -1575,7 +1549,6 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Sort out radio buttons  
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
-  d->ScalarsVsBrain = d->BrainRadioButton->isChecked();
 
   //Freeze UI if needed
   if (d->cliFreeze)
@@ -1596,28 +1569,6 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ModelHierarchyTreeView->setEnabled(false);
   }
 
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget::updateBrainReferenceNode(vtkMRMLNode* node)
-{
-  Q_D(qSlicerPlannerModuleWidget);
-  this->qvtkReconnect(d->BrainReferenceNode, node,
-                      vtkCommand::ModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML()));
-  this->qvtkReconnect(d->BrainReferenceNode, node,
-                      vtkMRMLDisplayableNode::DisplayModifiedEvent,
-                      this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
-  if(node && node != d->BrainReferenceNode)
-  {
-    d->cliFreeze = true;
-    d->cmdNode =  this->plannerLogic()->createHealthyBrainModel(vtkMRMLModelNode::SafeDownCast(node));
-    qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
-    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
-    d->BrainVisibilityCheckbox->setEnabled(true);
-  }
-  d->BrainReferenceNode = node;
-  this->updateMRMLFromWidget();
 }
 
 //-----------------------------------------------------------------------------
@@ -1663,10 +1614,6 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->updateReferenceNodeFromWidget(
-    d->BrainReferenceNodeComboBox->currentNode(),
-    d->BrainReferenceColorPickerButton->color(),
-    d->BrainReferenceOpacitySliderWidget->value());
-  d->updateReferenceNodeFromWidget(
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton->color(),
     d->TemplateReferenceOpacitySliderWidget->value());
@@ -1677,27 +1624,13 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
   }
 
-  //Set visibility on template/brain
-  if(d->BrainReferenceNode)
-  {
-    vtkMRMLModelNode::SafeDownCast(d->BrainReferenceNode)->GetDisplayNode()->SetVisibility(d->BrainVisibilityCheckbox->isChecked());
-  }
+  
   if(d->TemplateReferenceNode)
   {
     vtkMRMLModelNode::SafeDownCast(d->TemplateReferenceNode)->GetDisplayNode()->SetVisibility(d->TemplateVisibilityCheckbox->isChecked());
   }
 }
 
-//-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget::onOpenBrainReference()
-{
-  Q_D(qSlicerPlannerModuleWidget);
-  vtkMRMLNode* model = d->openReferenceDialog();
-  if(model)
-  {
-    d->BrainReferenceNodeComboBox->setCurrentNode(model);
-  }
-}
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidget::onOpenTemplateReference()
@@ -1938,15 +1871,9 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   //launch scalar computation
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLModelNode* distanceReference;
-  if (d->BrainRadioButton->isChecked())
-  {
-    distanceReference = this->plannerLogic()->getWrappedBrainModel();
-  }
-  else
-  {
-    distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
-  }
-  
+ 
+  distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
+    
   if (d->HierarchyNode && distanceReference)
   {
     d->hardenTransforms(false);
