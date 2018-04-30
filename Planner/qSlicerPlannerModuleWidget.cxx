@@ -1565,6 +1565,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
     d->ModelHierarchyTreeView->setEnabled(false);
+    d->BendingMenu->setVisible(false);
+    d->CuttingMenu->setVisible(false);
   }
 
 }
@@ -1975,14 +1977,13 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
 
   //Clear out hierarchy
   vtkMRMLModelHierarchyNode* tempH = d->HierarchyNode;
-  //d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
+  d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
   d->HierarchyNode = NULL;
-  this->updateWidgetFromMRML();
-
 
   d->removePlanes(this->mrmlScene(), tempH);
   d->removeTransforms(this->mrmlScene(), tempH);
   d->untagModels(this->mrmlScene(), tempH);
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
