@@ -222,11 +222,15 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
   this->Fiducials = NULL;
   this->logic->clearBendingData();
 
-  //reset transform to a linear node
-  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
-  vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
-  tnode->SetAndObserveTransformToParent(transform);
-  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  //reset parent transform to correct node
+  vtkSmartPointer<vtkMRMLTransformNode> parentTransform = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  if (!parentTransform->IsA("vtkMRMLLinearTransformNode"))
+  {     
+      vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(parentTransform->GetParentTransformNode()->GetID());
+      scene->RemoveNode(parentTransform);
+      parentTransform = NULL;
+  }
+  
 
 }
 
@@ -355,15 +359,24 @@ void qSlicerPlannerModuleWidgetPrivate::computeAndSetSourcePoints(vtkMRMLScene* 
 //Compute thin plate spline transform based on source and target points
 void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
 {
-  vtkMRMLTransformNode* tnode = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
-  vtkNew<vtkMRMLTransformNode> tnodetemp;
-  if(!tnode)
+  //Get direct parent transform of model
+  //  
+  vtkNew<vtkMRMLTransformNode> bendTemp;
+  vtkSmartPointer<vtkMRMLTransformNode> BendingTransformNode;
+  vtkSmartPointer<vtkMRMLTransformNode> parentTransform = vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetParentTransformNode();
+  if (parentTransform->IsA("vtkMRMLLinearTransformNode"))
   {
-    tnode = tnodetemp.GetPointer();
-    scene->AddNode(tnode);
-    tnode->CreateDefaultDisplayNodes();
+      //Add bending transform node to scene
+      BendingTransformNode = bendTemp.GetPointer();
+      scene->AddNode(BendingTransformNode);
+      //BendingTransformNode->CreateDefaultDisplayNodes();
+      BendingTransformNode->SetAndObserveTransformNodeID(parentTransform->GetID());
   }
-
+  else if (parentTransform->IsA("vtkMRMLTransformNode"))
+  {
+      BendingTransformNode = parentTransform;
+  }  
+  
   if(this->BendDoubleSide)
   {
     this->logic->setBendType(vtkSlicerPlannerLogic::Double);
@@ -382,8 +395,8 @@ void qSlicerPlannerModuleWidgetPrivate::computeTransform(vtkMRMLScene* scene)
     this->logic->setBendSide(vtkSlicerPlannerLogic::B);
   }
   vtkSmartPointer<vtkThinPlateSplineTransform> tps = this->logic->getBendTransform(this->BendMagnitude);
-  tnode->SetAndObserveTransformToParent(tps);
-  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(tnode->GetID());
+  BendingTransformNode->SetAndObserveTransformToParent(tps);
+  vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->SetAndObserveTransformNodeID(BendingTransformNode->GetID());
 
   //
   vtkNew<vtkTransformPolyDataFilter> transform;
@@ -1255,12 +1268,6 @@ void qSlicerPlannerModuleWidget::setup()
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
   d->ModelHierarchyNodeComboBox->setNoneEnabled(true);
   
-  qMRMLSortFilterProxyModel* filterModel = d->CurrentCutNodeComboBox->sortFilterProxyModel();
-  filterModel->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");
-
-  qMRMLSortFilterProxyModel* filterModel2 = d->CurrentBendNodeComboBox->sortFilterProxyModel();
-  filterModel2->addAttribute("vtkMRMLModelNode", "PlannerRole", "HierarchyMember");  
-
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
 
@@ -1277,12 +1284,6 @@ void qSlicerPlannerModuleWidget::setup()
     d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateTemplateReferenceNode(vtkMRMLNode*)));
 
-  this->connect(
-    d->CurrentCutNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(updateCurrentCutNode(vtkMRMLNode*)));
-  this->connect(
-    d->CurrentBendNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(updateCurrentBendNode(vtkMRMLNode*)));
   this->connect(
     d->CutPreviewButton, SIGNAL(clicked()), this, SLOT(previewCutButtonClicked()));
   this->connect(
@@ -1480,10 +1481,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //Disabled due to list view button usage
   //Comboboxes are effectively display only 
   d->CutPreviewButton->setEnabled(false);
-  d->CurrentBendNodeComboBox->setEnabled(false);
-  d->CurrentBendNodeComboBox->setVisible(false);
-  d->CurrentCutNodeComboBox->setEnabled(false);
-  d->CurrentCutNodeComboBox->setVisible(false);
+  
   
   //set based on cutting/bending state
   d->BendingMenu->setVisible(d->bendingOpen);
@@ -1567,6 +1565,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
     d->ModelHierarchyTreeView->setEnabled(false);
+    d->BendingMenu->setVisible(false);
+    d->CuttingMenu->setVisible(false);
   }
 
 }
@@ -1582,6 +1582,11 @@ void qSlicerPlannerModuleWidget::updateCurrentCutNode(vtkMRMLNode* node)
                       vtkMRMLDisplayableNode::DisplayModifiedEvent,
                       this, SLOT(updateWidgetFromMRML(vtkObject*, vtkObject*)));
   d->CurrentCutNode = node;
+  if (node)
+  {
+      d->hideTransforms();
+
+  }
 
   this->updateWidgetFromMRML();
 }
@@ -1730,7 +1735,7 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 }
 
 //-----------------------------------------------------------------------------
-//Update active model for bending from combobox
+//Update active model for bending from hierarchy
 void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
@@ -1972,14 +1977,13 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
 
   //Clear out hierarchy
   vtkMRMLModelHierarchyNode* tempH = d->HierarchyNode;
-  //d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
+  d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
   d->HierarchyNode = NULL;
-  this->updateWidgetFromMRML();
-
 
   d->removePlanes(this->mrmlScene(), tempH);
   d->removeTransforms(this->mrmlScene(), tempH);
   d->untagModels(this->mrmlScene(), tempH);
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
@@ -2001,7 +2005,6 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         title << "Cutting model: " << node->GetName();
         d->CuttingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
-        d->CurrentCutNodeComboBox->setCurrentNodeID(node->GetID());
         this->updateCurrentCutNode(node);
         this->previewCutButtonClicked();
     }
@@ -2011,7 +2014,6 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         title << "Bending model: " << node->GetName();
         d->BendingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
-        d->CurrentBendNodeComboBox->setCurrentNodeID(node->GetID());
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
         d->bendingOpen = true;
