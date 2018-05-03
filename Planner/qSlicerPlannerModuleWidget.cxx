@@ -1526,7 +1526,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->TemplateReferenceOpacitySliderWidget);
 
   //Bending init button
-  if(d->BendPoints[0] && d->BendPoints[1] && d->CurrentBendNode)
+  if(d->BendPoints[0] && d->BendPoints[1] && d->CurrentBendNode && !d->placingActive)
   {
     d->InitButton->setEnabled(true);
     d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the"
