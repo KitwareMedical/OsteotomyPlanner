@@ -287,7 +287,10 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 //Complete placement of current fiducial
 void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 {
-
+  if (!this->placingActive)
+  {
+    return;
+  }
     //check that point in close to (i.e. on surface of) model to bend
     //if not, retrigger placing and give it another go  
   
@@ -296,7 +299,7 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
   this->BendPoints[this->ActivePoint]->GetNthFiducialPosition(0, posa);
   point.SetX(posa[0]);
   point.SetY(posa[1]);
-  point.SetZ(posa[2]);
+  point.SetZ(posa[2]);  
 
   double dist = this->logic->getDistanceToModel(point, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
   if (dist > 1.0)
@@ -1778,6 +1781,7 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
 //Cancel the current bend and reset
 void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
+  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
@@ -1785,11 +1789,16 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   {
     d->computeTransform(this->mrmlScene());
   }
+  if (d->placingActive)
+  {
+    vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
+    interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::ViewTransform);
+  }
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
+  d->placingActive = false;
   d->bendingActive = false;
-  d->bendingOpen = false;
-  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  d->bendingOpen = false;  
   this->updateWidgetFromMRML();
 
 }
@@ -2076,6 +2085,8 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         d->hardenTransforms(false);        
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
+        d->MovingPointAButton->setEnabled(true);
+        d->MovingPointBButton->setEnabled(true);
         d->bendingOpen = true;
         this->updateWidgetFromMRML();
     }
