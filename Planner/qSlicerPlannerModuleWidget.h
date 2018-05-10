@@ -79,6 +79,9 @@ protected slots:
   void bendMagnitudeSliderUpdated();
   void finshBendClicked();
   void finishPlanButtonClicked();
+  void transformActivated();
+  void confirmMoveButtonClicked();
+  void cancelMoveButtonClicked();
 
   void modelCallback(const QModelIndex &);
 

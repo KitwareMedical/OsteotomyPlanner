@@ -136,6 +136,7 @@ public:
   void splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene);
   void applyRandomColor(vtkMRMLModelNode* node);
   void hardenTransforms(bool hardenLinearOnly);
+  void clearTransforms();
   void hideTransforms();
 
   //Cutting Variables
@@ -164,6 +165,9 @@ public:
   bool BendDoubleSide;
   bool BendASide;
   vtkWeakPointer<vtkMRMLScene> scene;
+
+  //move
+  bool moveActive;
 
   //Bending methods
   int beginPlacement(vtkMRMLScene* scene, int id);
@@ -249,6 +253,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
   this->bendingActive = false;
+  this->moveActive = false;
   this->bendingOpen = false;
   this->placingActive = false;
   this->cmdNode = NULL;
@@ -1169,6 +1174,53 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
   }
 }
 
+//-----------------------------------------------------------------------------
+//Harden all transforms in the current hierarchy
+void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      int m = childModel->StartModify();
+      vtkMRMLTransformNode* transformNode = childModel->GetParentTransformNode();
+      vtkMRMLMarkupsPlanesNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
+      int m2 = planeNode->StartModify();
+      if (!transformNode)
+      {
+        // already in the world coordinate system
+        return;
+      }
+      if (transformNode->IsTransformToWorldLinear())
+      {
+        this->updatePlanesFromModel(childModel->GetScene(), childModel);
+        vtkNew<vtkMatrix4x4> hardeningMatrix;
+        transformNode->GetMatrixTransformToWorld(hardeningMatrix.GetPointer());
+        hardeningMatrix->Identity();
+        transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+      }
+      else
+      {
+        // non-linear transform hardening
+          this->updatePlanesFromModel(childModel->GetScene(), childModel);
+          transformNode->SetAndObserveTransformToParent(NULL);
+          vtkNew<vtkMatrix4x4> hardeningMatrix;
+          hardeningMatrix->Identity();
+          transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+        
+      }
+      planeNode->EndModify(m2);
+      childModel->EndModify(m);
+    }
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidget methods
@@ -1273,6 +1325,8 @@ void qSlicerPlannerModuleWidget::setup()
 
 
   // Connect
+
+  this->connect(sceneModel, SIGNAL(transformOn()), this, SLOT(transformActivated()));
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
@@ -1290,6 +1344,11 @@ void qSlicerPlannerModuleWidget::setup()
     d->CutConfirmButton, SIGNAL(clicked()), this, SLOT(confirmCutButtonClicked()));
   this->connect(
     d->CutCancelButton, SIGNAL(clicked()), this, SLOT(cancelCutButtonClicked()));
+
+  this->connect(
+    d->ConfirmMoveButton, SIGNAL(clicked()), this, SLOT(confirmMoveButtonClicked()));
+  this->connect(
+    d->CancelMoveButton, SIGNAL(clicked()), this, SLOT(cancelMoveButtonClicked()));
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
@@ -1485,7 +1544,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   
   //set based on cutting/bending state
   d->BendingMenu->setVisible(d->bendingOpen);
-  d->CuttingMenu->setVisible(d->cuttingActive);  
+  d->CuttingMenu->setVisible(d->cuttingActive);
+  d->MoveMenu->setVisible(d->moveActive);
   d->CutConfirmButton->setEnabled(d->cuttingActive);
   d->CutCancelButton->setEnabled(d->cuttingActive);
   d->CutPreviewButton->setEnabled(d->cuttingActive);
@@ -1493,7 +1553,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->CancelBendButton->setEnabled(d->bendingOpen);
   d->HardenBendButton->setEnabled(d->bendingActive);
 
-  bool performingAction = d->cuttingActive || d->bendingOpen;
+  bool performingAction = d->cuttingActive || d->bendingOpen || d->moveActive;
 
   
   //non action sections
@@ -2021,5 +2081,42 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     }
     
     
+}
+
+void qSlicerPlannerModuleWidget::transformActivated()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive)
+  {
+    return;
+  }
+  d->moveActive = true;
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive || !d->moveActive)
+  {
+    return;
+  }
+  d->hideTransforms();
+  d->hardenTransforms(false);
+  d->moveActive = false;
+  this->updateWidgetFromMRML();  
+}
+
+void qSlicerPlannerModuleWidget::cancelMoveButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive || !d->moveActive)
+  {
+    return;
+  }
+  d->hideTransforms();
+  d->clearTransforms();
+  d->moveActive = false;
+  this->updateWidgetFromMRML();  
 }
 
