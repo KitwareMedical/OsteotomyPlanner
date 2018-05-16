@@ -1697,19 +1697,10 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   }
   d->FinishButton->setEnabled(!performingAction);
 
-  //Pre-op state
+  //Pre-op state 
   
-  if(!d->PreOpSet)
-  {
-    d->SetPreOp->setText(QString("Need to set Pre Op State! - click"));
-  }
-  else
-  {
-    d->SetPreOp->setText("Pre Op State set");
-    d->SetPreOp->setDisabled(true);
-  }
 
-  
+  d->SetPreOp->setDisabled(d->PreOpSet);
   d->updateWidgetFromReferenceNode(
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton,

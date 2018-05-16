@@ -118,7 +118,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Set PreOp</string>
+         <string>Start Planner</string>
         </property>
        </widget>
       </item>
