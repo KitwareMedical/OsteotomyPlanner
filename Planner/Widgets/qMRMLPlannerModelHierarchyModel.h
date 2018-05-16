@@ -76,7 +76,7 @@ public:
 
 
 signals:
-    void transformOn();
+    void transformOn(vtkMRMLNode* node);
 
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
