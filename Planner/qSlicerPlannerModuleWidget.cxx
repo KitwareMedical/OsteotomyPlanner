@@ -24,6 +24,7 @@
 
 // CTK includes
 #include "ctkMessageBox.h"
+#include <ctkVTKWidgetsUtils.h>
 
 // VTK includes
 #include "vtkNew.h"
@@ -33,6 +34,9 @@
 #include "vtkVector.h"
 #include "vtkVectorOperators.h"
 #include <vtksys/SystemTools.hxx>
+#include <vtkRenderWindow.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderLargeImage.h>
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -43,6 +47,10 @@
 #include "ui_qSlicerPlannerModuleWidget.h"
 #include "qMRMLSortFilterProxyModel.h"
 #include "qSlicerLayoutManager.h"
+#include "qMRMLThreeDView.h"
+#include "qMRMLThreeDWidget.h"
+#include "qMRMLUtils.h"
+#include "vtkPNGWriter.h"
 
 // Slicer
 #include "vtkMRMLDisplayableHierarchyLogic.h"
@@ -193,7 +201,7 @@ public:
   //Methods and vars for instruction saving
   std::array<std::string, 4> ActionInProgress;
   std::vector<std::array<std::string, 4>> RecordedActions;
-  std::vector<vtkSmartPointer<vtkImageData>> ActionScreenschots;
+  std::vector<vtkSmartPointer<vtkImageData>> ActionScreenshots;
   QString RootDirectory;
   QString SaveDirectory;
   QString InstructionFile;
@@ -205,10 +213,74 @@ public:
   void writeOutActions();
   void setUpSaveFiles();
   bool savingActive;
+  vtkSmartPointer<vtkImageData> grabScreenshot();
+  void savePNGImage(vtkImageData*, std::array<std::string, 4> action, int index);
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
+
+void qSlicerPlannerModuleWidgetPrivate::savePNGImage(vtkImageData* image, std::array<std::string, 4> action, int index)
+{
+  QDir saveDir = QDir(this->SaveDirectory);
+  QString pngFile = saveDir.absoluteFilePath(this->generatePNGFilename(action, index).c_str());
+
+  vtkSmartPointer<vtkPNGWriter> writer =
+    vtkSmartPointer<vtkPNGWriter>::New();
+  writer->SetInputData(image);
+  writer->SetFileName(pngFile.toStdString().c_str());
+  writer->Write();
+}
+
+vtkSmartPointer<vtkImageData> qSlicerPlannerModuleWidgetPrivate::grabScreenshot()
+{
+  vtkNew<vtkImageData> newImageData;
+  QWidget* widget = 0;
+  vtkRenderWindow* renderWindow = 0;
+  // Create a screenshot of the first 3DView
+  
+  qMRMLThreeDView* threeDView = qSlicerApplication::application()->layoutManager()->threeDWidget(0)->threeDView();
+  widget = threeDView;
+  renderWindow = threeDView->renderWindow(); 
+
+  double scaleFactor = 1;
+
+  if (!qFuzzyCompare(scaleFactor, 1.0) )
+  {
+    // use off screen rendering to magnifiy the VTK widget's image without interpolation
+    vtkRenderer *renderer = renderWindow->GetRenderers()->GetFirstRenderer();
+    vtkNew<vtkRenderLargeImage> renderLargeImage;
+    renderLargeImage->SetInput(renderer);
+    renderLargeImage->SetMagnification(scaleFactor);
+    renderLargeImage->Update();
+    newImageData.GetPointer()->DeepCopy(renderLargeImage->GetOutput());
+  }  
+  else
+  {
+    // no scaling, or for not just the 3D window
+    QImage screenShot = ctk::grabVTKWidget(widget);
+
+    if (!qFuzzyCompare(scaleFactor, 1.0))
+    {
+      // Rescale the image which gets saved
+      QImage rescaledScreenShot = screenShot.scaled(screenShot.size().width() * scaleFactor,
+        screenShot.size().height() * scaleFactor);
+
+      // convert the scaled screenshot from QPixmap to vtkImageData
+      qMRMLUtils::qImageToVtkImageData(rescaledScreenShot,
+        newImageData.GetPointer());
+    }
+    else
+    {
+      // convert the screenshot from QPixmap to vtkImageData
+      qMRMLUtils::qImageToVtkImageData(screenShot,
+        newImageData.GetPointer());
+    }
+  }
+  // save the screen shot image to this class
+  vtkSmartPointer<vtkImageData> screenshot = newImageData.GetPointer();
+  return screenshot;
+}
 
 void qSlicerPlannerModuleWidgetPrivate::writeOutActions()
 {
@@ -228,6 +300,7 @@ void qSlicerPlannerModuleWidgetPrivate::writeOutActions()
         this->NumberOfWrittenActions).c_str() << endl;
       file.close();
     }
+    this->savePNGImage(this->ActionScreenshots[this->NumberOfWrittenActions], action, this->NumberOfWrittenActions);
     this->NumberOfWrittenActions++;
   }
   
@@ -275,6 +348,7 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
 void qSlicerPlannerModuleWidgetPrivate::recordActionInProgress()
 {
     this->RecordedActions.push_back(this->ActionInProgress);
+    this->ActionScreenshots.push_back(this->grabScreenshot());
     this->ActionInProgress.fill("");
     this->NumberOfSavedActions++;
     this->writeOutActions();
@@ -383,7 +457,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 
   this->ActionInProgress.fill("");
   this->RecordedActions.clear();
-  this->ActionScreenschots.clear();
+  this->ActionScreenshots.clear();
   this->NumberOfSavedActions = 0;
   this->NumberOfWrittenActions = 0;
   this->RootDirectory = "";
@@ -1860,8 +1934,8 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
-  d->recordActionInProgress();
   this->updateWidgetFromMRML();
+  d->recordActionInProgress();
 }
 
 //-----------------------------------------------------------------------------
@@ -1994,9 +2068,9 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->clearBendingData(this->mrmlScene());
   d->bendingActive = false;
   d->bendingOpen = false;
-  d->recordActionInProgress();
   qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   this->updateWidgetFromMRML();
+  d->recordActionInProgress();
 }
 
 //-----------------------------------------------------------------------------
@@ -2253,8 +2327,8 @@ void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
   d->hideTransforms();
   d->hardenTransforms(false);
   d->moveActive = false;
-  d->recordActionInProgress();
   this->updateWidgetFromMRML();  
+  d->recordActionInProgress();
 }
 
 void qSlicerPlannerModuleWidget::cancelMoveButtonClicked()
