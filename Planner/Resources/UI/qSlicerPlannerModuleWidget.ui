@@ -17,10 +17,10 @@
    <item>
     <widget class="ctkCollapsibleButton" name="InputsCollapsibleButton">
      <property name="text">
-      <string>Inputs</string>
+      <string>Planner</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="3" column="0" colspan="2">
+      <item row="4" column="0" colspan="2">
        <widget class="qMRMLTreeView" name="ModelHierarchyTreeView">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -105,7 +105,7 @@
          <string>Select the directory where the planner will create the output folder</string>
         </property>
         <property name="text">
-         <string>Click to set location to create Save Directory</string>
+         <string>Click to set/change location for Save Directory</string>
         </property>
        </widget>
       </item>
@@ -266,14 +266,14 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="6" column="0">
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="SideNumberLabel">
         <property name="text">
          <string>(Side number is arbitray)</string>
         </property>
        </widget>
       </item>
       <item row="5" column="0">
-       <widget class="QLabel" name="Radio2Label">
+       <widget class="QLabel" name="SideLabel">
         <property name="text">
          <string>Side to bend</string>
         </property>
@@ -319,7 +319,7 @@
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="label_5">
+       <widget class="QLabel" name="MagnitudeLabel">
         <property name="text">
          <string>Magnitude</string>
         </property>
@@ -395,7 +395,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Init Bend</string>
+         <string>Begin Bending</string>
         </property>
        </widget>
       </item>
@@ -405,7 +405,7 @@
          <bool>false</bool>
         </property>
         <property name="text">
-         <string>Finish Bend</string>
+         <string>Confirm</string>
         </property>
        </widget>
       </item>

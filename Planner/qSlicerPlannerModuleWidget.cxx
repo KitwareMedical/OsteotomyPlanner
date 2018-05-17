@@ -1785,7 +1785,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {
     d->InitButton->setEnabled(true);
     d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the"
-        " 3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
+        " 3D view, or by using the Place button again. Click 'Begin Bending' once you are satisfied with the positioning.");
   }
   else
   {
@@ -1796,7 +1796,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if (d->bendingActive)
   {
       d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider."
-        " You can also select which side of the model you want to bend (or both sides).  Click 'Finish Bend' to finalize");
+        " You can also select which side of the model you want to bend (or both sides).  Click 'Confirm' to finalize");
   }
 
   //Sort out radio buttons  
