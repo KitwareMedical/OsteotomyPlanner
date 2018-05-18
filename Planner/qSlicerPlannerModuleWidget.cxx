@@ -1816,6 +1816,16 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->BendDoubleSide = d->DoubleSidedButton->isChecked();
   d->BendASide = d->ASideButton->isChecked();
 
+  if (!this->plannerLogic()->getWrappedBoneTemplateModel())
+  {
+    d->ReferenceRadioButton->setChecked(false);
+    d->ReferenceRadioButton->setEnabled(false);
+  }
+  else
+  {
+    d->ReferenceRadioButton->setEnabled(true);
+  }
+
   //Freeze UI if needed
   if (d->cliFreeze)
   {
@@ -1830,13 +1840,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->SaveDirectoryButton->setEnabled(d->savingActive && !d->PreOpSet);
   d->EnableSavingCheckbox->setEnabled(!d->savingActive || !d->PreOpSet);
 
-  if (d->SaveDirectory != "")
-  {
-    d->SavingToLabel->setVisible(d->savingActive);
-    d->SavingLocationLabel->setVisible(d->savingActive);
-  }
-  
-  
+  d->SavingToLabel->setVisible(d->savingActive);
+  d->SavingLocationLabel->setVisible(d->savingActive);  
 
   //Deactivate everything for null hierarchy or for pre op state not set
   if (!d->HierarchyNode || !d->PreOpSet)
@@ -1854,6 +1859,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {
     d->SaveDirectoryButton->setEnabled(false);
     d->EnableSavingCheckbox->setEnabled(false);
+    d->SetPreOp->setEnabled(false);
   }
 
 }
@@ -2202,8 +2208,15 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   //launch scalar computation
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLModelNode* distanceReference;
- 
-  distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
+
+  if (d->InitialStateRadioButton->isChecked())
+  {
+    distanceReference = this->plannerLogic()->getWrappedPreOpModel();
+  }
+  else
+  {
+    distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
+  }  
     
   if (d->HierarchyNode && distanceReference)
   {
