@@ -329,14 +329,10 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
   {
     return;
   }
-  const QDateTime now = QDateTime::currentDateTime();
-  const QString timestamp = now.toString(QLatin1String("yyyyMMdd-hhmmsszzz"));
-  std::stringstream ssDirectoryName;
-  ssDirectoryName << this->HierarchyNode->GetName() << "_" << timestamp.toStdString();
-  std::vector<std::string> pathComponents;
+  
   QDir rootDir = QDir(this->RootDirectory);
-  rootDir.mkdir(ssDirectoryName.str().c_str());
-  this->SaveDirectory = rootDir.absoluteFilePath(ssDirectoryName.str().c_str());
+  QDir saveDir = QDir(this->SaveDirectory);
+  rootDir.mkdir(saveDir.dirName());
 
   if (!rootDir.exists(this->SaveDirectory))
   {
@@ -344,7 +340,7 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
     this->savingActive = false;
     return;
   }
-  QDir saveDir = QDir(this->SaveDirectory);
+  
   std::stringstream ssFilename;
   ssFilename << this->HierarchyNode->GetName() << "_Instructions.txt";
   this->InstructionFile = saveDir.absoluteFilePath(ssFilename.str().c_str());
@@ -355,10 +351,6 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
     stream << "Osteotomy Planner Instructions for case: " << this->HierarchyNode->GetName() << endl;
     file.close();
   }
-
-
-  this->SavingLocationLabel->setText(this->SaveDirectory);
-
 }
 
 void qSlicerPlannerModuleWidgetPrivate::recordActionInProgress()
@@ -2420,6 +2412,18 @@ void qSlicerPlannerModuleWidget::saveDirectoryChanged(const QString &directory)
   }
   d->RootDirectory = directory;
   d->savingActive = (d->RootDirectory != "");
+  if (d->savingActive)
+  {
+    const QDateTime now = QDateTime::currentDateTime();
+    const QString timestamp = now.toString(QLatin1String("yyyyMMdd-hhmmsszzz"));
+    std::stringstream ssDirectoryName;
+    ssDirectoryName << d->HierarchyNode->GetName() << "_" << timestamp.toStdString();
+    std::vector<std::string> pathComponents;
+    QDir rootDir = QDir(d->RootDirectory);
+    d->SaveDirectory = rootDir.absoluteFilePath(ssDirectoryName.str().c_str());
+    d->SavingLocationLabel->setText(d->SaveDirectory);
+
+  }
   
   this->updateWidgetFromMRML();
 }
