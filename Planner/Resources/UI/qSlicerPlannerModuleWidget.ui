@@ -105,7 +105,7 @@
          <string>Select the directory where the planner will create the output folder</string>
         </property>
         <property name="text">
-         <string>Click to set/change location for Save Directory</string>
+         <string>Click to change location for Save Directory</string>
         </property>
        </widget>
       </item>
@@ -119,6 +119,33 @@
         </property>
         <property name="text">
          <string>Start Planner</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="EnableSavingCheckbox">
+        <property name="text">
+         <string>Enable Saving</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="SavingToLabel">
+        <property name="text">
+         <string>Saving to:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLabel" name="SavingLocationLabel">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
@@ -420,6 +447,38 @@
        <widget class="QPushButton" name="MovingPointBButton">
         <property name="text">
          <string>Place Point B</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="ScreenshotMenu">
+     <property name="title">
+      <string>Screenshot Menu</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QLabel" name="ScreenshotLabel">
+        <property name="text">
+         <string>Postion the model in the 3D view for the screenshot to record the action.  Click &quot;Take Screenshot&quot; when ready.</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="ScreenshotButton">
+        <property name="text">
+         <string>Take Screenshot</string>
         </property>
        </widget>
       </item>

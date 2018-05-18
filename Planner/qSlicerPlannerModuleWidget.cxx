@@ -213,6 +213,7 @@ public:
   void writeOutActions();
   void setUpSaveFiles();
   bool savingActive;
+  bool waitingOnScreenshot;
   vtkSmartPointer<vtkImageData> grabScreenshot();
   void savePNGImage(vtkImageData*, std::array<std::string, 4> action, int index);
 };
@@ -341,7 +342,7 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
   }
 
 
-  std::cout << this->SaveDirectory.toStdString() << std::endl;
+  this->SavingLocationLabel->setText(this->SaveDirectory);
 
 }
 
@@ -444,6 +445,7 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->PreOpSet = false;
   this->cliFreeze = false;
   this->savingActive = false;
+  this->waitingOnScreenshot = false;
   this->scene = NULL;
 
   this->BendDoubleSide = true;
@@ -1589,6 +1591,8 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(cuts, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
   this->connect(bends, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
+  this->connect(d->EnableSavingCheckbox, SIGNAL(toggled(bool)), this, SLOT(enabledSavingCheckboxToggled(bool)));
+  this->connect(d->ScreenshotButton, SIGNAL(clicked()), this, SLOT(takeScreenshotButtonClicked()));
 
   this->updateWidgetFromMRML();
 }
@@ -1720,7 +1724,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
     d->ModelHierarchyNodeComboBox->setEnabled(false);
-    d->SetPreOp->setEnabled(true);
+    d->SetPreOp->setEnabled(true);    
   }
   
   // Inputs
@@ -1749,6 +1753,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->BendingMenu->setVisible(d->bendingOpen);
   d->CuttingMenu->setVisible(d->cuttingActive);
   d->MoveMenu->setVisible(d->moveActive);
+  d->ScreenshotMenu->setVisible(d->waitingOnScreenshot);
+  d->ScreenshotMenu->setEnabled(d->waitingOnScreenshot);
   d->CutConfirmButton->setEnabled(d->cuttingActive);
   d->CutCancelButton->setEnabled(d->cuttingActive);
   d->CutPreviewButton->setEnabled(d->cuttingActive);
@@ -1757,7 +1763,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->HardenBendButton->setEnabled(d->bendingActive);
   d->SaveDirectoryButton->setEnabled(!d->savingActive);
 
-  bool performingAction = d->cuttingActive || d->bendingOpen || d->moveActive;
+  bool performingAction = d->cuttingActive || d->bendingOpen || d->moveActive || d->waitingOnScreenshot;
 
   
   //non action sections
@@ -1810,7 +1816,20 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
       d->MetricsCollapsibleButton->setEnabled(false);
       d->FinishButton->setEnabled(false);
       d->ModelHierarchyTreeView->setEnabled(false);
+      d->ScreenshotMenu->setEnabled(false);
   }
+
+  //Saving buttons
+  d->SaveDirectoryButton->setEnabled(d->savingActive && !d->PreOpSet);
+  d->EnableSavingCheckbox->setEnabled(!d->savingActive || !d->PreOpSet);
+
+  if (d->SaveDirectory != "")
+  {
+    d->SavingToLabel->setVisible(d->savingActive);
+    d->SavingLocationLabel->setVisible(d->savingActive);
+  }
+  
+  
 
   //Deactivate everything for null hierarchy or for pre op state not set
   if (!d->HierarchyNode || !d->PreOpSet)
@@ -1822,10 +1841,12 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ModelHierarchyTreeView->setEnabled(false);
     d->BendingMenu->setVisible(false);
     d->CuttingMenu->setVisible(false);
+    d->ScreenshotMenu->setVisible(false);
   }
   if (!d->HierarchyNode)
   {
     d->SaveDirectoryButton->setEnabled(false);
+    d->EnableSavingCheckbox->setEnabled(false);
   }
 
 }
@@ -1934,8 +1955,15 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
   this->updateWidgetFromMRML();
-  d->recordActionInProgress();
 }
 
 //-----------------------------------------------------------------------------
@@ -2069,8 +2097,15 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->bendingActive = false;
   d->bendingOpen = false;
   qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
   this->updateWidgetFromMRML();
-  d->recordActionInProgress();
 }
 
 //-----------------------------------------------------------------------------
@@ -2129,14 +2164,21 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
       d->SetPreOp->setEnabled(false);
       d->PreOpSet = true;
       d->cliFreeze = true;
-      if (d->RootDirectory != "" && !d->savingActive)
+      if (d->savingActive)
       {
-        d->savingActive = true;
         d->setUpSaveFiles();
       }
       d->ActionInProgress[0] = d->HierarchyNode->GetName();
       d->ActionInProgress[1] = "Initial State";
-      d->recordActionInProgress();
+      if (d->savingActive)
+      {
+        d->waitingOnScreenshot = true;
+      }
+      else
+      {
+        d->recordActionInProgress();
+      }
+      
       d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
@@ -2327,8 +2369,16 @@ void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
   d->hideTransforms();
   d->hardenTransforms(false);
   d->moveActive = false;
-  this->updateWidgetFromMRML();  
-  d->recordActionInProgress();
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
+  this->updateWidgetFromMRML();
+
 }
 
 void qSlicerPlannerModuleWidget::cancelMoveButtonClicked()
@@ -2353,12 +2403,31 @@ void qSlicerPlannerModuleWidget::saveDirectoryChanged(const QString &directory)
     return;
   }
   d->RootDirectory = directory;
+  d->savingActive = (d->RootDirectory != "");
+  
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::enabledSavingCheckboxToggled(bool state)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+
+  if (state && !d->savingActive)
+  {
+    d->SaveDirectoryButton->browse();
+    std::cout << "Saving to: " << d->RootDirectory.toStdString().c_str() << std::endl;
+  }
   if (d->PreOpSet)
   {
-    d->savingActive = true;
     d->setUpSaveFiles();
     d->writeOutActions();
   }
+}
+void qSlicerPlannerModuleWidget::takeScreenshotButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->recordActionInProgress();
+  d->waitingOnScreenshot = false;
   this->updateWidgetFromMRML();
 }
 

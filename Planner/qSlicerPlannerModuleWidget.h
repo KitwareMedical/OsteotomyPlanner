@@ -82,9 +82,13 @@ protected slots:
   void transformActivated(vtkMRMLNode* node);
   void confirmMoveButtonClicked();
   void cancelMoveButtonClicked();
-  void saveDirectoryChanged(const QString &);
-
   void modelCallback(const QModelIndex &);
+
+
+  //Saving slots
+  void saveDirectoryChanged(const QString &);
+  void enabledSavingCheckboxToggled(bool state);
+  void takeScreenshotButtonClicked();
 
 
   // Metrics slots
