@@ -79,6 +79,7 @@ public:
   void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBoneTemplateModel(){return this->BoneTemplate;}
+  vtkSmartPointer<vtkMRMLModelNode> getWrappedPreOpModel() { return this->SkullWrappedPreOP; }
 
   enum BendModeType
   {
