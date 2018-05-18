@@ -1859,6 +1859,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {
     d->SaveDirectoryButton->setEnabled(false);
     d->EnableSavingCheckbox->setEnabled(false);
+    d->SetPreOp->setEnabled(false);
   }
 
 }
