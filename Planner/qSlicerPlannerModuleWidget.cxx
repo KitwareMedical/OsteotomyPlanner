@@ -216,10 +216,25 @@ public:
   bool waitingOnScreenshot;
   vtkSmartPointer<vtkImageData> grabScreenshot();
   void savePNGImage(vtkImageData*, std::array<std::string, 4> action, int index);
+  void clearSavingData();
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
+
+void qSlicerPlannerModuleWidgetPrivate::clearSavingData()
+{
+  this->ActionInProgress.fill("");
+  this->RecordedActions.clear();
+  this->ActionScreenshots.clear();
+  this->RootDirectory = "";
+  this->SaveDirectory = "";
+  this->InstructionFile = "";
+  this->NumberOfSavedActions = 0;
+  this->NumberOfWrittenActions = 0;
+  this->savingActive = false;
+  this->waitingOnScreenshot = false;
+}
 
 void qSlicerPlannerModuleWidgetPrivate::savePNGImage(vtkImageData* image, std::array<std::string, 4> action, int index)
 {
@@ -2290,6 +2305,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     d->hideTransforms();
     d->hardenTransforms(false);
     d->clearControlPoints(this->mrmlScene());
+    d->clearSavingData();
     this->plannerLogic()->clearModelsAndData();
     d->PreOpSet = false;
   }
