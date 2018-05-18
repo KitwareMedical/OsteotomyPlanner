@@ -422,7 +422,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
     col2->SetName("Bone Template");
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
-    col3->SetName("Pre-op");
+    col3->SetName("Initial State");
     vtkAbstractArray* col4 = modelMetricsTable->AddColumn();
     col4->SetName("Current");
     modelMetricsTable->SetUseColumnNameAsColumnHeader(true);
