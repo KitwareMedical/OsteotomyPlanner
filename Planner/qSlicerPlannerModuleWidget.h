@@ -79,8 +79,16 @@ protected slots:
   void bendMagnitudeSliderUpdated();
   void finshBendClicked();
   void finishPlanButtonClicked();
-
+  void transformActivated(vtkMRMLNode* node);
+  void confirmMoveButtonClicked();
+  void cancelMoveButtonClicked();
   void modelCallback(const QModelIndex &);
+
+
+  //Saving slots
+  void saveDirectoryChanged(const QString &);
+  void enabledSavingCheckboxToggled(bool state);
+  void takeScreenshotButtonClicked();
 
 
   // Metrics slots

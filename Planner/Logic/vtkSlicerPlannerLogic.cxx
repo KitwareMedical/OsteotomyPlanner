@@ -336,6 +336,7 @@ double vtkSlicerPlannerLogic::computeICV(vtkMRMLModelNode* model)
 vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std::string name, int dest)
 {
   vtkNew<vtkMRMLModelNode> wrappedModel;
+  wrappedModel->HideFromEditorsOn();
   vtkMRMLScene* scene = this->GetMRMLScene();
   wrappedModel->SetScene(scene);
   wrappedModel->SetName(name.c_str());
@@ -382,8 +383,8 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
   node->GetDisplayNode()->SetVisibility(0);
   node->GetDisplayNode()->SetActiveScalarName("Normals");
   this->GetMRMLScene()->RemoveNode(cmdNode);
-  node->HideFromEditorsOn();
   node->SetAttribute("PlannerRole", "WrappedModel");
+
 
   if(this->TempMerged)
   {
@@ -421,7 +422,7 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* Hierarch
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
     col2->SetName("Bone Template");
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();
-    col3->SetName("Pre-op");
+    col3->SetName("Initial State");
     vtkAbstractArray* col4 = modelMetricsTable->AddColumn();
     col4->SetName("Current");
     modelMetricsTable->SetUseColumnNameAsColumnHeader(true);

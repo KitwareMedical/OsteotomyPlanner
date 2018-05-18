@@ -290,6 +290,7 @@ void qMRMLPlannerModelHierarchyModel
           if(item->checkState() == Qt::Checked ? true : false)
           {
             display->SetOpacity(0.5);
+            emit transformOn(node);
           }
           else
           {

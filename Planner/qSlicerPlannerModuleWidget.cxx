@@ -19,11 +19,12 @@
 #include <QDebug>
 #include <QMessageBox>
 #include <QSettings>
-
+#include <qdatetime.h>
 
 
 // CTK includes
 #include "ctkMessageBox.h"
+#include <ctkVTKWidgetsUtils.h>
 
 // VTK includes
 #include "vtkNew.h"
@@ -32,6 +33,10 @@
 #include <vtkSmartPointer.h>
 #include "vtkVector.h"
 #include "vtkVectorOperators.h"
+#include <vtksys/SystemTools.hxx>
+#include <vtkRenderWindow.h>
+#include <vtkRendererCollection.h>
+#include <vtkRenderLargeImage.h>
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -42,6 +47,10 @@
 #include "ui_qSlicerPlannerModuleWidget.h"
 #include "qMRMLSortFilterProxyModel.h"
 #include "qSlicerLayoutManager.h"
+#include "qMRMLThreeDView.h"
+#include "qMRMLThreeDWidget.h"
+#include "qMRMLUtils.h"
+#include "vtkPNGWriter.h"
 
 // Slicer
 #include "vtkMRMLDisplayableHierarchyLogic.h"
@@ -136,6 +145,7 @@ public:
   void splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene);
   void applyRandomColor(vtkMRMLModelNode* node);
   void hardenTransforms(bool hardenLinearOnly);
+  void clearTransforms();
   void hideTransforms();
 
   //Cutting Variables
@@ -165,6 +175,9 @@ public:
   bool BendASide;
   vtkWeakPointer<vtkMRMLScene> scene;
 
+  //move
+  bool moveActive;
+
   //Bending methods
   int beginPlacement(vtkMRMLScene* scene, int id);
   void endPlacement();
@@ -184,11 +197,194 @@ public:
   //Metrics methods
   void prepScalarComputation(vtkMRMLScene* scene);
   void setScalarVisibility(bool visible);
+
+  //Methods and vars for instruction saving
+  std::array<std::string, 4> ActionInProgress;
+  std::vector<std::array<std::string, 4>> RecordedActions;
+  std::vector<vtkSmartPointer<vtkImageData>> ActionScreenshots;
+  QString RootDirectory;
+  QString SaveDirectory;
+  QString InstructionFile;
+  int NumberOfSavedActions;
+  int NumberOfWrittenActions;
+  std::string generateInstruction(std::array<std::string, 4> action, int index);
+  std::string generatePNGFilename(std::array<std::string, 4> action, int index);
+  void recordActionInProgress();
+  void writeOutActions();
+  void setUpSaveFiles();
+  bool savingActive;
+  bool waitingOnScreenshot;
+  vtkSmartPointer<vtkImageData> grabScreenshot();
+  void savePNGImage(vtkImageData*, std::array<std::string, 4> action, int index);
+  void clearSavingData();
 };
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidgetPrivate methods
 
+void qSlicerPlannerModuleWidgetPrivate::clearSavingData()
+{
+  this->ActionInProgress.fill("");
+  this->RecordedActions.clear();
+  this->ActionScreenshots.clear();
+  this->RootDirectory = "";
+  this->SaveDirectory = "";
+  this->InstructionFile = "";
+  this->NumberOfSavedActions = 0;
+  this->NumberOfWrittenActions = 0;
+  this->savingActive = false;
+  this->waitingOnScreenshot = false;
+}
+
+void qSlicerPlannerModuleWidgetPrivate::savePNGImage(vtkImageData* image, std::array<std::string, 4> action, int index)
+{
+  QDir saveDir = QDir(this->SaveDirectory);
+  QString pngFile = saveDir.absoluteFilePath(this->generatePNGFilename(action, index).c_str());
+
+  vtkSmartPointer<vtkPNGWriter> writer =
+    vtkSmartPointer<vtkPNGWriter>::New();
+  writer->SetInputData(image);
+  writer->SetFileName(pngFile.toStdString().c_str());
+  writer->Write();
+}
+
+vtkSmartPointer<vtkImageData> qSlicerPlannerModuleWidgetPrivate::grabScreenshot()
+{
+  vtkNew<vtkImageData> newImageData;
+  QWidget* widget = 0;
+  vtkRenderWindow* renderWindow = 0;
+  // Create a screenshot of the first 3DView
+  
+  qMRMLThreeDView* threeDView = qSlicerApplication::application()->layoutManager()->threeDWidget(0)->threeDView();
+  widget = threeDView;
+  renderWindow = threeDView->renderWindow(); 
+
+  double scaleFactor = 1;
+
+  if (!qFuzzyCompare(scaleFactor, 1.0) )
+  {
+    // use off screen rendering to magnifiy the VTK widget's image without interpolation
+    vtkRenderer *renderer = renderWindow->GetRenderers()->GetFirstRenderer();
+    vtkNew<vtkRenderLargeImage> renderLargeImage;
+    renderLargeImage->SetInput(renderer);
+    renderLargeImage->SetMagnification(scaleFactor);
+    renderLargeImage->Update();
+    newImageData.GetPointer()->DeepCopy(renderLargeImage->GetOutput());
+  }  
+  else
+  {
+    // no scaling, or for not just the 3D window
+    QImage screenShot = ctk::grabVTKWidget(widget);
+
+    if (!qFuzzyCompare(scaleFactor, 1.0))
+    {
+      // Rescale the image which gets saved
+      QImage rescaledScreenShot = screenShot.scaled(screenShot.size().width() * scaleFactor,
+        screenShot.size().height() * scaleFactor);
+
+      // convert the scaled screenshot from QPixmap to vtkImageData
+      qMRMLUtils::qImageToVtkImageData(rescaledScreenShot,
+        newImageData.GetPointer());
+    }
+    else
+    {
+      // convert the screenshot from QPixmap to vtkImageData
+      qMRMLUtils::qImageToVtkImageData(screenShot,
+        newImageData.GetPointer());
+    }
+  }
+  // save the screen shot image to this class
+  vtkSmartPointer<vtkImageData> screenshot = newImageData.GetPointer();
+  return screenshot;
+}
+
+void qSlicerPlannerModuleWidgetPrivate::writeOutActions()
+{
+  if (!this->savingActive)
+  {
+    return;
+  }
+
+  while (this->NumberOfWrittenActions < this->NumberOfSavedActions)
+  {
+    std::array<std::string, 4> action = this->RecordedActions[this->NumberOfWrittenActions];
+    QFile file(this->InstructionFile);
+    if (file.open(QIODevice::Append))
+    {
+      QTextStream stream(&file);
+      stream << this->generateInstruction(action, this->NumberOfWrittenActions).c_str() << endl << "\t\t" << this->generatePNGFilename(action,
+        this->NumberOfWrittenActions).c_str() << endl;
+      file.close();
+    }
+    this->savePNGImage(this->ActionScreenshots[this->NumberOfWrittenActions], action, this->NumberOfWrittenActions);
+    this->NumberOfWrittenActions++;
+  }
+  
+
+}
+
+void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
+{
+  if (!this->savingActive)
+  {
+    return;
+  }
+  
+  QDir rootDir = QDir(this->RootDirectory);
+  QDir saveDir = QDir(this->SaveDirectory);
+  rootDir.mkdir(saveDir.dirName());
+
+  if (!rootDir.exists(this->SaveDirectory))
+  {
+    std::cout << "Failed to create output folder!" << std::endl;
+    this->savingActive = false;
+    return;
+  }
+  
+  std::stringstream ssFilename;
+  ssFilename << this->HierarchyNode->GetName() << "_Instructions.txt";
+  this->InstructionFile = saveDir.absoluteFilePath(ssFilename.str().c_str());
+  QFile file(this->InstructionFile);
+  if (file.open(QIODevice::ReadWrite))
+  {
+    QTextStream stream(&file);
+    stream << "Osteotomy Planner Instructions for case: " << this->HierarchyNode->GetName() << endl;
+    file.close();
+  }
+}
+
+void qSlicerPlannerModuleWidgetPrivate::recordActionInProgress()
+{
+    this->RecordedActions.push_back(this->ActionInProgress);
+    this->ActionScreenshots.push_back(this->grabScreenshot());
+    this->ActionInProgress.fill("");
+    this->NumberOfSavedActions++;
+    this->writeOutActions();
+}
+std::string qSlicerPlannerModuleWidgetPrivate::generateInstruction(std::array<std::string, 4> action, int index)
+{
+    std::stringstream ss;
+    ss << "Step " << index << ":\t" << action[1] << " " << action[0];
+
+    if (action[1] == "Cut")
+    {
+        ss << " into " << action[2] << " and " << action[3];
+    }
+
+    return ss.str();
+}
+
+// qSlicerPlannerModuleWidgetPrivate methods
+std::string qSlicerPlannerModuleWidgetPrivate::generatePNGFilename(std::array<std::string, 4> action, int index)
+{
+    std::stringstream ss;
+    if (this->HierarchyNode)
+    {
+        ss << this->HierarchyNode->GetName() << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
+    }  
+
+    return ss.str();
+}
 
 //-----------------------------------------------------------------------------
 //Clear fiducials used for bending
@@ -249,11 +445,14 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->modelMetricsTable = NULL;
   this->cuttingActive = false;
   this->bendingActive = false;
+  this->moveActive = false;
   this->bendingOpen = false;
   this->placingActive = false;
   this->cmdNode = NULL;
   this->PreOpSet = false;
   this->cliFreeze = false;
+  this->savingActive = false;
+  this->waitingOnScreenshot = false;
   this->scene = NULL;
 
   this->BendDoubleSide = true;
@@ -264,6 +463,15 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->Fiducials = NULL;
   this->BendMagnitude = 0;
   this->ActivePoint = -1;
+
+  this->ActionInProgress.fill("");
+  this->RecordedActions.clear();
+  this->ActionScreenshots.clear();
+  this->NumberOfSavedActions = 0;
+  this->NumberOfWrittenActions = 0;
+  this->RootDirectory = "";
+  this->InstructionFile = "";
+  this->SaveDirectory = "";
 
   qSlicerAbstractCoreModule* splitModule =
     qSlicerCoreApplication::application()->moduleManager()->module("SplitModel");
@@ -282,7 +490,10 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 //Complete placement of current fiducial
 void qSlicerPlannerModuleWidgetPrivate::endPlacement()
 {
-
+  if (!this->placingActive)
+  {
+    return;
+  }
     //check that point in close to (i.e. on surface of) model to bend
     //if not, retrigger placing and give it another go  
   
@@ -291,7 +502,7 @@ void qSlicerPlannerModuleWidgetPrivate::endPlacement()
   this->BendPoints[this->ActivePoint]->GetNthFiducialPosition(0, posa);
   point.SetX(posa[0]);
   point.SetY(posa[1]);
-  point.SetZ(posa[2]);
+  point.SetZ(posa[2]);  
 
   double dist = this->logic->getDistanceToModel(point, vtkMRMLModelNode::SafeDownCast(this->CurrentBendNode)->GetPolyData());
   if (dist > 1.0)
@@ -901,6 +1112,12 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   name1 << this->CurrentCutNode->GetName() << "_cut1";
   name2 << this->CurrentCutNode->GetName() << "_cut2";
 
+  this->ActionInProgress[0] = this->CurrentCutNode->GetName();
+  this->ActionInProgress[1] = "Cut";
+  this->ActionInProgress[2] = name1.str();
+  this->ActionInProgress[3] = name2.str();
+
+
   splitNode1->SetName(name1.str().c_str());
   splitNode2->SetName(name2.str().c_str());
 
@@ -1169,6 +1386,53 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
   }
 }
 
+//-----------------------------------------------------------------------------
+//Harden all transforms in the current hierarchy
+void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
+{
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  this->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      int m = childModel->StartModify();
+      vtkMRMLTransformNode* transformNode = childModel->GetParentTransformNode();
+      vtkMRMLMarkupsPlanesNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
+      int m2 = planeNode->StartModify();
+      if (!transformNode)
+      {
+        // already in the world coordinate system
+        return;
+      }
+      if (transformNode->IsTransformToWorldLinear())
+      {
+        this->updatePlanesFromModel(childModel->GetScene(), childModel);
+        vtkNew<vtkMatrix4x4> hardeningMatrix;
+        transformNode->GetMatrixTransformToWorld(hardeningMatrix.GetPointer());
+        hardeningMatrix->Identity();
+        transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+      }
+      else
+      {
+        // non-linear transform hardening
+          this->updatePlanesFromModel(childModel->GetScene(), childModel);
+          transformNode->SetAndObserveTransformToParent(NULL);
+          vtkNew<vtkMatrix4x4> hardeningMatrix;
+          hardeningMatrix->Identity();
+          transformNode->SetMatrixTransformFromParent(hardeningMatrix.GetPointer());
+        
+      }
+      planeNode->EndModify(m2);
+      childModel->EndModify(m);
+    }
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 // qSlicerPlannerModuleWidget methods
@@ -1273,6 +1537,8 @@ void qSlicerPlannerModuleWidget::setup()
 
 
   // Connect
+  this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
+  this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
@@ -1290,6 +1556,11 @@ void qSlicerPlannerModuleWidget::setup()
     d->CutConfirmButton, SIGNAL(clicked()), this, SLOT(confirmCutButtonClicked()));
   this->connect(
     d->CutCancelButton, SIGNAL(clicked()), this, SLOT(cancelCutButtonClicked()));
+
+  this->connect(
+    d->ConfirmMoveButton, SIGNAL(clicked()), this, SLOT(confirmMoveButtonClicked()));
+  this->connect(
+    d->CancelMoveButton, SIGNAL(clicked()), this, SLOT(cancelMoveButtonClicked()));
 
   this->connect(d->ComputeMetricsButton, SIGNAL(clicked()), this, SLOT(onComputeButton()));
   this->connect(d->SetPreOp, SIGNAL(clicked()), this, SLOT(onSetPreOP()));
@@ -1327,6 +1598,8 @@ void qSlicerPlannerModuleWidget::setup()
 
   this->connect(cuts, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
   this->connect(bends, SIGNAL(buttonIndexClicked(const QModelIndex &)), this, SLOT(modelCallback(const QModelIndex &)));
+  this->connect(d->EnableSavingCheckbox, SIGNAL(toggled(bool)), this, SLOT(enabledSavingCheckboxToggled(bool)));
+  this->connect(d->ScreenshotButton, SIGNAL(clicked()), this, SLOT(takeScreenshotButtonClicked()));
 
   this->updateWidgetFromMRML();
 }
@@ -1458,7 +1731,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
     d->ModelHierarchyNodeComboBox->setEnabled(false);
-    d->SetPreOp->setEnabled(true);
+    d->SetPreOp->setEnabled(true);    
   }
   
   // Inputs
@@ -1485,15 +1758,19 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   
   //set based on cutting/bending state
   d->BendingMenu->setVisible(d->bendingOpen);
-  d->CuttingMenu->setVisible(d->cuttingActive);  
+  d->CuttingMenu->setVisible(d->cuttingActive);
+  d->MoveMenu->setVisible(d->moveActive);
+  d->ScreenshotMenu->setVisible(d->waitingOnScreenshot);
+  d->ScreenshotMenu->setEnabled(d->waitingOnScreenshot);
   d->CutConfirmButton->setEnabled(d->cuttingActive);
   d->CutCancelButton->setEnabled(d->cuttingActive);
   d->CutPreviewButton->setEnabled(d->cuttingActive);
   d->BendMagnitudeSlider->setEnabled(d->bendingActive);
   d->CancelBendButton->setEnabled(d->bendingOpen);
   d->HardenBendButton->setEnabled(d->bendingActive);
+  d->SaveDirectoryButton->setEnabled(!d->savingActive);
 
-  bool performingAction = d->cuttingActive || d->bendingOpen;
+  bool performingAction = d->cuttingActive || d->bendingOpen || d->moveActive || d->waitingOnScreenshot;
 
   
   //non action sections
@@ -1507,19 +1784,10 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   }
   d->FinishButton->setEnabled(!performingAction);
 
-  //Pre-op state
+  //Pre-op state 
   
-  if(!d->PreOpSet)
-  {
-    d->SetPreOp->setText(QString("Need to set Pre Op State! - click"));
-  }
-  else
-  {
-    d->SetPreOp->setText("Pre Op State set");
-    d->SetPreOp->setDisabled(true);
-  }
 
-  
+  d->SetPreOp->setDisabled(d->PreOpSet);
   d->updateWidgetFromReferenceNode(
     d->TemplateReferenceNodeComboBox->currentNode(),
     d->TemplateReferenceColorPickerButton,
@@ -1530,7 +1798,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {
     d->InitButton->setEnabled(true);
     d->BendingInfoLabel->setText("You can move the points after they are placed by clicking and dragging in the"
-        " 3D view, or by using the Place button again.Click Init Bend once you are satified with the positioning.");
+        " 3D view, or by using the Place button again. Click 'Begin Bending' once you are satisfied with the positioning.");
   }
   else
   {
@@ -1541,7 +1809,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   if (d->bendingActive)
   {
       d->BendingInfoLabel->setText("You can adjust the magnitude of the bend with the slider."
-        " You can also select which side of the model you want to bend (or both sides).  Click 'Finish Bend' to finalize");
+        " You can also select which side of the model you want to bend (or both sides).  Click 'Confirm' to finalize");
   }
 
   //Sort out radio buttons  
@@ -1555,7 +1823,20 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
       d->MetricsCollapsibleButton->setEnabled(false);
       d->FinishButton->setEnabled(false);
       d->ModelHierarchyTreeView->setEnabled(false);
+      d->ScreenshotMenu->setEnabled(false);
   }
+
+  //Saving buttons
+  d->SaveDirectoryButton->setEnabled(d->savingActive && !d->PreOpSet);
+  d->EnableSavingCheckbox->setEnabled(!d->savingActive || !d->PreOpSet);
+
+  if (d->SaveDirectory != "")
+  {
+    d->SavingToLabel->setVisible(d->savingActive);
+    d->SavingLocationLabel->setVisible(d->savingActive);
+  }
+  
+  
 
   //Deactivate everything for null hierarchy or for pre op state not set
   if (!d->HierarchyNode || !d->PreOpSet)
@@ -1567,6 +1848,12 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ModelHierarchyTreeView->setEnabled(false);
     d->BendingMenu->setVisible(false);
     d->CuttingMenu->setVisible(false);
+    d->ScreenshotMenu->setVisible(false);
+  }
+  if (!d->HierarchyNode)
+  {
+    d->SaveDirectoryButton->setEnabled(false);
+    d->EnableSavingCheckbox->setEnabled(false);
   }
 
 }
@@ -1675,6 +1962,14 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->completeCut(this->mrmlScene());
   d->cuttingActive = false;
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
   this->updateWidgetFromMRML();
 }
 
@@ -1685,6 +1980,7 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
+  d->ActionInProgress.fill("");
   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
   this->updateWidgetFromMRML();
 }
@@ -1718,6 +2014,7 @@ void qSlicerPlannerModuleWidget::placeFiducialButtonClicked()
 //Cancel the current bend and reset
 void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
 {
+  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
   Q_D(qSlicerPlannerModuleWidget);
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
@@ -1725,11 +2022,17 @@ void qSlicerPlannerModuleWidget::cancelBendButtonClicked()
   {
     d->computeTransform(this->mrmlScene());
   }
+  if (d->placingActive)
+  {
+    vtkMRMLInteractionNode* interaction = qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode();
+    interaction->SetCurrentInteractionMode(vtkMRMLInteractionNode::ViewTransform);
+  }
   d->clearControlPoints(this->mrmlScene());
   d->clearBendingData(this->mrmlScene());
+  d->placingActive = false;
   d->bendingActive = false;
   d->bendingOpen = false;
-  qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  d->ActionInProgress.fill("");
   this->updateWidgetFromMRML();
 
 }
@@ -1801,6 +2104,14 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
   d->bendingActive = false;
   d->bendingOpen = false;
   qvtkDisconnect(qSlicerCoreApplication::application()->applicationLogic()->GetInteractionNode(), vtkMRMLInteractionNode::EndPlacementEvent, this, SLOT(cancelFiducialButtonClicked()));
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
   this->updateWidgetFromMRML();
 }
 
@@ -1860,6 +2171,21 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
       d->SetPreOp->setEnabled(false);
       d->PreOpSet = true;
       d->cliFreeze = true;
+      if (d->savingActive)
+      {
+        d->setUpSaveFiles();
+      }
+      d->ActionInProgress[0] = d->HierarchyNode->GetName();
+      d->ActionInProgress[1] = "Initial State";
+      if (d->savingActive)
+      {
+        d->waitingOnScreenshot = true;
+      }
+      else
+      {
+        d->recordActionInProgress();
+      }
+      
       d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
@@ -1971,6 +2297,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     d->hideTransforms();
     d->hardenTransforms(false);
     d->clearControlPoints(this->mrmlScene());
+    d->clearSavingData();
     this->plannerLogic()->clearModelsAndData();
     d->PreOpSet = false;
   }
@@ -2011,15 +2338,116 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     if (sourceIndex.column() == 6)
     {
         std::stringstream title;
+        d->ActionInProgress[0] = node->GetName();
+        d->ActionInProgress[1] = "Bend";
         title << "Bending model: " << node->GetName();
         d->BendingMenu->setTitle(title.str().c_str());
         d->hardenTransforms(false);        
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
+        d->MovingPointAButton->setEnabled(true);
+        d->MovingPointBButton->setEnabled(true);
         d->bendingOpen = true;
         this->updateWidgetFromMRML();
     }
     
     
+}
+
+void qSlicerPlannerModuleWidget::transformActivated(vtkMRMLNode* node)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive)
+  {
+    return;
+  }
+  d->moveActive = true;
+  d->ActionInProgress[0] = node->GetName();
+  d->ActionInProgress[1] = "Move";
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive || !d->moveActive)
+  {
+    return;
+  }
+  d->hideTransforms();
+  d->hardenTransforms(false);
+  d->moveActive = false;
+  if (d->savingActive)
+  {
+    d->waitingOnScreenshot = true;
+  }
+  else
+  {
+    d->recordActionInProgress();
+  }
+  this->updateWidgetFromMRML();
+
+}
+
+void qSlicerPlannerModuleWidget::cancelMoveButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->cuttingActive || d->bendingActive || !d->moveActive)
+  {
+    return;
+  }
+  d->hideTransforms();
+  d->clearTransforms();
+  d->moveActive = false;
+  d->ActionInProgress.fill("");
+  this->updateWidgetFromMRML();  
+}
+
+void qSlicerPlannerModuleWidget::saveDirectoryChanged(const QString &directory)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  if (d->savingActive)
+  {
+    return;
+  }
+  d->RootDirectory = directory;
+  d->savingActive = (d->RootDirectory != "");
+  if (d->savingActive)
+  {
+    const QDateTime now = QDateTime::currentDateTime();
+    const QString timestamp = now.toString(QLatin1String("yyyyMMdd-hhmmsszzz"));
+    std::stringstream ssDirectoryName;
+    ssDirectoryName << d->HierarchyNode->GetName() << "_" << timestamp.toStdString();
+    std::vector<std::string> pathComponents;
+    QDir rootDir = QDir(d->RootDirectory);
+    d->SaveDirectory = rootDir.absoluteFilePath(ssDirectoryName.str().c_str());
+    d->SavingLocationLabel->setText(d->SaveDirectory);
+
+  }
+  
+  this->updateWidgetFromMRML();
+}
+
+void qSlicerPlannerModuleWidget::enabledSavingCheckboxToggled(bool state)
+{
+  Q_D(qSlicerPlannerModuleWidget);
+
+  if (state && !d->savingActive)
+  {
+    d->SaveDirectoryButton->browse();
+    std::cout << "Saving to: " << d->RootDirectory.toStdString().c_str() << std::endl;
+  }
+  if (d->PreOpSet)
+  {
+    d->setUpSaveFiles();
+    d->writeOutActions();
+  }
+}
+void qSlicerPlannerModuleWidget::takeScreenshotButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+  d->recordActionInProgress();
+  d->waitingOnScreenshot = false;
+  this->updateWidgetFromMRML();
 }
 

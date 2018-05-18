@@ -76,8 +76,7 @@ public:
 
 
 signals:
-    void cutButtonClicked(vtkMRMLNode* node);
-    void bendButtonClicked(vtkMRMLNode* node);
+    void transformOn(vtkMRMLNode* node);
 
 protected:
   qMRMLPlannerModelHierarchyModel(qMRMLPlannerModelHierarchyModelPrivate* pimpl,
