@@ -17,7 +17,7 @@ class ReplayPlan(ScriptedLoadableModule):
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
     self.parent.title = "ReplayPlan" # TODO make this more human readable by adding spaces
-    self.parent.categories = ["Osteotomy Planner"]
+    self.parent.categories = ["Craniosynostosis"]
     self.parent.dependencies = []
     self.parent.contributors = ["Sam Horvath (Kitware Inc.)"] # replace with "Firstname Lastname (Organization)"
     self.parent.helpText = """ """
