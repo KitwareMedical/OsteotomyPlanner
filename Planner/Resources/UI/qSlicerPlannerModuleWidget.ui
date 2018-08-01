@@ -454,6 +454,9 @@
     </widget>
    </item>
    <item>
+    <widget class="ctkVTKScalarBarWidget" name="VTKScalarBar"/>
+   </item>
+   <item>
     <widget class="QGroupBox" name="ScreenshotMenu">
      <property name="title">
       <string>Screenshot Menu</string>
@@ -735,6 +738,11 @@
    <extends>QWidget</extends>
    <header>qSlicerWidget.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkVTKScalarBarWidget</class>
+   <extends>QWidget</extends>
+   <header>ctkVTKScalarBarWidget.h</header>
   </customwidget>
   <customwidget>
    <class>ctkCollapsibleButton</class>

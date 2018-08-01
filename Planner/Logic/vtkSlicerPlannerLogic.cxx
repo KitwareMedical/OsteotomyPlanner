@@ -369,8 +369,8 @@ vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::wrapModel(v
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode = this->wrapperLogic->CreateNodeInScene();
   cmdNode->SetParameterAsString("inputModel", model->GetID());
   cmdNode->SetParameterAsString("outputModel", wrappedModel->GetID());
-  cmdNode->SetParameterAsString("phires", "20");
-  cmdNode->SetParameterAsString("thetares", "20");
+  cmdNode->SetParameterAsString("phires", "60");
+  cmdNode->SetParameterAsString("thetares", "60");
   this->wrapperLogic->Apply(cmdNode, true);
   return cmdNode;
 }
