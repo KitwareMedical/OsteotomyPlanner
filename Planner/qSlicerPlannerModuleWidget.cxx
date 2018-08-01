@@ -76,6 +76,13 @@
 #include "vtkTransformPolyDataFilter.h"
 #include "vtkTransform.h"
 #include "vtkMRMLLayoutNode.h"
+#include "vtkScalarBarWidget.h"
+#include <vtkLookupTable.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkScalarBarActor.h>
+#include "vtkMRMLColorTableNode.h"
+#include "vtkMRMLColorNode.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -197,6 +204,8 @@ public:
   //Metrics methods
   void prepScalarComputation(vtkMRMLScene* scene);
   void setScalarVisibility(bool visible);
+  vtkSmartPointer<vtkScalarBarWidget> ScalarBarWidget;
+  vtkSmartPointer<vtkScalarBarActor> ScalarBarActor;
 
   //Methods and vars for instruction saving
   std::array<std::string, 4> ActionInProgress;
@@ -484,7 +493,21 @@ qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
   this->distanceLogic =
     vtkSlicerCLIModuleLogic::SafeDownCast(distanceModule->logic());
 
+
+  this->ScalarBarWidget = vtkSmartPointer<vtkScalarBarWidget>::New();
+  this->ScalarBarActor = vtkSmartPointer<vtkScalarBarActor>::New();
+  this->ScalarBarWidget->SetScalarBarActor(this->ScalarBarActor);
+  this->ScalarBarActor->SetOrientationToVertical();
+  this->ScalarBarActor->SetNumberOfLabels(11);
+  this->ScalarBarActor->SetTitle("Distances (mm)");
+
+  // it's a 2d actor, position it in screen space by percentages
+  this->ScalarBarActor->SetPosition(0.1, 0.1);
+  this->ScalarBarActor->SetWidth(0.1);
+  this->ScalarBarActor->SetHeight(0.8);
+
 }
+
 
 //-----------------------------------------------------------------------------
 //Complete placement of current fiducial
@@ -1301,6 +1324,7 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
     if(childModel)
     {
       childModel->GetDisplayNode()->SetScalarVisibility(visible);
+      this->VTKScalarBar->setDisplay(visible);
 
       if (visible)
       {
@@ -1309,6 +1333,10 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
         childModel->GetDisplayNode()->SetScalarRange(0, 15);
         const char *colorNodeID = "vtkMRMLColorTableNodeFileColdToHotRainbow.txt";
         childModel->GetDisplayNode()->SetAndObserveColorNodeID(colorNodeID);
+        vtkMRMLColorNode* colorNode = childModel->GetDisplayNode()->GetColorNode();
+        vtkMRMLColorTableNode *colorTableNode = vtkMRMLColorTableNode::SafeDownCast(colorNode);
+        colorNode->GetLookupTable()->SetRange(0, 15);
+        this->ScalarBarActor->SetLookupTable(colorTableNode->GetLookupTable());
       }      
     }
   }
@@ -1537,6 +1565,22 @@ void qSlicerPlannerModuleWidget::setup()
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
 
+  //Scalar Bar setup
+  d->VTKScalarBar->setScalarBarWidget(d->ScalarBarWidget);
+  qSlicerApplication * app = qSlicerApplication::application();
+  if (app && app->layoutManager())
+  {
+    qMRMLThreeDView* threeDView = app->layoutManager()->threeDWidget(0)->threeDView();
+    vtkRenderer* activeRenderer = app->layoutManager()->activeThreeDRenderer();
+    if (activeRenderer)
+    {
+      d->ScalarBarWidget->SetInteractor(activeRenderer->GetRenderWindow()->GetInteractor());
+    }
+    connect(d->VTKScalarBar, SIGNAL(modified()), threeDView, SLOT(scheduleRender()));
+  }
+  d->VTKScalarBar->setVisible(false);
+  d->VTKScalarBar->setDisplay(false);
+  d->ShowsScalarsCheckbox->setEnabled(false);
 
   // Connect
   this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
@@ -1843,7 +1887,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->EnableSavingCheckbox->setEnabled(!d->savingActive || !d->PreOpSet);
 
   d->SavingToLabel->setVisible(d->savingActive);
-  d->SavingLocationLabel->setVisible(d->savingActive);  
+  d->SavingLocationLabel->setVisible(d->savingActive); 
+
 
   //Deactivate everything for null hierarchy or for pre op state not set
   if (!d->HierarchyNode || !d->PreOpSet)
@@ -2224,6 +2269,8 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   {
     d->hardenTransforms(false);
     d->ComputeScalarsButton->setEnabled(false);
+    d->cliFreeze = true;
+    this->updateWidgetFromMRML();
     d->prepScalarComputation(this->mrmlScene());
     d->cmdNode = d->distanceLogic->CreateNodeInScene();
     this->runModelDistance(distanceReference);
@@ -2268,7 +2315,10 @@ void qSlicerPlannerModuleWidget::runModelDistance(vtkMRMLModelNode* distRef)
   }
   else
   {
+    d->cliFreeze = false;
+    this->updateWidgetFromMRML();
     d->ComputeScalarsButton->setEnabled(true);
+    d->ShowsScalarsCheckbox->setEnabled(true);
     this->mrmlScene()->RemoveNode(d->cmdNode);
     this->updateMRMLFromWidget();
   }
@@ -2315,6 +2365,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     d->clearSavingData();
     this->plannerLogic()->clearModelsAndData();
     d->PreOpSet = false;
+    d->ShowsScalarsCheckbox->setEnabled(false);
   }
 
   //Clear out hierarchy
