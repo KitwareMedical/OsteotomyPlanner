@@ -134,6 +134,8 @@ class ReplayPlanWidget(ScriptedLoadableModuleWidget):
     selectionNode = applicationLogic.GetSelectionNode()
     selectionNode.SetActiveVolumeID(volumeNode.GetID())
     applicationLogic.PropagateBackgroundVolumeSelection(0)
+    selectionNode.SetActiveLabelVolumeID(None)
+    applicationLogic.PropagateLabelVolumeSelection()
 
 
 
