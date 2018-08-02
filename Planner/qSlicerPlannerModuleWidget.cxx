@@ -1330,12 +1330,12 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
       {
         childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
         childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseManualScalarRange);
-        childModel->GetDisplayNode()->SetScalarRange(0, 15);
+        childModel->GetDisplayNode()->SetScalarRange(this->LUTRangeWidget->minimumValue(), this->LUTRangeWidget->maximumValue());
         const char *colorNodeID = "vtkMRMLColorTableNodeFileColdToHotRainbow.txt";
         childModel->GetDisplayNode()->SetAndObserveColorNodeID(colorNodeID);
         vtkMRMLColorNode* colorNode = childModel->GetDisplayNode()->GetColorNode();
         vtkMRMLColorTableNode *colorTableNode = vtkMRMLColorTableNode::SafeDownCast(colorNode);
-        colorNode->GetLookupTable()->SetRange(0, 15);
+        colorNode->GetLookupTable()->SetRange(this->LUTRangeWidget->minimumValue(), this->LUTRangeWidget->maximumValue());
         this->ScalarBarActor->SetLookupTable(colorTableNode->GetLookupTable());
       }      
     }
@@ -1625,7 +1625,9 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(
     d->TemplateVisibilityCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
   this->connect(
-    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));  
+    d->ShowsScalarsCheckbox, SIGNAL(stateChanged(int)), this, SLOT(updateMRMLFromWidget()));
+  this->connect(
+    d->LUTRangeWidget, SIGNAL(valuesChanged(double, double)), this, SLOT(updateMRMLFromWidget()));
   this->connect(
     d->TemplateReferenceColorPickerButton, SIGNAL(colorChanged(QColor)),
     this, SLOT(updateMRMLFromWidget()));
