@@ -2368,6 +2368,8 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
     this->plannerLogic()->clearModelsAndData();
     d->PreOpSet = false;
     d->ShowsScalarsCheckbox->setEnabled(false);
+    d->ShowsScalarsCheckbox->setChecked(false);
+    d->setScalarVisibility(false);
   }
 
   //Clear out hierarchy
