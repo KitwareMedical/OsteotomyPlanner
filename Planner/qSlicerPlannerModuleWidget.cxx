@@ -37,6 +37,8 @@
 #include <vtkRenderWindow.h>
 #include <vtkRendererCollection.h>
 #include <vtkRenderLargeImage.h>
+#include <vtkKdTreePointLocator.h>
+#include <vtkDoubleArray.h>
 
 // SlicerQt includes
 #include "qSlicerApplication.h"
@@ -83,6 +85,7 @@
 #include <vtkScalarBarActor.h>
 #include "vtkMRMLColorTableNode.h"
 #include "vtkMRMLColorNode.h"
+#include "vtkProbeFilter.h"
 
 // Slicer CLI includes
 #include <qSlicerCoreApplication.h>
@@ -2256,6 +2259,43 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
 {
   //launch scalar computation
   Q_D(qSlicerPlannerModuleWidget);
+  
+  //begin wrap of current model
+  if (d->HierarchyNode)
+  {
+    std::vector<vtkMRMLHierarchyNode*> children;
+
+    d->HierarchyNode->GetAllChildrenNodes(children);
+    if (children.size() > 0)
+    {
+      d->hardenTransforms(false);
+      std::cout << "Wrapping Current Model" << std::endl;
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
+      qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchDistance()));
+      d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+    }
+  } 
+  
+}
+
+void qSlicerPlannerModuleWidget::launchDistance()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+
+  //clean up wrap
+  if (d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+  {
+    std::cout << "Finishing wrap of current model" << std::endl;
+    this->plannerLogic()->finishWrap(d->cmdNode);
+    d->cliFreeze = false;
+    this->updateWidgetFromMRML();
+  }
+  else
+  {
+    return;
+  }
+
+  //select the reference
   vtkMRMLModelNode* distanceReference;
 
   if (d->InitialStateRadioButton->isChecked())
@@ -2265,17 +2305,30 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   else
   {
     distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
-  }  
-    
+  }
+
   if (d->HierarchyNode && distanceReference)
   {
+    std::cout << "1" << std::endl;
     d->hardenTransforms(false);
     d->ComputeScalarsButton->setEnabled(false);
-    d->cliFreeze = true;
+    //d->cliFreeze = true;
+    std::cout << "2" << std::endl;
     this->updateWidgetFromMRML();
-    d->prepScalarComputation(this->mrmlScene());
+    //d->prepScalarComputation(this->mrmlScene());
     d->cmdNode = d->distanceLogic->CreateNodeInScene();
-    this->runModelDistance(distanceReference);
+    d->distanceLogic->SetMRMLScene(this->mrmlScene());
+    vtkNew<vtkMRMLModelNode> temp;
+    this->mrmlScene()->AddNode(temp.GetPointer());
+    std::cout << "3" << std::endl;
+    d->cmdNode->SetParameterAsString("vtkFile1", this->plannerLogic()->getWrappedCurrentModel()->GetID());
+    d->cmdNode->SetParameterAsString("vtkFile2", distanceReference->GetID());
+    d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
+    d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
+    std::cout << "4" << std::endl;
+    d->distanceLogic->Apply(d->cmdNode, true);
+    qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
+    d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
   }
 }
 
@@ -2284,17 +2337,49 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
 void qSlicerPlannerModuleWidget::finishDistance()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  if(d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
+  if (d->cmdNode->GetStatus() != vtkMRMLCommandLineModuleNode::Completed)
   {
-    vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
-    int m = d->modelIterator.back()->StartModify();
-    d->modelIterator.back()->SetAndObservePolyData(distanceNode->GetPolyData());
-    d->modelIterator.back()->EndModify(m);
-    this->mrmlScene()->RemoveNode(distanceNode);
-    distanceNode = NULL;
-    d->modelIterator.pop_back();
-    this->runModelDistance(vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkFile2"))));
+    return;
   }
+  //grab each model from the hierarchy, probe into the returned distance node
+  vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
+  vtkNew<vtkKdTreePointLocator> locator;
+  locator->SetDataSet(distanceNode->GetPolyData());
+  locator->BuildLocator();
+  vtkNew<vtkProbeFilter> probe;
+  probe->SetSourceData(distanceNode->GetPolyData());
+  
+  std::vector<vtkMRMLHierarchyNode*> children;
+  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  d->HierarchyNode->GetAllChildrenNodes(children);
+  for (it = children.begin(); it != children.end(); ++it)
+  {
+    vtkMRMLModelNode* childModel =
+      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+
+    if (childModel)
+    {
+      //std::cout << "Probing model" << std::endl;
+      //probe->SetInputData(childModel->GetPolyData());
+      //probe->Update();
+      vtkNew<vtkDoubleArray> absolute;
+      absolute-
+      int m = childModel->StartModify();
+      childModel->GetPolyData()->GetPointData()->AddArray(probe->GetPolyDataOutput()->GetPointData()->GetScalars("Absolute"));
+      //childModel->SetAndObservePolyData(probe->GetPolyDataOutput());
+      childModel->EndModify(m);
+      //break;
+    }
+  }
+  d->cliFreeze = false;
+  this->mrmlScene()->RemoveNode(distanceNode);
+  distanceNode = NULL;
+  
+  d->ComputeScalarsButton->setEnabled(true);
+  d->ShowsScalarsCheckbox->setEnabled(true);
+  this->mrmlScene()->RemoveNode(d->cmdNode);
+  this->updateWidgetFromMRML();
+  this->updateMRMLFromWidget();
 }
 
 //-----------------------------------------------------------------------------

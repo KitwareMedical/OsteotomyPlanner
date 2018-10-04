@@ -80,6 +80,7 @@ public:
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBoneTemplateModel(){return this->BoneTemplate;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedPreOpModel() { return this->SkullWrappedPreOP; }
+  vtkSmartPointer<vtkMRMLModelNode> getWrappedCurrentModel() { return this->CurrentModel; }
 
   enum BendModeType
   {

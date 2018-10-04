@@ -101,6 +101,7 @@ protected slots:
   void launchMetrics();
   void finishDistance();
   void runModelDistance(vtkMRMLModelNode* distRef);
+  void launchDistance();
 
 
 protected:
