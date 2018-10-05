@@ -2273,6 +2273,8 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchDistance()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
+      d->cliFreeze = true;
+      this->updateWidgetFromMRML();
     }
   } 
   
@@ -2287,8 +2289,8 @@ void qSlicerPlannerModuleWidget::launchDistance()
   {
     std::cout << "Finishing wrap of current model" << std::endl;
     this->plannerLogic()->finishWrap(d->cmdNode);
-    d->cliFreeze = false;
-    this->updateWidgetFromMRML();
+    //d->cliFreeze = false;
+    //this->updateWidgetFromMRML();
   }
   else
   {
@@ -2336,19 +2338,23 @@ void qSlicerPlannerModuleWidget::launchDistance()
 //Catch end of model to model CLI and run next
 void qSlicerPlannerModuleWidget::finishDistance()
 {
+  std::cout << "Beginning Distance Function" << std::endl;
   Q_D(qSlicerPlannerModuleWidget);
   if (d->cmdNode->GetStatus() != vtkMRMLCommandLineModuleNode::Completed)
   {
     return;
   }
   //grab each model from the hierarchy, probe into the returned distance node
+  std::cout << "Beginning Distance" << std::endl;
   vtkMRMLModelNode* distanceNode = vtkMRMLModelNode::SafeDownCast(this->mrmlScene()->GetNodeByID(d->cmdNode->GetParameterAsString("vtkOutput")));
   vtkNew<vtkKdTreePointLocator> locator;
   locator->SetDataSet(distanceNode->GetPolyData());
+  std::cout << "Building Locator" << std::endl;
   locator->BuildLocator();
-  vtkNew<vtkProbeFilter> probe;
-  probe->SetSourceData(distanceNode->GetPolyData());
+  std::cout << "Built" << std::endl;
   
+  auto absolute_wrapped = vtkDoubleArray::SafeDownCast(distanceNode->GetPolyData()->GetPointData()->GetScalars("Absolute"));
+  std::cout << "Got Scalars" << std::endl;
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
   d->HierarchyNode->GetAllChildrenNodes(children);
@@ -2359,21 +2365,39 @@ void qSlicerPlannerModuleWidget::finishDistance()
 
     if (childModel)
     {
-      //std::cout << "Probing model" << std::endl;
+      int m = childModel->StartModify();
+      std::cout << "Probing model" << std::endl;
       //probe->SetInputData(childModel->GetPolyData());
       //probe->Update();
       vtkNew<vtkDoubleArray> absolute;
-      absolute-
-      int m = childModel->StartModify();
-      childModel->GetPolyData()->GetPointData()->AddArray(probe->GetPolyDataOutput()->GetPointData()->GetScalars("Absolute"));
+      absolute->SetName("Absolute");
+      int n = childModel->GetPolyData()->GetNumberOfPoints();
+      absolute->SetNumberOfValues(n);
+      std::cout << "number of points: " << n << std::endl;
+      
+      for (int i = 0; i < n; i++)
+      {
+        double* p = childModel->GetPolyData()->GetPoints()->GetPoint(i);
+        int id = locator->FindClosestPoint(p);
+        absolute->SetValue(i,  absolute_wrapped->GetValue(id));
+        //std::cout << id << " " << absolute_wrapped->GetValue(id) << std::endl;
+      }
+      //childModel->GetPolyData()->GetPointData()->RemoveArray("Absolute");
+      childModel->GetPolyData()->GetPointData()->AddArray(absolute);
       //childModel->SetAndObservePolyData(probe->GetPolyDataOutput());
       childModel->EndModify(m);
+      //childModel->Modified();
+      //childModel->GetPolyData()->GetPointData()->SetActiveAttribute("Absolute", 0);
+      //childModel->GetDisplayNode()->Modified();
       //break;
     }
   }
   d->cliFreeze = false;
   this->mrmlScene()->RemoveNode(distanceNode);
   distanceNode = NULL;
+
+  d->hideTransforms();
+  d->hardenTransforms(false);
   
   d->ComputeScalarsButton->setEnabled(true);
   d->ShowsScalarsCheckbox->setEnabled(true);

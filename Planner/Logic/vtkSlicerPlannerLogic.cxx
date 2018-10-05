@@ -336,7 +336,7 @@ double vtkSlicerPlannerLogic::computeICV(vtkMRMLModelNode* model)
 vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::wrapModel(vtkMRMLModelNode* model, std::string name, int dest)
 {
   vtkNew<vtkMRMLModelNode> wrappedModel;
-  wrappedModel->HideFromEditorsOn();
+  //wrappedModel->HideFromEditorsOn();
   vtkMRMLScene* scene = this->GetMRMLScene();
   wrappedModel->SetScene(scene);
   wrappedModel->SetName(name.c_str());
@@ -369,8 +369,8 @@ vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::wrapModel(v
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode = this->wrapperLogic->CreateNodeInScene();
   cmdNode->SetParameterAsString("inputModel", model->GetID());
   cmdNode->SetParameterAsString("outputModel", wrappedModel->GetID());
-  cmdNode->SetParameterAsString("phires", "80");
-  cmdNode->SetParameterAsString("thetares", "80");
+  cmdNode->SetParameterAsString("phires", "150");
+  cmdNode->SetParameterAsString("thetares", "150");
   this->wrapperLogic->Apply(cmdNode, true);
   return cmdNode;
 }
