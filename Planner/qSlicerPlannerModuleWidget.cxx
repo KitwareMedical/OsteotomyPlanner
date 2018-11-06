@@ -2383,7 +2383,7 @@ void qSlicerPlannerModuleWidget::finishDistance()
         //std::cout << id << " " << absolute_wrapped->GetValue(id) << std::endl;
       }
       //childModel->GetPolyData()->GetPointData()->RemoveArray("Absolute");
-      childModel->GetPolyData()->GetPointData()->AddArray(absolute);
+      childModel->GetPolyData()->GetPointData()->AddArray(absolute.GetPointer());
       //childModel->SetAndObservePolyData(probe->GetPolyDataOutput());
       childModel->EndModify(m);
       //childModel->Modified();
