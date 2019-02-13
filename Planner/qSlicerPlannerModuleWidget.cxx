@@ -1331,7 +1331,15 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
       if (visible)
       {
-        childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
+        if (this->UnsignedDistanceRadioButton->isChecked())
+        {
+          childModel->GetDisplayNode()->SetActiveScalarName("Absolute");
+        }
+        else
+        {
+          childModel->GetDisplayNode()->SetActiveScalarName("Signed");
+        }
+        
         childModel->GetDisplayNode()->SetScalarRangeFlag(vtkMRMLDisplayNode::UseManualScalarRange);
         childModel->GetDisplayNode()->SetScalarRange(this->LUTRangeWidget->minimumValue(), this->LUTRangeWidget->maximumValue());
         const char *colorNodeID = "vtkMRMLColorTableNodeFileColdToHotRainbow.txt";
@@ -2325,8 +2333,15 @@ void qSlicerPlannerModuleWidget::launchDistance()
     std::cout << "3" << std::endl;
     d->cmdNode->SetParameterAsString("vtkFile1", this->plannerLogic()->getWrappedCurrentModel()->GetID());
     d->cmdNode->SetParameterAsString("vtkFile2", distanceReference->GetID());
-    d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
-    d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
+    d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());      
+    if (d->UnsignedDistanceRadioButton->isChecked())
+    {
+      d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
+    }
+    else
+    {
+      d->cmdNode->SetParameterAsString("distanceType", "signed_closest_point");
+    }
     std::cout << "4" << std::endl;
     d->distanceLogic->Apply(d->cmdNode, true);
     qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
@@ -2352,8 +2367,17 @@ void qSlicerPlannerModuleWidget::finishDistance()
   std::cout << "Building Locator" << std::endl;
   locator->BuildLocator();
   std::cout << "Built" << std::endl;
+  vtkDoubleArray * absolute_wrapped;
+  if (d->UnsignedDistanceRadioButton->isChecked())
+  {
+    absolute_wrapped = vtkDoubleArray::SafeDownCast(distanceNode->GetPolyData()->GetPointData()->GetScalars("Absolute"));
+  }
+  else
+  {
+    absolute_wrapped = vtkDoubleArray::SafeDownCast(distanceNode->GetPolyData()->GetPointData()->GetScalars("Signed"));
+  }
   
-  auto absolute_wrapped = vtkDoubleArray::SafeDownCast(distanceNode->GetPolyData()->GetPointData()->GetScalars("Absolute"));
+  
   std::cout << "Got Scalars" << std::endl;
   std::vector<vtkMRMLHierarchyNode*> children;
   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
@@ -2370,7 +2394,14 @@ void qSlicerPlannerModuleWidget::finishDistance()
       //probe->SetInputData(childModel->GetPolyData());
       //probe->Update();
       vtkNew<vtkDoubleArray> absolute;
-      absolute->SetName("Absolute");
+      if (d->UnsignedDistanceRadioButton->isChecked())
+      {
+        absolute->SetName("Absolute");
+      }
+      else
+      {
+        absolute->SetName("Signed");
+      }
       int n = childModel->GetPolyData()->GetNumberOfPoints();
       absolute->SetNumberOfValues(n);
       std::cout << "number of points: " << n << std::endl;
@@ -2419,7 +2450,14 @@ void qSlicerPlannerModuleWidget::runModelDistance(vtkMRMLModelNode* distRef)
     d->cmdNode->SetParameterAsString("vtkFile1", d->modelIterator.back()->GetID());
     d->cmdNode->SetParameterAsString("vtkFile2", distRef->GetID());
     d->cmdNode->SetParameterAsString("vtkOutput", temp->GetID());
-    d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
+    if (d->UnsignedDistanceRadioButton->isChecked())
+    {
+      d->cmdNode->SetParameterAsString("distanceType", "absolute_closest_point");
+    }
+    else
+    {
+      d->cmdNode->SetParameterAsString("distanceType", "signed_closest_point");
+    }
     d->distanceLogic->Apply(d->cmdNode, true);
     qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishDistance()));
     d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
