@@ -5,8 +5,9 @@ set(KIT ${PROJECT_NAME})
 set(${KIT}_EXPORT_DIRECTIVE "Q_SLICER_QTMODULES_${MODULE_NAME_UPPER}_WIDGETS_EXPORT")
 
 set(${KIT}_INCLUDE_DIRECTORIES
-  ${vtkSlicerPlanesModuleMRML_SOURCE_DIR}
-  ${vtkSlicerPlanesModuleMRML_BINARY_DIR}
+  ${vtkSlicerMarkupsModuleMRML_SOURCE_DIRS}
+  ${vtkSlicerMarkupsModuleMRML_BINARY_DIRS}
+  ${vtkSlicerMarkupsModuleMRML_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -25,7 +26,7 @@ set(${KIT}_RESOURCES
   )
 
 set(${KIT}_TARGET_LIBRARIES
-  vtkSlicerPlanesModuleMRML
+  vtkSlicerMarkupsModuleMRML
   )
 
 #-----------------------------------------------------------------------------
