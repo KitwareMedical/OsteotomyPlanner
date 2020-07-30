@@ -44,7 +44,7 @@
 #include "qSlicerApplication.h"
 #include "qSlicerIOManager.h"
 #include "qSlicerFileDialog.h"
-#include "qMRMLSceneModelHierarchyModel.h"
+//#include "qMRMLSceneModelHierarchyModel.h"
 #include "qSlicerPlannerModuleWidget.h"
 #include "ui_qSlicerPlannerModuleWidget.h"
 #include "qMRMLSortFilterProxyModel.h"
