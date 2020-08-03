@@ -58,7 +58,7 @@
 #include "vtkMRMLDisplayableHierarchyLogic.h"
 #include "vtkMRMLLinearTransformNode.h"
 #include "vtkMRMLMarkupsDisplayNode.h"
-// #include "vtkMRMLMarkupsPlanesNode.h"
+#include "vtkMRMLMarkupsPlaneNode.h"
 #include "vtkMRMLModelHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
@@ -133,9 +133,9 @@ public:
   void updatePlanesFromModel(vtkMRMLScene* scene, vtkMRMLModelNode*) const;
   void removePlanes(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
 
-  vtkMRMLMarkupsPlanesNode* createPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode);
+  vtkMRMLMarkupsPlaneNode* createPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode);
   void removePlaneNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
-  vtkMRMLMarkupsPlanesNode* getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
+  vtkMRMLMarkupsPlaneNode* getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
 
   qMRMLPlannerModelHierarchyModel* sceneModel() const;
   void updateWidgetFromReferenceNode(
@@ -893,13 +893,13 @@ void qSlicerPlannerModuleWidgetPrivate
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
+vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
   vtkMRMLScene* scene, vtkMRMLNode* refNode)
 {
   Q_ASSERT(scene);
-  vtkNew<vtkMRMLMarkupsPlanesNode> newPlanes;
-  vtkMRMLMarkupsPlanesNode* planes =
-    vtkMRMLMarkupsPlanesNode::SafeDownCast(
+  vtkNew<vtkMRMLMarkupsPlaneNode> newPlanes;
+  vtkMRMLMarkupsPlaneNode* planes =
+    vtkMRMLMarkupsPlaneNode::SafeDownCast(
       scene->AddNode(newPlanes.GetPointer()));
   QString planesName = refNode->GetName();
   planesName += "Planner_Planes";
@@ -916,11 +916,11 @@ vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate
+vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate
 ::getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
 {
-  vtkMRMLMarkupsPlanesNode* plane =
-    vtkMRMLMarkupsPlanesNode::SafeDownCast(refNode ?
+  vtkMRMLMarkupsPlaneNode* plane =
+    vtkMRMLMarkupsPlaneNode::SafeDownCast(refNode ?
         refNode->GetNodeReference(this->sceneModel()->planesReferenceRole()) : NULL);
   return plane;
 }
@@ -929,7 +929,7 @@ vtkMRMLMarkupsPlanesNode* qSlicerPlannerModuleWidgetPrivate
 void qSlicerPlannerModuleWidgetPrivate
 ::removePlaneNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef)
 {
-  vtkMRMLMarkupsPlanesNode* plane = this->getPlaneNode(scene, nodeRef);
+  vtkMRMLMarkupsPlaneNode* plane = this->getPlaneNode(scene, nodeRef);
   if(plane)
   {
     scene->RemoveNode(plane);
@@ -955,7 +955,7 @@ void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
       vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
     if(childModel)
     {
-      vtkMRMLMarkupsPlanesNode* childPlane = this->getPlaneNode(scene, childModel);
+      vtkMRMLMarkupsPlaneNode* childPlane = this->getPlaneNode(scene, childModel);
       if(!childPlane)
       {
         childPlane = this->createPlaneNode(scene, childModel);
@@ -1003,7 +1003,7 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(vtkMRMLScene* scen
   {
     return;
   }
-  vtkMRMLMarkupsPlanesNode* plane = this->getPlaneNode(scene, model);
+  vtkMRMLMarkupsPlaneNode* plane = this->getPlaneNode(scene, model);
 
   plane->RemoveAllMarkups();
 
@@ -1248,7 +1248,7 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
   this->splitLogic->SetMRMLScene(scene);
 
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> cmdNode = this->splitLogic->CreateNodeInScene();
-  vtkMRMLMarkupsPlanesNode* plane = this->getPlaneNode(scene, inputNode);
+  vtkMRMLMarkupsPlaneNode* plane = this->getPlaneNode(scene, inputNode);
 
   double normal[3];
   double origin[3];
@@ -1390,7 +1390,7 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
     {
       int m = childModel->StartModify();
       vtkMRMLTransformNode* transformNode = childModel->GetParentTransformNode();
-      vtkMRMLMarkupsPlanesNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
+      vtkMRMLMarkupsPlaneNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
       int m2 = planeNode->StartModify();
       if(!transformNode)
       {
@@ -1441,7 +1441,7 @@ void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
     {
       int m = childModel->StartModify();
       vtkMRMLTransformNode* transformNode = childModel->GetParentTransformNode();
-      vtkMRMLMarkupsPlanesNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
+      vtkMRMLMarkupsPlaneNode* planeNode = this->getPlaneNode(childModel->GetScene(), childModel);
       int m2 = planeNode->StartModify();
       if (!transformNode)
       {
