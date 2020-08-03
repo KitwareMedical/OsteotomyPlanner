@@ -137,7 +137,7 @@ public:
   void removePlaneNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
   vtkMRMLMarkupsPlaneNode* getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
 
-  qMRMLPlannerModelHierarchyModel* sceneModel() const;
+  // qMRMLPlannerModelHierarchyModel* sceneModel() const;
   void updateWidgetFromReferenceNode(
     vtkMRMLNode* node,
     ctkColorPickerButton* button,
@@ -848,38 +848,38 @@ void qSlicerPlannerModuleWidgetPrivate
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
-::createTransformNode(vtkMRMLScene* scene, vtkMRMLNode* refNode)
-{
-  Q_ASSERT(scene);
-  vtkNew<vtkMRMLLinearTransformNode> newTransform;
-  vtkMRMLLinearTransformNode* transform =
-    vtkMRMLLinearTransformNode::SafeDownCast(
-      scene->AddNode(newTransform.GetPointer()));
-  QString transformName = refNode->GetName();
-  transformName += "_Transform";
-  transform->SetName(transformName.toLatin1());
-
-  vtkNew<vtkMRMLTransformDisplayNode> newDisplay;
-  newDisplay->SetEditorScalingEnabled(false);
-  vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
-  transform->SetAndObserveDisplayNodeID(display->GetID());
-
-  refNode->SetNodeReferenceID(
-    this->sceneModel()->transformDisplayReferenceRole(), display->GetID());
-  return transform;
-}
+// vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
+// ::createTransformNode(vtkMRMLScene* scene, vtkMRMLNode* refNode)
+// {
+//   Q_ASSERT(scene);
+//   vtkNew<vtkMRMLLinearTransformNode> newTransform;
+//   vtkMRMLLinearTransformNode* transform =
+//     vtkMRMLLinearTransformNode::SafeDownCast(
+//       scene->AddNode(newTransform.GetPointer()));
+//   QString transformName = refNode->GetName();
+//   transformName += "_Transform";
+//   transform->SetName(transformName.toLatin1());
+//
+//   vtkNew<vtkMRMLTransformDisplayNode> newDisplay;
+//   newDisplay->SetEditorScalingEnabled(false);
+//   vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
+//   transform->SetAndObserveDisplayNodeID(display->GetID());
+//
+//   refNode->SetNodeReferenceID(
+//     this->sceneModel()->transformDisplayReferenceRole(), display->GetID());
+//   return transform;
+// }
 
 //-----------------------------------------------------------------------------
-vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
-::getTransformNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
-{
-  vtkMRMLTransformDisplayNode* display =
-    vtkMRMLTransformDisplayNode::SafeDownCast(refNode ?
-        refNode->GetNodeReference(this->sceneModel()->transformDisplayReferenceRole()) : NULL);
-  return display ?
-         vtkMRMLLinearTransformNode::SafeDownCast(display->GetDisplayableNode()) : NULL;
-}
+// vtkMRMLLinearTransformNode* qSlicerPlannerModuleWidgetPrivate
+// ::getTransformNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
+// {
+//   vtkMRMLTransformDisplayNode* display =
+//     vtkMRMLTransformDisplayNode::SafeDownCast(refNode ?
+//         refNode->GetNodeReference(this->sceneModel()->transformDisplayReferenceRole()) : NULL);
+//   return display ?
+//          vtkMRMLLinearTransformNode::SafeDownCast(display->GetDisplayableNode()) : NULL;
+// }
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
@@ -893,37 +893,37 @@ void qSlicerPlannerModuleWidgetPrivate
 }
 
 //-----------------------------------------------------------------------------
-vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
-  vtkMRMLScene* scene, vtkMRMLNode* refNode)
-{
-  Q_ASSERT(scene);
-  vtkNew<vtkMRMLMarkupsPlaneNode> newPlanes;
-  vtkMRMLMarkupsPlaneNode* planes =
-    vtkMRMLMarkupsPlaneNode::SafeDownCast(
-      scene->AddNode(newPlanes.GetPointer()));
-  QString planesName = refNode->GetName();
-  planesName += "Planner_Planes";
-  planes->SetName(planesName.toLatin1());
-  vtkNew<vtkMRMLMarkupsDisplayNode> newDisplay;
-  vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
-  planes->SetAndObserveDisplayNodeID(display->GetID());
-
-  refNode->SetNodeReferenceID(
-    this->sceneModel()->planesReferenceRole(), planes->GetID());
-  
-
-  return planes;
-}
+// vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate::createPlaneNode(
+//   vtkMRMLScene* scene, vtkMRMLNode* refNode)
+// {
+//   Q_ASSERT(scene);
+//   vtkNew<vtkMRMLMarkupsPlaneNode> newPlanes;
+//   vtkMRMLMarkupsPlaneNode* planes =
+//     vtkMRMLMarkupsPlaneNode::SafeDownCast(
+//       scene->AddNode(newPlanes.GetPointer()));
+//   QString planesName = refNode->GetName();
+//   planesName += "Planner_Planes";
+//   planes->SetName(planesName.toLatin1());
+//   vtkNew<vtkMRMLMarkupsDisplayNode> newDisplay;
+//   vtkMRMLNode* display = scene->AddNode(newDisplay.GetPointer());
+//   planes->SetAndObserveDisplayNodeID(display->GetID());
+//
+//   refNode->SetNodeReferenceID(
+//     this->sceneModel()->planesReferenceRole(), planes->GetID());
+//
+//
+//   return planes;
+// }
 
 //-----------------------------------------------------------------------------
-vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate
-::getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
-{
-  vtkMRMLMarkupsPlaneNode* plane =
-    vtkMRMLMarkupsPlaneNode::SafeDownCast(refNode ?
-        refNode->GetNodeReference(this->sceneModel()->planesReferenceRole()) : NULL);
-  return plane;
-}
+// vtkMRMLMarkupsPlaneNode* qSlicerPlannerModuleWidgetPrivate
+// ::getPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode) const
+// {
+//   vtkMRMLMarkupsPlaneNode* plane =
+//     vtkMRMLMarkupsPlaneNode::SafeDownCast(refNode ?
+//         refNode->GetNodeReference(this->sceneModel()->planesReferenceRole()) : NULL);
+//   return plane;
+// }
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
@@ -1046,12 +1046,12 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(vtkMRMLScene* scen
 
 
 //-----------------------------------------------------------------------------
-qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
-::sceneModel() const
-{
-  return qobject_cast<qMRMLPlannerModelHierarchyModel*>(
-           this->ModelHierarchyTreeView->sceneModel());
-}
+// qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
+// ::sceneModel() const
+// {
+//   return qobject_cast<qMRMLPlannerModelHierarchyModel*>(
+//            this->ModelHierarchyTreeView->sceneModel());
+// }
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate::updateWidgetFromReferenceNode(
@@ -1356,22 +1356,22 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
 //-----------------------------------------------------------------------------
 //Hide all transforms in the current hierarchy
-void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
-{
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  this->HierarchyNode->GetAllChildrenNodes(children);
-  for(it = children.begin(); it != children.end(); ++it)
-  {
-    vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
-
-    if(childModel)
-    {
-      this->sceneModel()->setTransformVisibility(childModel, false);
-    }
-  }
-}
+// void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
+// {
+//   std::vector<vtkMRMLHierarchyNode*> children;
+//   std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+//   this->HierarchyNode->GetAllChildrenNodes(children);
+//   for(it = children.begin(); it != children.end(); ++it)
+//   {
+//     vtkMRMLModelNode* childModel =
+//       vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+//
+//     if(childModel)
+//     {
+//       this->sceneModel()->setTransformVisibility(childModel, false);
+//     }
+//   }
+// }
 
 
 //-----------------------------------------------------------------------------
@@ -1502,8 +1502,8 @@ void qSlicerPlannerModuleWidget::setup()
   d->setupUi(this);
   this->Superclass::setup();
 
-  qMRMLPlannerModelHierarchyModel* sceneModel =
-    new qMRMLPlannerModelHierarchyModel(this);
+  // qMRMLPlannerModelHierarchyModel* sceneModel =
+  //   new qMRMLPlannerModelHierarchyModel(this);
 
   d->scene = this->mrmlScene();
 
@@ -1515,56 +1515,56 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
   this->plannerLogic()->setWrapperLogic(wrapperLogic);
 
-  d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
-  d->ModelHierarchyTreeView->setSceneModelType("Planner");
-  d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
-  sceneModel->setIDColumn(-1);
-  sceneModel->setHeaderData(0, Qt::Horizontal, "Node");
-  sceneModel->setExpandColumn(1);
-  sceneModel->setHeaderData(1, Qt::Horizontal, ""); // Don't know a good descriptor
-  sceneModel->setColorColumn(2);
-  sceneModel->setHeaderData(2, Qt::Horizontal, "Color");
-  sceneModel->setOpacityColumn(3);
-  sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
-  sceneModel->setTransformVisibilityColumn(4);
-  sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
-  sceneModel->setCutButtonColumn(5);
-  sceneModel->setHeaderData(5, Qt::Horizontal, "Cut");
-  sceneModel->setBendButtonColumn(6);
-  sceneModel->setHeaderData(6, Qt::Horizontal, "Bend");
-  // use lazy update instead of responding to scene import end event
-  sceneModel->setLazyUpdate(true);
+  // d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
+  // d->ModelHierarchyTreeView->setSceneModelType("Planner");
+  // d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
+  // sceneModel->setIDColumn(-1);
+  // sceneModel->setHeaderData(0, Qt::Horizontal, "Node");
+  // sceneModel->setExpandColumn(1);
+  // sceneModel->setHeaderData(1, Qt::Horizontal, ""); // Don't know a good descriptor
+  // sceneModel->setColorColumn(2);
+  // sceneModel->setHeaderData(2, Qt::Horizontal, "Color");
+  // sceneModel->setOpacityColumn(3);
+  // sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
+  // sceneModel->setTransformVisibilityColumn(4);
+  // sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
+  // sceneModel->setCutButtonColumn(5);
+  // sceneModel->setHeaderData(5, Qt::Horizontal, "Cut");
+  // sceneModel->setBendButtonColumn(6);
+  // sceneModel->setHeaderData(6, Qt::Horizontal, "Bend");
+  // // use lazy update instead of responding to scene import end event
+  // sceneModel->setLazyUpdate(true);
 
 
-  d->ModelHierarchyTreeView->setHeaderHidden(false);
-  d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
-#else
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
-#endif
+//   d->ModelHierarchyTreeView->setHeaderHidden(false);
+//   d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
+// #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+// #else
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+//   d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+// #endif
 
-  d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
-  d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
-  d->ModelHierarchyTreeView->setDragEnabled(false);
-  
-  ButtonItemDelegate* cuts = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
-  ButtonItemDelegate* bends = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
-  
-  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
-  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
+  // d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
+  // d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
+  // d->ModelHierarchyTreeView->setDragEnabled(false);
+  //
+  // ButtonItemDelegate* cuts = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
+  // ButtonItemDelegate* bends = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
+  //
+  // d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
+  // d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
 
 
 
@@ -1595,7 +1595,7 @@ void qSlicerPlannerModuleWidget::setup()
 
   // Connect
   this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
-  this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
+  // this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
   this->connect(
     d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
@@ -1691,39 +1691,39 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget
-::onNodeAddedEvent(vtkObject* scene, vtkObject* node)
-{
-  Q_D(qSlicerPlannerModuleWidget);
-  Q_UNUSED(scene);
-  vtkMRMLModelHierarchyNode* hNode =
-    vtkMRMLModelHierarchyNode::SafeDownCast(node);
-  if(!hNode || hNode->GetHideFromEditors())
-  {
-    return;
-  }
-
-  // OnNodeAddedEvent is here to make sure that the combobox is populated
-  // too after a node is added to the scene, because the tree view will be
-  // and they need to match.
-  if(!d->HierarchyNode)
-  {
-    if(this->mrmlScene()->IsBatchProcessing())
-    {
-      // Problem is, during a batch processing, the model is yet up-to-date.
-      // So we wait for the sceneUpdated() signal and then do the update.
-      d->StagedHierarchyNode = hNode;
-      this->connect(
-        d->ModelHierarchyTreeView->sceneModel(), SIGNAL(sceneUpdated()),
-        this, SLOT(onSceneUpdated()));
-    }
-    else
-    {
-      // No problem, just do the update directly.
-      this->setCurrentNode(hNode);
-    }
-  }
-}
+// void qSlicerPlannerModuleWidget
+// ::onNodeAddedEvent(vtkObject* scene, vtkObject* node)
+// {
+//   Q_D(qSlicerPlannerModuleWidget);
+//   Q_UNUSED(scene);
+//   vtkMRMLModelHierarchyNode* hNode =
+//     vtkMRMLModelHierarchyNode::SafeDownCast(node);
+//   if(!hNode || hNode->GetHideFromEditors())
+//   {
+//     return;
+//   }
+//
+//   // OnNodeAddedEvent is here to make sure that the combobox is populated
+//   // too after a node is added to the scene, because the tree view will be
+//   // and they need to match.
+//   if(!d->HierarchyNode)
+//   {
+//     if(this->mrmlScene()->IsBatchProcessing())
+//     {
+//       // Problem is, during a batch processing, the model is yet up-to-date.
+//       // So we wait for the sceneUpdated() signal and then do the update.
+//       d->StagedHierarchyNode = hNode;
+//       this->connect(
+//         d->ModelHierarchyTreeView->sceneModel(), SIGNAL(sceneUpdated()),
+//         this, SLOT(onSceneUpdated()));
+//     }
+//     else
+//     {
+//       // No problem, just do the update directly.
+//       this->setCurrentNode(hNode);
+//     }
+//   }
+// }
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidget
@@ -2003,23 +2003,23 @@ void qSlicerPlannerModuleWidget::onOpenTemplateReference()
 
 //-----------------------------------------------------------------------------
 //View current cut results
-void qSlicerPlannerModuleWidget::previewCutButtonClicked()
-{
-  Q_D(qSlicerPlannerModuleWidget);
-
-  if(d->cuttingActive)
-  {
-    d->adjustCut(this->mrmlScene());
-  }
-  else
-  {
-    d->cuttingActive = true;
-    d->previewCut(this->mrmlScene());
-
-  }
-  this->updateWidgetFromMRML();
-  d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
-}
+// void qSlicerPlannerModuleWidget::previewCutButtonClicked()
+// {
+//   Q_D(qSlicerPlannerModuleWidget);
+//
+//   if(d->cuttingActive)
+//   {
+//     d->adjustCut(this->mrmlScene());
+//   }
+//   else
+//   {
+//     d->cuttingActive = true;
+//     d->previewCut(this->mrmlScene());
+//
+//   }
+//   this->updateWidgetFromMRML();
+//   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
+// }
 
 //-----------------------------------------------------------------------------
 //Finish and harden current cutting action
@@ -2041,15 +2041,15 @@ void qSlicerPlannerModuleWidget::confirmCutButtonClicked()
 
 //-----------------------------------------------------------------------------
 //Cancel current cutting action
-void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
-{
-  Q_D(qSlicerPlannerModuleWidget);
-  d->cancelCut(this->mrmlScene());
-  d->cuttingActive = false;
-  d->ActionInProgress.fill("");
-  d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
-  this->updateWidgetFromMRML();
-}
+// void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
+// {
+//   Q_D(qSlicerPlannerModuleWidget);
+//   d->cancelCut(this->mrmlScene());
+//   d->cuttingActive = false;
+//   d->ActionInProgress.fill("");
+//   d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
+//   this->updateWidgetFromMRML();
+// }
 
 //-----------------------------------------------------------------------------
 //Activate the placing of a specific fiducial
@@ -2530,46 +2530,46 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   this->updateWidgetFromMRML();
 }
 
-void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
-{
-    Q_D(qSlicerPlannerModuleWidget);
-
-    if (d->cuttingActive || d->bendingOpen)
-    {
-        std::cout << "Busy!" << std::endl;
-        return;
-    }
-    
-    QModelIndex sourceIndex = d->ModelHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
-    vtkMRMLNode* node = d->ModelHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
-
-    if (sourceIndex.column() == 5)
-    {
-        std::stringstream title;
-        title << "Cutting model: " << node->GetName();
-        d->CuttingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(false);        
-        this->updateCurrentCutNode(node);
-        this->previewCutButtonClicked();
-    }
-    if (sourceIndex.column() == 6)
-    {
-        std::stringstream title;
-        d->ActionInProgress[0] = node->GetName();
-        d->ActionInProgress[1] = "Bend";
-        title << "Bending model: " << node->GetName();
-        d->BendingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(false);        
-        d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
-        this->updateCurrentBendNode(node);
-        d->MovingPointAButton->setEnabled(true);
-        d->MovingPointBButton->setEnabled(true);
-        d->bendingOpen = true;
-        this->updateWidgetFromMRML();
-    }
-    
-    
-}
+// void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
+// {
+//     Q_D(qSlicerPlannerModuleWidget);
+//
+//     if (d->cuttingActive || d->bendingOpen)
+//     {
+//         std::cout << "Busy!" << std::endl;
+//         return;
+//     }
+//
+//     QModelIndex sourceIndex = d->ModelHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
+//     vtkMRMLNode* node = d->ModelHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
+//
+//     if (sourceIndex.column() == 5)
+//     {
+//         std::stringstream title;
+//         title << "Cutting model: " << node->GetName();
+//         d->CuttingMenu->setTitle(title.str().c_str());
+//         d->hardenTransforms(false);
+//         this->updateCurrentCutNode(node);
+//         this->previewCutButtonClicked();
+//     }
+//     if (sourceIndex.column() == 6)
+//     {
+//         std::stringstream title;
+//         d->ActionInProgress[0] = node->GetName();
+//         d->ActionInProgress[1] = "Bend";
+//         title << "Bending model: " << node->GetName();
+//         d->BendingMenu->setTitle(title.str().c_str());
+//         d->hardenTransforms(false);
+//         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
+//         this->updateCurrentBendNode(node);
+//         d->MovingPointAButton->setEnabled(true);
+//         d->MovingPointBButton->setEnabled(true);
+//         d->bendingOpen = true;
+//         this->updateWidgetFromMRML();
+//     }
+//
+//
+// }
 
 void qSlicerPlannerModuleWidget::transformActivated(vtkMRMLNode* node)
 {
