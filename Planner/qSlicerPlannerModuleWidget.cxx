@@ -44,7 +44,7 @@
 #include "qSlicerApplication.h"
 #include "qSlicerIOManager.h"
 #include "qSlicerFileDialog.h"
-#include "qMRMLSceneModelHierarchyModel.h"
+// #include "qMRMLSubjectHierarchyModel.h"
 #include "qSlicerPlannerModuleWidget.h"
 #include "ui_qSlicerPlannerModuleWidget.h"
 #include "qMRMLSortFilterProxyModel.h"
@@ -58,7 +58,7 @@
 #include "vtkMRMLDisplayableHierarchyLogic.h"
 #include "vtkMRMLLinearTransformNode.h"
 #include "vtkMRMLMarkupsDisplayNode.h"
-#include "vtkMRMLMarkupsPlanesNode.h"
+// #include "vtkMRMLMarkupsPlanesNode.h"
 #include "vtkMRMLModelHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
@@ -95,7 +95,7 @@
 #include <vtkSlicerCLIModuleLogic.h>
 
 // Self
-#include "qMRMLPlannerModelHierarchyModel.h"
+// #include "qMRMLPlannerModelHierarchyModel.h"
 #include "vtkSlicerPlannerLogic.h"
 #include "ButtonItemDelegate.h"
 
