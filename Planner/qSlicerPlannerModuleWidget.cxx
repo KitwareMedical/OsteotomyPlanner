@@ -1039,9 +1039,11 @@ void qSlicerPlannerModuleWidgetPrivate::updatePlanesFromModel(vtkMRMLScene* scen
   double normal[3] = {0.0, 0.0, 0.0};
   normal[largetDimension] = 1.0;
 
-  plane->AddPlaneFromArray(origin, normal, min, max);
-  plane->SetNthMarkupVisibility(0, false);
-  plane->SetNthMarkupAssociatedNodeID(0, model->GetID());
+  plane->SetPlaneBounds(bounds);
+  plane->SetNormal(normal);
+  plane->SetOrigin(origin);
+  plane->SetDisplayVisibility(false);
+  plane->SetNthControlPointAssociatedNodeID(0, model->GetID());
 }
 
 
