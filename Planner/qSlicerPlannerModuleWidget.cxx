@@ -1254,8 +1254,8 @@ void qSlicerPlannerModuleWidgetPrivate::splitModel(vtkMRMLModelNode* inputNode, 
 
   double normal[3];
   double origin[3];
-  plane->GetNthPlaneNormal(0, normal);
-  plane->GetNthPlaneOrigin(0, origin);
+  plane->GetNormal(normal);
+  plane->GetOrigin(origin);
 
 
 
