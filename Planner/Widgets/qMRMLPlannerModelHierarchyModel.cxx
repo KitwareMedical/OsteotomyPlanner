@@ -31,7 +31,7 @@
 // MRML includes
 #include <vtkMRMLDisplayableNode.h>
 #include <vtkMRMLDisplayableHierarchyNode.h>
-#include <vtkMRMLMarkupsPlanesNode.h>
+#include <vtkMRMLMarkupsPlaneNode.h>
 #include <vtkMRMLModelNode.h>
 #include <vtkMRMLScene.h>
 #include <vtkMRMLTransformDisplayNode.h>
@@ -48,7 +48,7 @@ public:
 
   vtkMRMLTransformDisplayNode* transformDisplayNode(
     vtkMRMLScene* scene, vtkMRMLNode* node) const;
-  vtkMRMLMarkupsPlanesNode* planesNode(
+  vtkMRMLMarkupsPlaneNode* planesNode(
     vtkMRMLScene* scene, vtkMRMLNode* node) const;
 
   int TransformVisibilityColumn;
@@ -87,7 +87,7 @@ vtkMRMLTransformDisplayNode* qMRMLPlannerModelHierarchyModelPrivate
 }
 
 //------------------------------------------------------------------------------
-vtkMRMLMarkupsPlanesNode* qMRMLPlannerModelHierarchyModelPrivate
+vtkMRMLMarkupsPlaneNode* qMRMLPlannerModelHierarchyModelPrivate
 ::planesNode(vtkMRMLScene* scene, vtkMRMLNode* node) const
 {
   if(!node)
@@ -95,8 +95,8 @@ vtkMRMLMarkupsPlanesNode* qMRMLPlannerModelHierarchyModelPrivate
     return NULL;
   }
 
-  vtkMRMLMarkupsPlanesNode* planes =
-    vtkMRMLMarkupsPlanesNode::SafeDownCast(node->GetNodeReference(
+  vtkMRMLMarkupsPlaneNode* planes =
+    vtkMRMLMarkupsPlaneNode::SafeDownCast(node->GetNodeReference(
           qMRMLPlannerModelHierarchyModel::planesReferenceRole()));
   if(!planes)
   {
@@ -185,7 +185,7 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
   {
     qvtkConnect(display, vtkCommand::ModifiedEvent, this, SLOT(onMRMLNodeModified(vtkObject*)));
   }
-  vtkMRMLMarkupsPlanesNode* markup =
+  vtkMRMLMarkupsPlaneNode* markup =
     d->planesNode(this->mrmlScene(), vtkMRMLNode::SafeDownCast(object));
   if(markup || (!markup && !node))
   {
@@ -243,7 +243,7 @@ void qMRMLPlannerModelHierarchyModel
   }
   else if(column == this->planesVisibilityColumn())
   {
-    vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+    vtkMRMLMarkupsPlaneNode* planes = d->planesNode(this->mrmlScene(), node);
     if(planes)
     {
       
@@ -304,7 +304,7 @@ void qMRMLPlannerModelHierarchyModel
   }
   else if(item->column() == this->planesVisibilityColumn())
   {
-    vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+    vtkMRMLMarkupsPlaneNode* planes = d->planesNode(this->mrmlScene(), node);
     if(planes)
     {
       for(int i = 0; i < planes->GetNumberOfMarkups(); ++i)
@@ -397,7 +397,7 @@ void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
   //this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
-  vtkMRMLMarkupsPlanesNode* planes = d->planesNode(this->mrmlScene(), node);
+  vtkMRMLMarkupsPlaneNode* planes = d->planesNode(this->mrmlScene(), node);
   planes->SetNthMarkupVisibility(0, visible);
 
 }
