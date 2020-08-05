@@ -25,7 +25,6 @@
 #include "qSlicerPlannerModuleWidgetsExport.h"
 
 // MRMLWidgets includes
-#include "qMRMLSceneModelHierarchyModel.h"
 class qMRMLPlannerModelHierarchyModelPrivate;
 
 
