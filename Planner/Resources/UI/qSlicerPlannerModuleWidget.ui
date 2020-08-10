@@ -21,44 +21,17 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="4" column="0" colspan="2">
-       <widget class="qMRMLTreeView" name="ModelHierarchyTreeView">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
+       <widget class="qMRMLSubjectHierarchyTreeView" name="SubjectHierarchyTreeView">
         <property name="dragDropMode">
          <enum>QAbstractItemView::InternalMove</enum>
         </property>
-        <property name="selectionMode">
-         <enum>QAbstractItemView::ExtendedSelection</enum>
-        </property>
-        <property name="headerHidden">
-         <bool>true</bool>
-        </property>
-        <property name="sceneModelType">
-         <string>ModelHierarchy</string>
-        </property>
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLModelHierarchyNode</string>
-          <string>vtkMRMLModelNode</string>
-         </stringlist>
-        </property>
-        <property name="renameMenuActionVisible">
+	<property name="indentation">
+	 <number>12</number>
+	</property>
+        <property name="editMenuActionVisible">
          <bool>false</bool>
         </property>
-        <property name="deleteMenuActionVisible">
-         <bool>false</bool>
-        </property>
-        <property name="showHidden">
-         <bool>false</bool>
-        </property>
-        <property name="showScene">
-         <bool>false</bool>
-        </property>
-        <property name="showRootNode">
+        <property name="multiSelection">
          <bool>true</bool>
         </property>
        </widget>
