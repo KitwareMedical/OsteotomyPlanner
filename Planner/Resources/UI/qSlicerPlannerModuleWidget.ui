@@ -830,7 +830,7 @@
   <connection>
    <sender>qSlicerPlannerModuleWidget</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>ModelHierarchyTreeView</receiver>
+   <receiver>SubjectHierarchyTreeView</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
     <hint type="sourcelabel">
