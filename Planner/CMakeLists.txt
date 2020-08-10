@@ -19,6 +19,7 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${CMAKE_CURRENT_SOURCE_DIR}/Widgets
   ${CMAKE_CURRENT_BINARY_DIR}/Widgets
 
+  ${qSlicerSubjectHierarchyModuleWidgets_INCLUDE_DIRS}
   ${vtkSlicerMarkupsModuleMRML_INCLUDE_DIRS}
   )
 

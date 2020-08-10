@@ -759,9 +759,9 @@
    <header>qMRMLTableView.h</header>
   </customwidget>
   <customwidget>
-   <class>qMRMLTreeView</class>
+   <class>qMRMLSubjectHierarchyTreeView</class>
    <extends>QTreeView</extends>
-   <header>qMRMLTreeView.h</header>
+   <header>qMRMLSubjectHierarchyTreeView.h</header>
    <slots>
     <slot>setSceneModel(int)</slot>
    </slots>
