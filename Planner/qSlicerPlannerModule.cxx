@@ -100,7 +100,7 @@ QStringList qSlicerPlannerModule::categories() const
 //-----------------------------------------------------------------------------
 QStringList qSlicerPlannerModule::dependencies() const
 {
-  return QStringList() << "Planes";
+  return QStringList();
 }
 
 //-----------------------------------------------------------------------------
