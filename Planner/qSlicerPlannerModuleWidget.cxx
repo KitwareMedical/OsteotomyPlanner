@@ -1052,7 +1052,7 @@ qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
 ::sceneModel() const
 {
   return qobject_cast<qMRMLPlannerModelHierarchyModel*>(
-           this->ModelHierarchyTreeView->sceneModel());
+           this->SubjectHierarchyTreeView->sceneModel());
 }
 
 //-----------------------------------------------------------------------------
@@ -1517,9 +1517,9 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
   this->plannerLogic()->setWrapperLogic(wrapperLogic);
 
-  d->ModelHierarchyTreeView->setSceneModel(sceneModel, "Planner");
-  d->ModelHierarchyTreeView->setSceneModelType("Planner");
-  d->ModelHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
+  d->SubjectHierarchyTreeView->setSceneModel(sceneModel, "Planner");
+  d->SubjectHierarchyTreeView->setSceneModelType("Planner");
+  d->SubjectHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
   sceneModel->setIDColumn(-1);
   sceneModel->setHeaderData(0, Qt::Horizontal, "Node");
   sceneModel->setExpandColumn(1);
@@ -1538,35 +1538,35 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setLazyUpdate(true);
 
 
-  d->ModelHierarchyTreeView->setHeaderHidden(false);
-  d->ModelHierarchyTreeView->header()->setStretchLastSection(false);
+  d->SubjectHierarchyTreeView->setHeaderHidden(false);
+  d->SubjectHierarchyTreeView->header()->setStretchLastSection(false);
 #if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
 #else
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
-  d->ModelHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->nameColumn(), QHeaderView::Stretch);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->expandColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->colorColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->opacityColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->transformVisibilityColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->cutButtonColumn(), QHeaderView::ResizeToContents);
+  d->SubjectHierarchyTreeView->header()->setSectionResizeMode(sceneModel->bendButtonColumn(), QHeaderView::ResizeToContents);
 #endif
 
-  d->ModelHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
-  d->ModelHierarchyTreeView->sortFilterProxyModel()->invalidate();
-  d->ModelHierarchyTreeView->setDragEnabled(false);
+  d->SubjectHierarchyTreeView->sortFilterProxyModel()->setHideChildNodeTypes(d->HideChildNodeTypes);
+  d->SubjectHierarchyTreeView->sortFilterProxyModel()->invalidate();
+  d->SubjectHierarchyTreeView->setDragEnabled(false);
   
-  ButtonItemDelegate* cuts = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
-  ButtonItemDelegate* bends = new ButtonItemDelegate(d->ModelHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
+  ButtonItemDelegate* cuts = new ButtonItemDelegate(d->SubjectHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogCloseButton));
+  ButtonItemDelegate* bends = new ButtonItemDelegate(d->SubjectHierarchyTreeView, qApp->style()->standardPixmap(QStyle::SP_DialogOkButton));
   
-  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
-  d->ModelHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
+  d->SubjectHierarchyTreeView->setItemDelegateForColumn(sceneModel->cutButtonColumn(), cuts);
+  d->SubjectHierarchyTreeView->setItemDelegateForColumn(sceneModel->bendButtonColumn(), bends);
 
 
 
@@ -1716,7 +1716,7 @@ void qSlicerPlannerModuleWidget
       // So we wait for the sceneUpdated() signal and then do the update.
       d->StagedHierarchyNode = hNode;
       this->connect(
-        d->ModelHierarchyTreeView->sceneModel(), SIGNAL(sceneUpdated()),
+        d->SubjectHierarchyTreeView->sceneModel(), SIGNAL(sceneUpdated()),
         this, SLOT(onSceneUpdated()));
     }
     else
@@ -1797,10 +1797,10 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
-  d->ModelHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
-  d->ModelHierarchyTreeView->setRootNode(d->HierarchyNode);
-  d->ModelHierarchyTreeView->setCurrentNode(d->HierarchyNode);
-  d->ModelHierarchyTreeView->expandAll();
+  d->SubjectHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
+  d->SubjectHierarchyTreeView->setRootNode(d->HierarchyNode);
+  d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyNode);
+  d->SubjectHierarchyTreeView->expandAll();
 
   // Create all the transforms for the current hierarchy node
   //must do first so that there are available for the planes nodes
@@ -1837,7 +1837,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   //non action sections
   d->MetricsCollapsibleButton->setEnabled(!performingAction);
   d->ReferencesCollapsibleButton->setEnabled(!performingAction);
-  d->ModelHierarchyTreeView->setEnabled(!performingAction);
+  d->SubjectHierarchyTreeView->setEnabled(!performingAction);
   if (performingAction)
   {
       d->ReferencesCollapsibleButton->setCollapsed(true);
@@ -1893,7 +1893,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
       d->ReferencesCollapsibleButton->setEnabled(false);
       d->MetricsCollapsibleButton->setEnabled(false);
       d->FinishButton->setEnabled(false);
-      d->ModelHierarchyTreeView->setEnabled(false);
+      d->SubjectHierarchyTreeView->setEnabled(false);
       d->ScreenshotMenu->setEnabled(false);
   }
 
@@ -1912,7 +1912,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
     d->ModelHierarchyNodeComboBox->setEnabled(true);
-    d->ModelHierarchyTreeView->setEnabled(false);
+    d->SubjectHierarchyTreeView->setEnabled(false);
     d->BendingMenu->setVisible(false);
     d->CuttingMenu->setVisible(false);
     d->ScreenshotMenu->setVisible(false);
@@ -2542,8 +2542,8 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         return;
     }
     
-    QModelIndex sourceIndex = d->ModelHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
-    vtkMRMLNode* node = d->ModelHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
+    QModelIndex sourceIndex = d->SubjectHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
+    vtkMRMLNode* node = d->SubjectHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
 
     if (sourceIndex.column() == 5)
     {
