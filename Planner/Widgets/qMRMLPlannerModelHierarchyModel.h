@@ -71,8 +71,8 @@ public:
   static const char* transformDisplayReferenceRole();
   static const char* planesReferenceRole();
 
-  void setPlaneVisibility(vtkMRMLNode* node, bool visible);
-  void setTransformVisibility(vtkMRMLNode* node, bool visible);
+  void setPlaneVisibility(vtkIdType shItemId, bool visible);
+  void setTransformVisibility(vtkIdType shItemId, bool visible);
 
 
 signals:

@@ -407,19 +407,29 @@ int qMRMLPlannerModelHierarchyModel::maxColumnId()const
   return maxId;
 }
 
-void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkMRMLNode* node, bool visible)
+void qMRMLPlannerModelHierarchyModel::setPlaneVisibility(vtkIdType shItemID, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  //this->itemFromNode(node, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+
+  // consider using QStandardItem * itemFromSubjectHierarchyItem (vtkIdType itemID, int column=0) const
+  // This is a patch to make things compile only.
+  vtkMRMLNode* node;
+
+  //this->itemFromSubjectHierarchyItem(shItemID, d->PlanesVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLMarkupsPlaneNode* planes = d->planesNode(this->mrmlScene(), node);
   planes->SetNthControlPointVisibility(0, visible);
 
 }
 
-void qMRMLPlannerModelHierarchyModel::setTransformVisibility(vtkMRMLNode* node, bool visible)
+void qMRMLPlannerModelHierarchyModel::setTransformVisibility(vtkIdType shItemID, bool visible)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
-  this->itemFromNode(node, d->TransformVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
+
+  // consider using QStandardItem * itemFromSubjectHierarchyItem (vtkIdType itemID, int column=0) const
+  // This is a patch to make things compile only.
+  vtkMRMLNode* node;
+
+  this->itemFromSubjectHierarchyItem(shItemID, d->TransformVisibilityColumn)->setCheckState(visible ? Qt::Checked : Qt::Unchecked);
   vtkMRMLTransformDisplayNode* transform = d->transformDisplayNode(this->mrmlScene(), node);
   transform->SetVisibility(visible);
 
