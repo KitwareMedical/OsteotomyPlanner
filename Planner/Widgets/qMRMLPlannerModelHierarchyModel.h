@@ -25,26 +25,12 @@
 #include "qSlicerPlannerModuleWidgetsExport.h"
 
 // MRMLWidgets includes
-#include "qMRMLSceneDisplayableModel.h"
-//#include "qMRMLSceneModelHierarchyModel.h"
+#include "qMRMLSubjectHierarchyModel.h"
 class qMRMLPlannerModelHierarchyModelPrivate;
-
-class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLSceneModelHierarchyModel : public qMRMLSceneDisplayableModel
-{
-  Q_OBJECT
-
-public:
-  typedef qMRMLSceneDisplayableModel Superclass;
-  qMRMLSceneModelHierarchyModel(QObject *parent=nullptr):Superclass(parent){}
-  ~qMRMLSceneModelHierarchyModel() override{}
-
-private:
-  Q_DISABLE_COPY(qMRMLSceneModelHierarchyModel);
-};
 
 
 class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
-  : public qMRMLSceneModelHierarchyModel
+  : public qMRMLSubjectHierarchyModel
 {
   Q_OBJECT
   /// \todo
@@ -66,7 +52,7 @@ class Q_SLICER_QTMODULES_PLANNER_WIDGETS_EXPORT qMRMLPlannerModelHierarchyModel
              WRITE setBendButtonColumn)
 
 public:
-  typedef qMRMLSceneModelHierarchyModel Superclass;
+  typedef qMRMLSubjectHierarchyModel Superclass;
   qMRMLPlannerModelHierarchyModel(QObject* parent = 0);
   virtual ~qMRMLPlannerModelHierarchyModel();
 
