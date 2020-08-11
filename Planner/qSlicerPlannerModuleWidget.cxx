@@ -1052,7 +1052,7 @@ qMRMLPlannerModelHierarchyModel* qSlicerPlannerModuleWidgetPrivate
 ::sceneModel() const
 {
   return qobject_cast<qMRMLPlannerModelHierarchyModel*>(
-           this->SubjectHierarchyTreeView->sceneModel());
+           this->SubjectHierarchyTreeView->model());
 }
 
 //-----------------------------------------------------------------------------
