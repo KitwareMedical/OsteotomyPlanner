@@ -762,9 +762,6 @@
    <class>qMRMLSubjectHierarchyTreeView</class>
    <extends>QTreeView</extends>
    <header>qMRMLSubjectHierarchyTreeView.h</header>
-   <slots>
-    <slot>setSceneModel(int)</slot>
-   </slots>
   </customwidget>
   <customwidget>
    <class>qSlicerCLIProgressBar</class>
