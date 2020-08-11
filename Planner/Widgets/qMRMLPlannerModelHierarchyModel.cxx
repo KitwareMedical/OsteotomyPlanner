@@ -196,10 +196,14 @@ void qMRMLPlannerModelHierarchyModel::onReferenceChangedEvent(vtkObject* object)
 
 //------------------------------------------------------------------------------
 QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
-::nodeFlags(vtkMRMLNode* node, int column)const
+::subjectHierarchyItemFlags(vtkIdType itemID, int column)const
 {
   Q_D(const qMRMLPlannerModelHierarchyModel);
-  QFlags<Qt::ItemFlag> flags = this->Superclass::nodeFlags(node, column);
+  QFlags<Qt::ItemFlag> flags = this->Superclass::subjectHierarchyItemFlags(itemID, column);
+
+  // consider using QStandardItem * itemFromSubjectHierarchyItem (vtkIdType itemID, int column=0) const
+  // This is a patch to make things compile only.
+  vtkMRMLNode* node;
 
   vtkMRMLTransformableNode* transformable = vtkMRMLTransformableNode::SafeDownCast(node);
   vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
