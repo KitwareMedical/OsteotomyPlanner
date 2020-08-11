@@ -86,7 +86,7 @@ protected:
   /// visibility check state changes.
   virtual void observeNode(vtkMRMLNode* node);
   virtual QFlags<Qt::ItemFlag> subjectHierarchyItemFlags(vtkIdType itemID, int column)const;
-  void updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column);
+  void updateItemDataFromSubjectHierarchyItem(QStandardItem* item, vtkIdType shItemID, int column);
   void updateNodeFromItemData(vtkMRMLNode* node, QStandardItem* item);
 
   virtual int maxColumnId()const;

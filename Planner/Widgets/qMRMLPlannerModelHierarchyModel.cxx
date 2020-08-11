@@ -230,9 +230,14 @@ QFlags<Qt::ItemFlag> qMRMLPlannerModelHierarchyModel
 
 //------------------------------------------------------------------------------
 void qMRMLPlannerModelHierarchyModel
-::updateItemDataFromNode(QStandardItem* item, vtkMRMLNode* node, int column)
+::updateItemDataFromSubjectHierarchyItem(QStandardItem* item, vtkIdType shItemID, int column)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
+
+  // consider using QStandardItem * itemFromSubjectHierarchyItem (vtkIdType itemID, int column=0) const
+  // This is a patch to make things compile only.
+  vtkMRMLNode* node;
+
   vtkMRMLModelNode* model = vtkMRMLModelNode::SafeDownCast(node);
   if(column == this->transformVisibilityColumn())
   {
@@ -265,7 +270,7 @@ void qMRMLPlannerModelHierarchyModel
     }
   }
   
-  this->Superclass::updateItemDataFromNode(item, node, column);
+  this->Superclass::updateItemDataFromSubjectHierarchyItem(item, shItemID, column);
 }
 
 //------------------------------------------------------------------------------
