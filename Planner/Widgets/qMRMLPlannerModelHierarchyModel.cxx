@@ -157,7 +157,7 @@ const char* qMRMLPlannerModelHierarchyModel::planesReferenceRole()
 //------------------------------------------------------------------------------
 void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
 {
-  this->Superclass::observeNode(node);
+  // this->Superclass::observeNode(node);
   Q_D(const qMRMLPlannerModelHierarchyModel);
 
   if(node->IsA("vtkMRMLModelHierarchyNode") || node->IsA("vtkMRMLModelNode"))
