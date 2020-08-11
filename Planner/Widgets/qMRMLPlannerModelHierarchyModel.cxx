@@ -275,9 +275,14 @@ void qMRMLPlannerModelHierarchyModel
 
 //------------------------------------------------------------------------------
 void qMRMLPlannerModelHierarchyModel
-::updateNodeFromItemData(vtkMRMLNode* node, QStandardItem* item)
+::updateSubjectHierarchyItemFromItemData(vtkIdType shItemID, QStandardItem* item)
 {
   Q_D(qMRMLPlannerModelHierarchyModel);
+
+  // consider using QStandardItem * itemFromSubjectHierarchyItem (vtkIdType itemID, int column=0) const
+  // This is a patch to make things compile only.
+  vtkMRMLNode* node;
+
   if(item->column() == this->transformVisibilityColumn())
   {
     vtkMRMLTransformDisplayNode* display =
@@ -327,7 +332,7 @@ void qMRMLPlannerModelHierarchyModel
     }
   }
   
-  return this->Superclass::updateNodeFromItemData(node, item);
+  return this->Superclass::updateSubjectHierarchyItemFromItemData(shItemID, item);
 }
 
 //------------------------------------------------------------------------------

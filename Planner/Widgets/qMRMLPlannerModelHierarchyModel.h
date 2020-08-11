@@ -87,7 +87,7 @@ protected:
   virtual void observeNode(vtkMRMLNode* node);
   virtual QFlags<Qt::ItemFlag> subjectHierarchyItemFlags(vtkIdType itemID, int column)const;
   void updateItemDataFromSubjectHierarchyItem(QStandardItem* item, vtkIdType shItemID, int column);
-  void updateNodeFromItemData(vtkMRMLNode* node, QStandardItem* item);
+  void updateSubjectHierarchyItemFromItemData(vtkIdType shItemID, QStandardItem* item);
 
   virtual int maxColumnId()const;
 
