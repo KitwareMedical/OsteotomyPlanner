@@ -8,6 +8,7 @@ set(${KIT}_INCLUDE_DIRECTORIES
   ${vtkSlicerMarkupsModuleMRML_SOURCE_DIRS}
   ${vtkSlicerMarkupsModuleMRML_BINARY_DIRS}
   ${vtkSlicerMarkupsModuleMRML_INCLUDE_DIRS}
+  ${qSlicerSubjectHierarchyModuleWidgets_INCLUDE_DIRS}
   )
 
 set(${KIT}_SRCS
@@ -27,6 +28,7 @@ set(${KIT}_RESOURCES
 
 set(${KIT}_TARGET_LIBRARIES
   vtkSlicerMarkupsModuleMRML
+  qSlicerSubjectHierarchyModuleWidgets
   )
 
 #-----------------------------------------------------------------------------
