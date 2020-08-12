@@ -1521,18 +1521,14 @@ void qSlicerPlannerModuleWidget::setup()
   d->SubjectHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
   sceneModel->setIDColumn(-1);
   sceneModel->setHeaderData(0, Qt::Horizontal, "Node");
-  sceneModel->setExpandColumn(1);
-  sceneModel->setHeaderData(1, Qt::Horizontal, ""); // Don't know a good descriptor
-  sceneModel->setColorColumn(2);
-  sceneModel->setHeaderData(2, Qt::Horizontal, "Color");
-  sceneModel->setOpacityColumn(3);
-  sceneModel->setHeaderData(3, Qt::Horizontal, "Opacity");
-  sceneModel->setTransformVisibilityColumn(4);
-  sceneModel->setHeaderData(4, Qt::Horizontal, "Transform");
-  sceneModel->setCutButtonColumn(5);
-  sceneModel->setHeaderData(5, Qt::Horizontal, "Cut");
-  sceneModel->setBendButtonColumn(6);
-  sceneModel->setHeaderData(6, Qt::Horizontal, "Bend");
+  sceneModel->setColorColumn(1);
+  sceneModel->setHeaderData(1, Qt::Horizontal, "Color");
+  sceneModel->setTransformVisibilityColumn(2);
+  sceneModel->setHeaderData(2, Qt::Horizontal, "Transform");
+  sceneModel->setCutButtonColumn(3);
+  sceneModel->setHeaderData(3, Qt::Horizontal, "Cut");
+  sceneModel->setBendButtonColumn(4);
+  sceneModel->setHeaderData(4, Qt::Horizontal, "Bend");
   // use lazy update instead of responding to scene import end event
   sceneModel->setLazyUpdate(true);
 
