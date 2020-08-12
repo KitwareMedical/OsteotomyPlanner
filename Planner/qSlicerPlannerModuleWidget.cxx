@@ -1517,8 +1517,7 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
   this->plannerLogic()->setWrapperLogic(wrapperLogic);
 
-  d->SubjectHierarchyTreeView->setSceneModel(sceneModel, "Planner");
-  d->SubjectHierarchyTreeView->setSceneModelType("Planner");
+  d->SubjectHierarchyTreeView->setModel(sceneModel);
   d->SubjectHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
   sceneModel->setIDColumn(-1);
   sceneModel->setHeaderData(0, Qt::Horizontal, "Node");
