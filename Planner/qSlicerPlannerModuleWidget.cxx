@@ -1529,8 +1529,6 @@ void qSlicerPlannerModuleWidget::setup()
   sceneModel->setHeaderData(3, Qt::Horizontal, "Cut");
   sceneModel->setBendButtonColumn(4);
   sceneModel->setHeaderData(4, Qt::Horizontal, "Bend");
-  // use lazy update instead of responding to scene import end event
-  sceneModel->setLazyUpdate(true);
 
 
   d->SubjectHierarchyTreeView->setHeaderHidden(false);
