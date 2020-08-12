@@ -1707,7 +1707,7 @@ void qSlicerPlannerModuleWidget
       // So we wait for the sceneUpdated() signal and then do the update.
       d->StagedHierarchyNode = hNode;
       this->connect(
-        d->SubjectHierarchyTreeView->sceneModel(), SIGNAL(sceneUpdated()),
+        d->SubjectHierarchyTreeView->model(), SIGNAL(sceneUpdated()),
         this, SLOT(onSceneUpdated()));
     }
     else
@@ -2534,7 +2534,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     }
     
     QModelIndex sourceIndex = d->SubjectHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
-    vtkMRMLNode* node = d->SubjectHierarchyTreeView->sceneModel()->mrmlNodeFromIndex(sourceIndex);
+    vtkMRMLNode* node = d->SubjectHierarchyTreeView->model()->mrmlNodeFromIndex(sourceIndex);
 
     if (sourceIndex.column() == 5)
     {
