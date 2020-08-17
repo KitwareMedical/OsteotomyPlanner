@@ -60,6 +60,7 @@
 #include "vtkMRMLMarkupsDisplayNode.h"
 #include "vtkMRMLMarkupsPlaneNode.h"
 #include "vtkMRMLModelHierarchyNode.h"
+#include "vtkMRMLSubjectHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
 #include "vtkMRMLTransformDisplayNode.h"
@@ -1371,7 +1372,8 @@ void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
 
     if(childModel)
     {
-      this->sceneModel()->setTransformVisibility(childModel, false);
+      vtkIdType childModelID = this->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(childModel);
+      this->sceneModel()->setTransformVisibility(childModelID, false);
     }
   }
 }
@@ -1786,11 +1788,13 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ModelHierarchyNodeComboBox->setEnabled(false);
     d->SetPreOp->setEnabled(true);    
   }
+
+  vtkIdType HierarchyNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->HierarchyNode);
   
   // Inputs
   d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
   d->SubjectHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
-  d->SubjectHierarchyTreeView->setRootNode(d->HierarchyNode);
+  d->SubjectHierarchyTreeView->setRootItem(HierarchyNodeID);
   d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyNode);
   d->SubjectHierarchyTreeView->expandAll();
 
@@ -2012,7 +2016,8 @@ void qSlicerPlannerModuleWidget::previewCutButtonClicked()
 
   }
   this->updateWidgetFromMRML();
-  d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, true);
+  vtkIdType CurrentCutNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->CurrentCutNode);
+  d->sceneModel()->setPlaneVisibility(CurrentCutNodeID, true);
 }
 
 //-----------------------------------------------------------------------------
@@ -2041,7 +2046,8 @@ void qSlicerPlannerModuleWidget::cancelCutButtonClicked()
   d->cancelCut(this->mrmlScene());
   d->cuttingActive = false;
   d->ActionInProgress.fill("");
-  d->sceneModel()->setPlaneVisibility(d->CurrentCutNode, false);
+  vtkIdType CurrentCutNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->CurrentCutNode);
+  d->sceneModel()->setPlaneVisibility(CurrentCutNodeID, false);
   this->updateWidgetFromMRML();
 }
 
@@ -2535,7 +2541,8 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
     }
     
     QModelIndex sourceIndex = d->SubjectHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
-    vtkMRMLNode* node = d->SubjectHierarchyTreeView->model()->mrmlNodeFromIndex(sourceIndex);
+    vtkIdType itemID = d->SubjectHierarchyTreeView->model()->subjectHierarchyItemFromIndex(sourceIndex);
+    vtkMRMLNode* node = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemDataNode(itemID);
 
     if (sourceIndex.column() == 5)
     {
