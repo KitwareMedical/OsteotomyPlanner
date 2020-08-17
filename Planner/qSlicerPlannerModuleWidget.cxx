@@ -96,6 +96,7 @@
 
 // Self
 #include "qMRMLPlannerModelHierarchyModel.h"
+#include "qMRMLSortFilterSubjectHierarchyProxyModel.h"
 #include "vtkSlicerPlannerLogic.h"
 #include "ButtonItemDelegate.h"
 

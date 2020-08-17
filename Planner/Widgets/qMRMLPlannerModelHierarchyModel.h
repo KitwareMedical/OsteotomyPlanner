@@ -26,7 +26,6 @@
 
 // MRMLWidgets includes
 #include "qMRMLSubjectHierarchyModel.h"
-#include "qMRMLSortFilterSubjectHierarchyProxyModel.h"
 class qMRMLPlannerModelHierarchyModelPrivate;
 
 
