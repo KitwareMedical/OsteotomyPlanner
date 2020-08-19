@@ -65,12 +65,12 @@ class PlannerTestingTest(ScriptedLoadableModuleTest):
     path = os.path.join(scriptedModulesPath, 'Resources', 'Testing', 'ModelHierachyScene.mrb')
     slicer.util.loadScene(path)
 
-    collection = slicer.mrmlScene.GetNodesByClass('vtkMRMLModelHierarchyNode')
+    collection = slicer.mrmlScene.GetNodesByClass('vtkMRMLSubjectHierarchyNode')
     self.assertEquals(collection.GetNumberOfItems(), numberOfModelHierarchies)
 
     legsModel = collection.GetItemAsObject(numberOfModelHierarchies - 1)
     self.assertIsNotNone(legsModel)
-    self.assertIs(legsModel, slicer.vtkMRMLModelHierarchyNode)
+    self.assertIs(legsModel, slicer.vtkMRMLSubjectHierarchyNode)
     return legsModel
 
   def runTest(self):
@@ -82,8 +82,8 @@ class PlannerTestingTest(ScriptedLoadableModuleTest):
   def test_ModuleHierachyTreeView(self):
     """ Test the module hierachy tree view
     """
-    modelHierarchyTreeView = self.widget('ModelHierarchyTreeView')
-    modelHierarchyComboBox = self.widget('ModelHierarchyNodeComboBox')
+    modelHierarchyTreeView = self.widget('SubjectHierarchyTreeView')
+    modelHierarchyComboBox = self.widget('SubjectHierarchyNodeComboBox')
 
     # Test base state
     self.assertIsNone(modelHierarchyComboBox.GetCurrentNode())
