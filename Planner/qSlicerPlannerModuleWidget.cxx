@@ -127,7 +127,7 @@ public:
   vtkMRMLLinearTransformNode* getTransformNode(
     vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
   void removeTransformNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
-  void removeTransforms(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
+  void removeTransforms(vtkMRMLScene* scene, vtkIdType hierarchyID);
 
   void createPlanesIfNecessary(
     vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
@@ -704,22 +704,20 @@ void qSlicerPlannerModuleWidgetPrivate::fireDeleteChildrenWarning() const
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::removeTransforms(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
+::removeTransforms(vtkMRMLScene* scene, vtkIdType hierarchyID)
 {
-  if (!hierarchy)
-  {
-    return;
-  }
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
 
-  this->removeTransformNode(scene, hierarchy);
+  this->removeTransformNode(scene, hierarchyNode);
 
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  hierarchy->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  shNode->GetItemChildren(hierarchyID, children, true);
   for (it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(shNode->GetItemDataNode(*it));
     if (childModel)
     {
       this->removeTransformNode(scene, childModel);
