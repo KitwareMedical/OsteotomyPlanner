@@ -164,7 +164,7 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 
 //----------------------------------------------------------------------------
 //Create reference model from current hierarchy state
-vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLSubjectHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkIdType hierarchyID)
 {
   if(this->SkullWrappedPreOP)
   {
@@ -172,12 +172,16 @@ vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOP
     this->SkullWrappedPreOP = NULL;
   }
 
+  vtkMRMLScene* scene = this->GetMRMLScene();
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
+
   std::string name;
-  name = HierarchyNode->GetName();
+  name = hierarchyNode->GetName();
   name += " - Merged";
-  this->TempMerged = this->mergeModel(HierarchyNode, name);
+  this->TempMerged = this->mergeModel(hierarchyID, name);
   this->TempMerged->GetDisplayNode()->SetVisibility(0);
-  name = HierarchyNode->GetName();
+  name = hierarchyNode->GetName();
   name += " - Wrapped";
   return this->wrapModel(this->TempMerged, name, vtkSlicerPlannerLogic::PreOP);
 }

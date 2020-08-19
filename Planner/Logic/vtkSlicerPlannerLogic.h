@@ -67,7 +67,7 @@ public:
   void clearModelsAndData();
 
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createPreOPModels(vtkMRMLSubjectHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createPreOPModels(vtkIdType hierarchyID);
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> createHealthyBrainModel(vtkMRMLModelNode* brain);
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> createBoneTemplateModel(vtkMRMLModelNode* boneTemplate);
   double getPreOPICV();
