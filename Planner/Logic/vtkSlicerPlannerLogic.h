@@ -117,7 +117,7 @@ private:
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
-  vtkMRMLModelNode* mergeModel(vtkMRMLSubjectHierarchyNode* HierarchyNode, std::string name);
+  vtkMRMLModelNode* mergeModel(vtkIdType hierarchyID, std::string name);
   void generateSourcePoints();
   vtkVector3d projectToModel(vtkVector3d point);
   vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);  
