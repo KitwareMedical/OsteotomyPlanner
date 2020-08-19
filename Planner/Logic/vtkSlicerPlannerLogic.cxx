@@ -163,7 +163,7 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 }
 
 //----------------------------------------------------------------------------
-//Create reference model form current hierarhcy state
+//Create reference model from current hierarchy state
 vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLSubjectHierarchyNode* HierarchyNode)
 {
   if(this->SkullWrappedPreOP)
