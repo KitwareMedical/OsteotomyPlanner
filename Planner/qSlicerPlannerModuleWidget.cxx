@@ -121,7 +121,7 @@ public:
   void tagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
   void untagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
   void createTransformsIfNecessary(
-    vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
+    vtkMRMLScene* scene, vtkIdType hierarchyID);
   vtkMRMLLinearTransformNode* createTransformNode(
     vtkMRMLScene* scene, vtkMRMLNode* refNode);
   vtkMRMLLinearTransformNode* getTransformNode(
@@ -728,26 +728,24 @@ void qSlicerPlannerModuleWidgetPrivate
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::createTransformsIfNecessary(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
+::createTransformsIfNecessary(vtkMRMLScene* scene, vtkIdType hierarchyID)
 {
-  if(!hierarchy)
-  {
-    return;
-  }
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
 
-  vtkMRMLLinearTransformNode* transform = this->getTransformNode(scene, hierarchy);
+  vtkMRMLLinearTransformNode* transform = this->getTransformNode(scene, hierarchyNode);
   if(!transform)
   {
-    transform = this->createTransformNode(scene, hierarchy);
+    transform = this->createTransformNode(scene, hierarchyNode);
   }
 
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  hierarchy->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  shNode->GetItemChildren(hierarchyID, children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(shNode->GetItemDataNode(*it));
     if(childModel)
     {
       vtkMRMLLinearTransformNode* childTransform = this->getTransformNode(scene, childModel);
