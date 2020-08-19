@@ -28,7 +28,7 @@
 // MRML includes
 #include <vtkMRMLScene.h>
 #include <vtkMRMLHierarchyNode.h>
-#include <vtkMRMLModelHierarchyNode.h>
+#include <vtkMRMLSubjectHierarchyNode.h>
 #include <vtkMRMLModelStorageNode.h>
 #include <vtkMRMLModelDisplayNode.h>
 
@@ -164,7 +164,7 @@ void vtkSlicerPlannerLogic::setWrapperLogic(vtkSlicerCLIModuleLogic* logic)
 
 //----------------------------------------------------------------------------
 //Create reference model form current hierarhcy state
-vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode> vtkSlicerPlannerLogic::createPreOPModels(vtkMRMLSubjectHierarchyNode* HierarchyNode)
 {
   if(this->SkullWrappedPreOP)
   {
@@ -196,7 +196,7 @@ double vtkSlicerPlannerLogic::getPreOPICV()
 
 //----------------------------------------------------------------------------
 //Create wrapped model from current hierarchy
-vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLSubjectHierarchyNode* HierarchyNode)
 {
   if(this->CurrentModel)
   {
@@ -280,7 +280,7 @@ double vtkSlicerPlannerLogic::getTemplateICV()
 
 //----------------------------------------------------------------------------
 //Merge hierarchy into a single model
-vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name)
+vtkMRMLModelNode* vtkSlicerPlannerLogic::mergeModel(vtkMRMLSubjectHierarchyNode* HierarchyNode, std::string name)
 {
 
   vtkNew<vtkMRMLModelNode> mergedModel;
@@ -401,7 +401,7 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
 
 //----------------------------------------------------------------------------
 //Fill table node with metrics
-void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable)
+void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLSubjectHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable)
 {
   double preOpVolume;
   double currentVolume;

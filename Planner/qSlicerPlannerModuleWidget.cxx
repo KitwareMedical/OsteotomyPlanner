@@ -59,7 +59,6 @@
 #include "vtkMRMLLinearTransformNode.h"
 #include "vtkMRMLMarkupsDisplayNode.h"
 #include "vtkMRMLMarkupsPlaneNode.h"
-#include "vtkMRMLModelHierarchyNode.h"
 #include "vtkMRMLSubjectHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
@@ -119,21 +118,21 @@ public:
   qSlicerPlannerModuleWidgetPrivate();
   void fireDeleteChildrenWarning() const;
 
-  void tagModels(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
-  void untagModels(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+  void tagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
+  void untagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
   void createTransformsIfNecessary(
-    vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+    vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
   vtkMRMLLinearTransformNode* createTransformNode(
     vtkMRMLScene* scene, vtkMRMLNode* refNode);
   vtkMRMLLinearTransformNode* getTransformNode(
     vtkMRMLScene* scene, vtkMRMLNode* refNode) const;
   void removeTransformNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
-  void removeTransforms(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+  void removeTransforms(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
 
   void createPlanesIfNecessary(
-    vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+    vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
   void updatePlanesFromModel(vtkMRMLScene* scene, vtkMRMLModelNode*) const;
-  void removePlanes(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* refNode);
+  void removePlanes(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* refNode);
 
   vtkMRMLMarkupsPlaneNode* createPlaneNode(vtkMRMLScene* scene, vtkMRMLNode* refNode);
   void removePlaneNode(vtkMRMLScene* scene, vtkMRMLNode* nodeRef);
@@ -161,8 +160,8 @@ public:
   void hideTransforms();
 
   //Cutting Variables
-  vtkWeakPointer<vtkMRMLModelHierarchyNode> HierarchyNode;
-  vtkWeakPointer<vtkMRMLModelHierarchyNode> StagedHierarchyNode;
+  vtkWeakPointer<vtkMRMLSubjectHierarchyNode> HierarchyNode;
+  vtkWeakPointer<vtkMRMLSubjectHierarchyNode> StagedHierarchyNode;
   QStringList HideChildNodeTypes;
   vtkWeakPointer<vtkMRMLNode> TemplateReferenceNode;
   vtkWeakPointer<vtkMRMLNode> CurrentCutNode;
@@ -705,7 +704,7 @@ void qSlicerPlannerModuleWidgetPrivate::fireDeleteChildrenWarning() const
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::removeTransforms(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+::removeTransforms(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if (!hierarchy)
   {
@@ -731,7 +730,7 @@ void qSlicerPlannerModuleWidgetPrivate
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::createTransformsIfNecessary(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+::createTransformsIfNecessary(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if(!hierarchy)
   {
@@ -767,7 +766,7 @@ void qSlicerPlannerModuleWidgetPrivate
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::tagModels(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+::tagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if (!hierarchy)
   {
@@ -809,7 +808,7 @@ void qSlicerPlannerModuleWidgetPrivate
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate
-::untagModels(vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+::untagModels(vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if (!hierarchy)
   {
@@ -940,7 +939,7 @@ void qSlicerPlannerModuleWidgetPrivate
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
-  vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+  vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if(!hierarchy)
   {
@@ -972,7 +971,7 @@ void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidgetPrivate::removePlanes(
-  vtkMRMLScene* scene, vtkMRMLModelHierarchyNode* hierarchy)
+  vtkMRMLScene* scene, vtkMRMLSubjectHierarchyNode* hierarchy)
 {
   if (!hierarchy)
   {
@@ -1178,8 +1177,8 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
                    splitNode2, scene);
 
   //add to hierarchy
-  vtkNew<vtkMRMLModelHierarchyNode> splitNodeH1;
-  vtkNew<vtkMRMLModelHierarchyNode> splitNodeH2;
+  vtkNew<vtkMRMLSubjectHierarchyNode> splitNodeH1;
+  vtkNew<vtkMRMLSubjectHierarchyNode> splitNodeH2;
   splitNodeH1->SetHideFromEditors(1);
   splitNodeH2->SetHideFromEditors(1);
   scene->AddNode(splitNodeH1.GetPointer());
@@ -1227,7 +1226,7 @@ void qSlicerPlannerModuleWidgetPrivate::cancelCut(vtkMRMLScene* scene)
 //Delete model and associated nodes from scene
 void qSlicerPlannerModuleWidgetPrivate::deleteModel(vtkMRMLModelNode* node, vtkMRMLScene* scene)
 {
-  vtkMRMLModelHierarchyNode* hnode = vtkMRMLModelHierarchyNode::SafeDownCast(
+  vtkMRMLSubjectHierarchyNode* hnode = vtkMRMLSubjectHierarchyNode::SafeDownCast(
                                        vtkMRMLHierarchyNode::GetAssociatedHierarchyNode(node->GetScene(), node->GetID()));
 
   if(hnode)
@@ -1567,7 +1566,7 @@ void qSlicerPlannerModuleWidget::setup()
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
-  d->ModelHierarchyNodeComboBox->setNoneEnabled(true);
+  d->SubjectHierarchyNodeComboBox->setNoneEnabled(true);
   
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
@@ -1593,10 +1592,10 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
   this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
   this->connect(
-    d->ModelHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    d->SubjectHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
   this->connect(
-    d->ModelHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
+    d->SubjectHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
     this, SLOT(onCurrentNodeAboutToBeRemoved(vtkMRMLNode*)));
 
   this->connect(
@@ -1663,7 +1662,7 @@ void qSlicerPlannerModuleWidget::setup()
 void qSlicerPlannerModuleWidget::setCurrentNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
-  vtkMRMLModelHierarchyNode* hNode = vtkMRMLModelHierarchyNode::SafeDownCast(node);
+  vtkMRMLSubjectHierarchyNode* hNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
   d->HierarchyNode = hNode;
   this->updateWidgetFromMRML();
 }
@@ -1692,8 +1691,8 @@ void qSlicerPlannerModuleWidget
 {
   Q_D(qSlicerPlannerModuleWidget);
   Q_UNUSED(scene);
-  vtkMRMLModelHierarchyNode* hNode =
-    vtkMRMLModelHierarchyNode::SafeDownCast(node);
+  vtkMRMLSubjectHierarchyNode* hNode =
+    vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
   if(!hNode || hNode->GetHideFromEditors())
   {
     return;
@@ -1757,8 +1756,8 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
 void qSlicerPlannerModuleWidget::onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
-  vtkMRMLModelHierarchyNode* hierarchy =
-    vtkMRMLModelHierarchyNode::SafeDownCast(node);
+  vtkMRMLSubjectHierarchyNode* hierarchy =
+    vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
   if(hierarchy && hierarchy == d->HierarchyNode)
   {
     d->fireDeleteChildrenWarning();
@@ -1785,14 +1784,14 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
-    d->ModelHierarchyNodeComboBox->setEnabled(false);
+    d->SubjectHierarchyNodeComboBox->setEnabled(false);
     d->SetPreOp->setEnabled(true);    
   }
 
   vtkIdType HierarchyNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->HierarchyNode);
   
   // Inputs
-  d->ModelHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
+  d->SubjectHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
   d->SubjectHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
   d->SubjectHierarchyTreeView->setRootItem(HierarchyNodeID);
   d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyNode);
@@ -1907,7 +1906,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
-    d->ModelHierarchyNodeComboBox->setEnabled(true);
+    d->SubjectHierarchyNodeComboBox->setEnabled(true);
     d->SubjectHierarchyTreeView->setEnabled(false);
     d->BendingMenu->setVisible(false);
     d->CuttingMenu->setVisible(false);
@@ -2520,8 +2519,8 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   }
 
   //Clear out hierarchy
-  vtkMRMLModelHierarchyNode* tempH = d->HierarchyNode;
-  d->ModelHierarchyNodeComboBox->setCurrentNode(NULL);
+  vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyNode;
+  d->SubjectHierarchyNodeComboBox->setCurrentNode(NULL);
   d->HierarchyNode = NULL;
 
   d->removePlanes(this->mrmlScene(), tempH);

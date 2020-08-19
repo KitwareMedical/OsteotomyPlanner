@@ -161,7 +161,7 @@ void qMRMLPlannerModelHierarchyModel::observeNode(vtkMRMLNode* node)
   // this->Superclass::observeNode(node);
   Q_D(const qMRMLPlannerModelHierarchyModel);
 
-  if(node->IsA("vtkMRMLModelHierarchyNode") || node->IsA("vtkMRMLModelNode"))
+  if(node->IsA("vtkMRMLSubjectHierarchyNode") || node->IsA("vtkMRMLModelNode"))
   {
     qvtkConnect(node, vtkMRMLNode::ReferenceAddedEvent,
                 this, SLOT(onReferenceChangedEvent(vtkObject*)));

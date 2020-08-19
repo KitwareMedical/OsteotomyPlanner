@@ -67,16 +67,16 @@ public:
   void clearModelsAndData();
 
   void setWrapperLogic(vtkSlicerCLIModuleLogic* logic);
-  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createPreOPModels(vtkMRMLModelHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createPreOPModels(vtkMRMLSubjectHierarchyNode* HierarchyNode);
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> createHealthyBrainModel(vtkMRMLModelNode* brain);
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> createBoneTemplateModel(vtkMRMLModelNode* boneTemplate);
   double getPreOPICV();
   double getHealthyBrainICV();
   double getCurrentICV();
   double getTemplateICV();
-  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkMRMLModelHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkMRMLSubjectHierarchyNode* HierarchyNode);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
-  void fillMetricsTable(vtkMRMLModelHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
+  void fillMetricsTable(vtkMRMLSubjectHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBoneTemplateModel(){return this->BoneTemplate;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedPreOpModel() { return this->SkullWrappedPreOP; }
@@ -117,7 +117,7 @@ private:
   vtkSlicerPlannerLogic(const vtkSlicerPlannerLogic&); // Not implemented
   void operator=(const vtkSlicerPlannerLogic&); // Not implemented
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> wrapModel(vtkMRMLModelNode* model, std::string Name, int dest);
-  vtkMRMLModelNode* mergeModel(vtkMRMLModelHierarchyNode* HierarchyNode, std::string name);
+  vtkMRMLModelNode* mergeModel(vtkMRMLSubjectHierarchyNode* HierarchyNode, std::string name);
   void generateSourcePoints();
   vtkVector3d projectToModel(vtkVector3d point);
   vtkVector3d projectToModel(vtkVector3d point, vtkPlane* plane);  
