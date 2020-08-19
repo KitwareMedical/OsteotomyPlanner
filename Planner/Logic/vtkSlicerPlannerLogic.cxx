@@ -200,19 +200,24 @@ double vtkSlicerPlannerLogic::getPreOPICV()
 
 //----------------------------------------------------------------------------
 //Create wrapped model from current hierarchy
-vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurrentModel(vtkMRMLSubjectHierarchyNode* HierarchyNode)
+vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurrentModel(vtkIdType hierarchyID)
 {
   if(this->CurrentModel)
   {
     this->GetMRMLScene()->RemoveNode(this->CurrentModel);
     this->CurrentModel = NULL;
   }
+
+  vtkMRMLScene* scene = this->GetMRMLScene();
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
+
   std::string name;
-  name = HierarchyNode->GetName();
+  name = hierarchyNode->GetName();
   name += " - Temp Merge";
-  this->TempMerged = this->mergeModel(HierarchyNode, name);
+  this->TempMerged = this->mergeModel(hierarchyID, name);
   this->TempMerged->GetDisplayNode()->SetVisibility(0);
-  name = HierarchyNode->GetName();
+  name = hierarchyNode->GetName();
   name += " - Current Wrapped";
   return this->wrapModel(this->TempMerged, name, vtkSlicerPlannerLogic::Current);
 }

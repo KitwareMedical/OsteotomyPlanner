@@ -74,7 +74,7 @@ public:
   double getHealthyBrainICV();
   double getCurrentICV();
   double getTemplateICV();
-  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkMRMLSubjectHierarchyNode* HierarchyNode);
+  vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkIdType hierarchyID);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
   void fillMetricsTable(vtkMRMLSubjectHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
