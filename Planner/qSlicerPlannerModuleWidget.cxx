@@ -1275,13 +1275,13 @@ void qSlicerPlannerModuleWidgetPrivate::applyRandomColor(vtkMRMLModelNode* model
 void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scene)
 {
 
-  std::vector<vtkMRMLHierarchyNode*> children;
-  this->HierarchyNode->GetAllChildrenNodes(children);
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1295,13 +1295,13 @@ void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scen
 //Set the scalar visibility on all models in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 {
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  this->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1337,13 +1337,13 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 //Hide all transforms in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
 {
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  this->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1358,13 +1358,13 @@ void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
 //Harden all transforms in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
 {
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  this->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1409,13 +1409,13 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
 //Harden all transforms in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
 {
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  this->HierarchyNode->GetAllChildrenNodes(children);
-  for (it = children.begin(); it != children.end(); ++it)
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
 
     if (childModel)
     {
@@ -2183,9 +2183,9 @@ void qSlicerPlannerModuleWidget::onComputeButton()
 
   if(d->HierarchyNode)
   {
-    std::vector<vtkMRMLHierarchyNode*> children;
+    std::vector<vtkIdType> children;
 
-    d->HierarchyNode->GetAllChildrenNodes(children);
+    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
     if(children.size() > 0)
     {
       d->hardenTransforms(false);
@@ -2204,9 +2204,9 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
   Q_D(qSlicerPlannerModuleWidget);
   if(d->HierarchyNode)
   {
-    std::vector<vtkMRMLHierarchyNode*> children;
+    std::vector<vtkIdType> children;
     qSlicerApplication::application()->layoutManager()->setLayout(vtkMRMLLayoutNode::SlicerLayoutOneUp3DView);
-    d->HierarchyNode->GetAllChildrenNodes(children);
+    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
     if(children.size() > 0)
     {
       d->SetPreOp->setEnabled(false);
@@ -2246,9 +2246,9 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   //begin wrap of current model
   if (d->HierarchyNode)
   {
-    std::vector<vtkMRMLHierarchyNode*> children;
+    std::vector<vtkIdType> children;
 
-    d->HierarchyNode->GetAllChildrenNodes(children);
+    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
     if (children.size() > 0)
     {
       d->hardenTransforms(false);
@@ -2354,9 +2354,9 @@ void qSlicerPlannerModuleWidget::finishDistance()
   
   
   std::cout << "Got Scalars" << std::endl;
-  std::vector<vtkMRMLHierarchyNode*> children;
-  std::vector<vtkMRMLHierarchyNode*>::const_iterator it;
-  d->HierarchyNode->GetAllChildrenNodes(children);
+  std::vector<vtkIdType> children;
+  std::vector<vtkIdType>::const_iterator it;
+  d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
   for (it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
