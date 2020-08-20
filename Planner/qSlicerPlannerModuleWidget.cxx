@@ -60,6 +60,7 @@
 #include "vtkMRMLMarkupsDisplayNode.h"
 #include "vtkMRMLMarkupsPlaneNode.h"
 #include "vtkMRMLSubjectHierarchyNode.h"
+#include "vtkMRMLHierarchyNode.h"
 #include "vtkMRMLModelNode.h"
 #include "vtkMRMLScene.h"
 #include "vtkMRMLTransformDisplayNode.h"
@@ -1201,12 +1202,12 @@ void qSlicerPlannerModuleWidgetPrivate::cancelCut(vtkMRMLScene* scene)
 //Delete model and associated nodes from scene
 void qSlicerPlannerModuleWidgetPrivate::deleteModel(vtkMRMLModelNode* node, vtkMRMLScene* scene)
 {
-  vtkMRMLSubjectHierarchyNode* hnode = vtkMRMLSubjectHierarchyNode::SafeDownCast(
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(
                                        vtkMRMLHierarchyNode::GetAssociatedHierarchyNode(node->GetScene(), node->GetID()));
 
-  if(hnode)
+  if(shNode)
   {
-    scene->RemoveNode(hnode);
+    scene->RemoveNode(shNode);
   }
   if(node)
   {
