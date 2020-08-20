@@ -1775,11 +1775,11 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   // Create all the transforms for the current hierarchy node
   //must do first so that there are available for the planes nodes
-  d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode);
+  d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
   // Create the plane node for the current hierarchy node
-  d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode);
+  d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
   //keeps hierarchy models out of other drop down boxes
-  d->tagModels(this->mrmlScene(), d->HierarchyNode);
+  d->tagModels(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
 
   
 
@@ -2190,7 +2190,7 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
-      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
@@ -2227,7 +2227,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
         d->recordActionInProgress();
       }
       
-      d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode);
+      d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
@@ -2253,7 +2253,7 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
-      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode);
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchDistance()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
       d->cliFreeze = true;
@@ -2360,7 +2360,7 @@ void qSlicerPlannerModuleWidget::finishDistance()
   for (it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast((*it)->GetAssociatedNode());
+      vtkMRMLModelNode::SafeDownCast(d->HierarchyNode->GetItemDataNode(*it));
 
     if (childModel)
     {
@@ -2499,9 +2499,9 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   d->SubjectHierarchyNodeComboBox->setCurrentNode(NULL);
   d->HierarchyNode = NULL;
 
-  d->removePlanes(this->mrmlScene(), tempH);
-  d->removeTransforms(this->mrmlScene(), tempH);
-  d->untagModels(this->mrmlScene(), tempH);
+  d->removePlanes(this->mrmlScene(), tempH->GetSceneItemID());
+  d->removeTransforms(this->mrmlScene(), tempH->GetSceneItemID());
+  d->untagModels(this->mrmlScene(), tempH->GetSceneItemID());
   this->updateWidgetFromMRML();
 }
 
