@@ -1790,11 +1790,11 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
   // Create all the transforms for the current hierarchy node
   //must do first so that there are available for the planes nodes
-  d->createTransformsIfNecessary(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
+  d->createTransformsIfNecessary(this->mrmlScene(), HierarchyNodeID);
   // Create the plane node for the current hierarchy node
-  d->createPlanesIfNecessary(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
+  d->createPlanesIfNecessary(this->mrmlScene(), HierarchyNodeID);
   //keeps hierarchy models out of other drop down boxes
-  d->tagModels(this->mrmlScene(), d->HierarchyNode->GetSceneItemID());
+  d->tagModels(this->mrmlScene(), HierarchyNodeID);
 
   
 
