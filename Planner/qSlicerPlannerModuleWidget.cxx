@@ -731,6 +731,11 @@ void qSlicerPlannerModuleWidgetPrivate
 void qSlicerPlannerModuleWidgetPrivate
 ::createTransformsIfNecessary(vtkMRMLScene* scene, vtkIdType hierarchyID)
 {
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == hierarchyID)
+  {
+    return;
+  }
+
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
   vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
 
@@ -765,6 +770,11 @@ void qSlicerPlannerModuleWidgetPrivate
 void qSlicerPlannerModuleWidgetPrivate
 ::tagModels(vtkMRMLScene* scene, vtkIdType hierarchyID)
 {
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == hierarchyID)
+  {
+    return;
+  }
+
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
 
   std::vector<vtkIdType> children;
@@ -928,6 +938,11 @@ void qSlicerPlannerModuleWidgetPrivate
 void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
   vtkMRMLScene* scene, vtkIdType hierarchyID)
 {
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == hierarchyID)
+  {
+    return;
+  }
+
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
 
   int count = 0;
