@@ -354,15 +354,18 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
     this->savingActive = false;
     return;
   }
+
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
   
   std::stringstream ssFilename;
-  ssFilename << this->HierarchyItem->GetName() << "_Instructions.txt";
+  ssFilename << shNode->GetItemName(this->HierarchyItem) << "_Instructions.txt";
   this->InstructionFile = saveDir.absoluteFilePath(ssFilename.str().c_str());
   QFile file(this->InstructionFile);
   if (file.open(QIODevice::ReadWrite))
   {
     QTextStream stream(&file);
-    stream << "Osteotomy Planner Instructions for case: " << this->HierarchyItem->GetName() << endl;
+    stream << "Osteotomy Planner Instructions for case: "
+           << shNode->GetItemName(this->HierarchyItem).c_str() << endl;
     file.close();
   }
 }
