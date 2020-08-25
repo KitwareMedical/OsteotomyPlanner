@@ -452,8 +452,8 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
 //Constructor
 qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 {
-  this->HierarchyItem = NULL;
-  this->StagedHierarchyItem = NULL;
+  this->HierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
+  this->StagedHierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
   this->HideChildNodeTypes =
     (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
   this->TemplateReferenceNode = NULL;
@@ -1124,7 +1124,7 @@ vtkMRMLNode* qSlicerPlannerModuleWidgetPrivate::openReferenceDialog() const
 //Create and display temporary cut
 void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
 {
-  if(!this->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == this->HierarchyItem)
   {
     this->cuttingActive = false;
     return;
@@ -1695,7 +1695,7 @@ void qSlicerPlannerModuleWidget
   // OnNodeAddedEvent is here to make sure that the combobox is populated
   // too after a node is added to the scene, because the tree view will be
   // and they need to match.
-  if(!d->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == d->HierarchyItem)
   {
     if(this->mrmlScene()->IsBatchProcessing())
     {
@@ -1739,10 +1739,10 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
 {
   Q_D(qSlicerPlannerModuleWidget);
   this->disconnect(this, SLOT(onSceneUpdated()));
-  if(!d->HierarchyItem && d->StagedHierarchyItem != d->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == d->HierarchyItem && d->StagedHierarchyItem != d->HierarchyItem)
   {
     this->setCurrentNode(d->StagedHierarchyItem);
-    d->StagedHierarchyItem = NULL;
+    d->StagedHierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
   }
 }
 
@@ -1773,8 +1773,8 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 {
   Q_D(qSlicerPlannerModuleWidget);
 
-  //activate for non-null hierarchy
-  if (d->HierarchyItem)
+  // activate for valid hierarchy item
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
@@ -1786,7 +1786,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   
   // Inputs
   d->SubjectHierarchyComboBox->setCurrentItem(d->HierarchyItem);
-  d->SubjectHierarchyTreeView->setEnabled(d->HierarchyItem != NULL);
+  d->SubjectHierarchyTreeView->setEnabled(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem);
   d->SubjectHierarchyTreeView->setRootItem(HierarchyNodeID);
   d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyItem);
   d->SubjectHierarchyTreeView->expandAll();
@@ -1895,7 +1895,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
 
   //Deactivate everything for null hierarchy or for pre op state not set
-  if (!d->HierarchyItem || !d->PreOpSet)
+  if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == d->HierarchyItem || !d->PreOpSet)
   {
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
@@ -1906,7 +1906,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->CuttingMenu->setVisible(false);
     d->ScreenshotMenu->setVisible(false);
   }
-  if (!d->HierarchyItem)
+  if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == d->HierarchyItem)
   {
     d->SaveDirectoryButton->setEnabled(false);
     d->EnableSavingCheckbox->setEnabled(false);
@@ -1968,7 +1968,7 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->TemplateReferenceOpacitySliderWidget->value());
 
   //set visibility on scalars
-  if(d->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
   }
@@ -2199,7 +2199,7 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     d->ModelMetrics->setMRMLTableNode(d->modelMetricsTable);
   }
 
-  if(d->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
 
@@ -2220,7 +2220,7 @@ void qSlicerPlannerModuleWidget::onComputeButton()
 void qSlicerPlannerModuleWidget::onSetPreOP()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  if(d->HierarchyItem)
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
     qSlicerApplication::application()->layoutManager()->setLayout(vtkMRMLLayoutNode::SlicerLayoutOneUp3DView);
@@ -2262,7 +2262,7 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   Q_D(qSlicerPlannerModuleWidget);
   
   //begin wrap of current model
-  if (d->HierarchyItem)
+  if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
 
@@ -2310,7 +2310,7 @@ void qSlicerPlannerModuleWidget::launchDistance()
     distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
   }
 
-  if (d->HierarchyItem && distanceReference)
+  if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem && distanceReference)
   {
     std::cout << "1" << std::endl;
     d->hardenTransforms(false);
@@ -2499,7 +2499,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
 
   
-  if (d->HierarchyItem)
+  if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     d->hideTransforms();
     d->hardenTransforms(false);
@@ -2514,8 +2514,8 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
 
   //Clear out hierarchy
   vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyItem;
-  d->SubjectHierarchyComboBox->setCurrentNode(NULL);
-  d->HierarchyItem = NULL;
+  d->SubjectHierarchyComboBox->setCurrentItem(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
+  d->HierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
 
   d->removePlanes(this->mrmlScene(), tempH->GetSceneItemID());
   d->removeTransforms(this->mrmlScene(), tempH->GetSceneItemID());
