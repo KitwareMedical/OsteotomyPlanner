@@ -161,8 +161,8 @@ public:
   void hideTransforms();
 
   //Cutting Variables
-  vtkWeakPointer<vtkMRMLSubjectHierarchyNode> HierarchyNode;
-  vtkWeakPointer<vtkMRMLSubjectHierarchyNode> StagedHierarchyNode;
+  vtkIdType HierarchyItem;
+  vtkIdType StagedHierarchyItem;
   QStringList HideChildNodeTypes;
   vtkWeakPointer<vtkMRMLNode> TemplateReferenceNode;
   vtkWeakPointer<vtkMRMLNode> CurrentCutNode;
@@ -356,13 +356,13 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
   }
   
   std::stringstream ssFilename;
-  ssFilename << this->HierarchyNode->GetName() << "_Instructions.txt";
+  ssFilename << this->HierarchyItem->GetName() << "_Instructions.txt";
   this->InstructionFile = saveDir.absoluteFilePath(ssFilename.str().c_str());
   QFile file(this->InstructionFile);
   if (file.open(QIODevice::ReadWrite))
   {
     QTextStream stream(&file);
-    stream << "Osteotomy Planner Instructions for case: " << this->HierarchyNode->GetName() << endl;
+    stream << "Osteotomy Planner Instructions for case: " << this->HierarchyItem->GetName() << endl;
     file.close();
   }
 }
@@ -392,9 +392,9 @@ std::string qSlicerPlannerModuleWidgetPrivate::generateInstruction(std::array<st
 std::string qSlicerPlannerModuleWidgetPrivate::generatePNGFilename(std::array<std::string, 4> action, int index)
 {
     std::stringstream ss;
-    if (this->HierarchyNode)
+    if (this->HierarchyItem)
     {
-        ss << this->HierarchyNode->GetName() << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
+        ss << this->HierarchyItem->GetName() << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
     }  
 
     return ss.str();
@@ -448,8 +448,8 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
 //Constructor
 qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
 {
-  this->HierarchyNode = NULL;
-  this->StagedHierarchyNode = NULL;
+  this->HierarchyItem = NULL;
+  this->StagedHierarchyItem = NULL;
   this->HideChildNodeTypes =
     (QStringList() << "vtkMRMLFiberBundleNode" << "vtkMRMLAnnotationNode");
   this->TemplateReferenceNode = NULL;
@@ -1120,7 +1120,7 @@ vtkMRMLNode* qSlicerPlannerModuleWidgetPrivate::openReferenceDialog() const
 //Create and display temporary cut
 void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
 {
-  if(!this->HierarchyNode)
+  if(!this->HierarchyItem)
   {
     this->cuttingActive = false;
     return;
@@ -1175,9 +1175,9 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
                    splitNode2, scene);
 
   //add to hierarchy
-  vtkIdType hierarchyID = this->HierarchyNode->GetSceneItemID();
-  this->HierarchyNode->CreateItem(hierarchyID, splitNode1);
-  this->HierarchyNode->CreateItem(hierarchyID, splitNode2);
+  vtkIdType hierarchyID = this->HierarchyItem->GetSceneItemID();
+  this->HierarchyItem->CreateItem(hierarchyID, splitNode1);
+  this->HierarchyItem->CreateItem(hierarchyID, splitNode2);
   this->StagedCutNode1 = splitNode1;
   this->StagedCutNode2 = splitNode2;
 
@@ -1292,11 +1292,11 @@ void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scen
 
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  this->HierarchyItem->GetItemChildren(this->HierarchyItem->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyItem->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1312,11 +1312,11 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  this->HierarchyItem->GetItemChildren(this->HierarchyItem->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyItem->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1354,11 +1354,11 @@ void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  this->HierarchyItem->GetItemChildren(this->HierarchyItem->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyItem->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1375,11 +1375,11 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  this->HierarchyItem->GetItemChildren(this->HierarchyItem->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyItem->GetItemDataNode(*it));
 
     if(childModel)
     {
@@ -1426,11 +1426,11 @@ void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  this->HierarchyNode->GetItemChildren(this->HierarchyNode->GetSceneItemID(), children, true);
+  this->HierarchyItem->GetItemChildren(this->HierarchyItem->GetSceneItemID(), children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(this->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(this->HierarchyItem->GetItemDataNode(*it));
 
     if (childModel)
     {
@@ -1653,7 +1653,7 @@ void qSlicerPlannerModuleWidget::setCurrentNode(vtkMRMLNode* node)
 {
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLSubjectHierarchyNode* hNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
-  d->HierarchyNode = hNode;
+  d->HierarchyItem = hNode;
   this->updateWidgetFromMRML();
 }
 
@@ -1691,13 +1691,13 @@ void qSlicerPlannerModuleWidget
   // OnNodeAddedEvent is here to make sure that the combobox is populated
   // too after a node is added to the scene, because the tree view will be
   // and they need to match.
-  if(!d->HierarchyNode)
+  if(!d->HierarchyItem)
   {
     if(this->mrmlScene()->IsBatchProcessing())
     {
       // Problem is, during a batch processing, the model is yet up-to-date.
       // So we wait for the sceneUpdated() signal and then do the update.
-      d->StagedHierarchyNode = hNode;
+      d->StagedHierarchyItem = hNode;
       this->connect(
         d->SubjectHierarchyTreeView->model(), SIGNAL(sceneUpdated()),
         this, SLOT(onSceneUpdated()));
@@ -1735,10 +1735,10 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
 {
   Q_D(qSlicerPlannerModuleWidget);
   this->disconnect(this, SLOT(onSceneUpdated()));
-  if(!d->HierarchyNode && d->StagedHierarchyNode != d->HierarchyNode)
+  if(!d->HierarchyItem && d->StagedHierarchyItem != d->HierarchyItem)
   {
-    this->setCurrentNode(d->StagedHierarchyNode);
-    d->StagedHierarchyNode = NULL;
+    this->setCurrentNode(d->StagedHierarchyItem);
+    d->StagedHierarchyItem = NULL;
   }
 }
 
@@ -1748,7 +1748,7 @@ void qSlicerPlannerModuleWidget::onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node
   Q_D(qSlicerPlannerModuleWidget);
   vtkMRMLSubjectHierarchyNode* hierarchy =
     vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
-  if(hierarchy && hierarchy == d->HierarchyNode)
+  if(hierarchy && hierarchy == d->HierarchyItem)
   {
     d->fireDeleteChildrenWarning();
     this->plannerLogic()->DeleteHierarchyChildren(hierarchy);
@@ -1770,7 +1770,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   Q_D(qSlicerPlannerModuleWidget);
 
   //activate for non-null hierarchy
-  if (d->HierarchyNode)
+  if (d->HierarchyItem)
   {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
@@ -1778,13 +1778,13 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->SetPreOp->setEnabled(true);    
   }
 
-  vtkIdType HierarchyNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->HierarchyNode);
+  vtkIdType HierarchyNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->HierarchyItem);
   
   // Inputs
-  d->SubjectHierarchyComboBox->setCurrentNode(d->HierarchyNode);
-  d->SubjectHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
+  d->SubjectHierarchyComboBox->setCurrentItem(d->HierarchyItem);
+  d->SubjectHierarchyTreeView->setEnabled(d->HierarchyItem != NULL);
   d->SubjectHierarchyTreeView->setRootItem(HierarchyNodeID);
-  d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyNode);
+  d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyItem);
   d->SubjectHierarchyTreeView->expandAll();
 
   // Create all the transforms for the current hierarchy node
@@ -1891,7 +1891,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
 
 
   //Deactivate everything for null hierarchy or for pre op state not set
-  if (!d->HierarchyNode || !d->PreOpSet)
+  if (!d->HierarchyItem || !d->PreOpSet)
   {
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
@@ -1902,7 +1902,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->CuttingMenu->setVisible(false);
     d->ScreenshotMenu->setVisible(false);
   }
-  if (!d->HierarchyNode)
+  if (!d->HierarchyItem)
   {
     d->SaveDirectoryButton->setEnabled(false);
     d->EnableSavingCheckbox->setEnabled(false);
@@ -1964,7 +1964,7 @@ void qSlicerPlannerModuleWidget::updateMRMLFromWidget()
     d->TemplateReferenceOpacitySliderWidget->value());
 
   //set visibility on scalars
-  if(d->HierarchyNode)
+  if(d->HierarchyItem)
   {
     d->setScalarVisibility(d->ShowsScalarsCheckbox->isChecked());
   }
@@ -2195,16 +2195,16 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     d->ModelMetrics->setMRMLTableNode(d->modelMetricsTable);
   }
 
-  if(d->HierarchyNode)
+  if(d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
 
-    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
+    d->HierarchyItem->GetItemChildren(d->HierarchyItem->GetSceneItemID(), children);
     if(children.size() > 0)
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
-      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode->GetSceneItemID());
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyItem->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
     }
@@ -2216,11 +2216,11 @@ void qSlicerPlannerModuleWidget::onComputeButton()
 void qSlicerPlannerModuleWidget::onSetPreOP()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  if(d->HierarchyNode)
+  if(d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
     qSlicerApplication::application()->layoutManager()->setLayout(vtkMRMLLayoutNode::SlicerLayoutOneUp3DView);
-    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
+    d->HierarchyItem->GetItemChildren(d->HierarchyItem->GetSceneItemID(), children);
     if(children.size() > 0)
     {
       d->SetPreOp->setEnabled(false);
@@ -2230,7 +2230,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
       {
         d->setUpSaveFiles();
       }
-      d->ActionInProgress[0] = d->HierarchyNode->GetName();
+      d->ActionInProgress[0] = d->HierarchyItem->GetName();
       d->ActionInProgress[1] = "Initial State";
       if (d->savingActive)
       {
@@ -2241,7 +2241,7 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
         d->recordActionInProgress();
       }
       
-      d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyNode->GetSceneItemID());
+      d->cmdNode = this->plannerLogic()->createPreOPModels(d->HierarchyItem->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(finishWrap()));
 
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
@@ -2258,16 +2258,16 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   Q_D(qSlicerPlannerModuleWidget);
   
   //begin wrap of current model
-  if (d->HierarchyNode)
+  if (d->HierarchyItem)
   {
     std::vector<vtkIdType> children;
 
-    d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
+    d->HierarchyItem->GetItemChildren(d->HierarchyItem->GetSceneItemID(), children);
     if (children.size() > 0)
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
-      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyNode->GetSceneItemID());
+      d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyItem->GetSceneItemID());
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchDistance()));
       d->MetricsProgress->setCommandLineModuleNode(d->cmdNode);
       d->cliFreeze = true;
@@ -2306,7 +2306,7 @@ void qSlicerPlannerModuleWidget::launchDistance()
     distanceReference = this->plannerLogic()->getWrappedBoneTemplateModel();
   }
 
-  if (d->HierarchyNode && distanceReference)
+  if (d->HierarchyItem && distanceReference)
   {
     std::cout << "1" << std::endl;
     d->hardenTransforms(false);
@@ -2370,11 +2370,11 @@ void qSlicerPlannerModuleWidget::finishDistance()
   std::cout << "Got Scalars" << std::endl;
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  d->HierarchyNode->GetItemChildren(d->HierarchyNode->GetSceneItemID(), children);
+  d->HierarchyItem->GetItemChildren(d->HierarchyItem->GetSceneItemID(), children);
   for (it = children.begin(); it != children.end(); ++it)
   {
     vtkMRMLModelNode* childModel =
-      vtkMRMLModelNode::SafeDownCast(d->HierarchyNode->GetItemDataNode(*it));
+      vtkMRMLModelNode::SafeDownCast(d->HierarchyItem->GetItemDataNode(*it));
 
     if (childModel)
     {
@@ -2483,7 +2483,7 @@ void qSlicerPlannerModuleWidget::launchMetrics()
   if(d->cmdNode->GetStatus() == vtkMRMLCommandLineModuleNode::Completed)
   {
     this->plannerLogic()->finishWrap(d->cmdNode);
-    this->plannerLogic()->fillMetricsTable(d->HierarchyNode, d->modelMetricsTable);
+    this->plannerLogic()->fillMetricsTable(d->HierarchyItem, d->modelMetricsTable);
     this->updateWidgetFromMRML();
   }
 }
@@ -2495,7 +2495,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   Q_D(qSlicerPlannerModuleWidget);
 
   
-  if (d->HierarchyNode)
+  if (d->HierarchyItem)
   {
     d->hideTransforms();
     d->hardenTransforms(false);
@@ -2509,9 +2509,9 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   }
 
   //Clear out hierarchy
-  vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyNode;
+  vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyItem;
   d->SubjectHierarchyComboBox->setCurrentNode(NULL);
-  d->HierarchyNode = NULL;
+  d->HierarchyItem = NULL;
 
   d->removePlanes(this->mrmlScene(), tempH->GetSceneItemID());
   d->removeTransforms(this->mrmlScene(), tempH->GetSceneItemID());
@@ -2624,7 +2624,7 @@ void qSlicerPlannerModuleWidget::saveDirectoryChanged(const QString &directory)
     const QDateTime now = QDateTime::currentDateTime();
     const QString timestamp = now.toString(QLatin1String("yyyyMMdd-hhmmsszzz"));
     std::stringstream ssDirectoryName;
-    ssDirectoryName << d->HierarchyNode->GetName() << "_" << timestamp.toStdString();
+    ssDirectoryName << d->HierarchyItem->GetName() << "_" << timestamp.toStdString();
     std::vector<std::string> pathComponents;
     QDir rootDir = QDir(d->RootDirectory);
     d->SaveDirectory = rootDir.absoluteFilePath(ssDirectoryName.str().c_str());
