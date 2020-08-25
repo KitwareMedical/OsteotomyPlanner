@@ -1557,7 +1557,6 @@ void qSlicerPlannerModuleWidget::setup()
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
-  d->SubjectHierarchyComboBox->setNoneEnabled(true);
   
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
