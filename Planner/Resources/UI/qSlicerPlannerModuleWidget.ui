@@ -37,7 +37,7 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="qMRMLNodeComboBox" name="SubjectHierarchyNodeComboBox">
+       <widget class="qMRMLSubjectHierarchyComboBox" name="SubjectHierarchyComboBox">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -55,11 +55,6 @@
           <width>212</width>
           <height>16777215</height>
          </size>
-        </property>
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLSubjectHierarchyNode</string>
-         </stringlist>
         </property>
         <property name="addEnabled">
          <bool>false</bool>
@@ -744,6 +739,11 @@
    <container>1</container>
   </customwidget>
   <customwidget>
+   <class>qMRMLSubjectHierarchyComboBox</class>
+   <extends>ctkComboBox</extends>
+   <header>qMRMLSubjectHierarchyComboBox.h</header>
+  </customwidget>
+  <customwidget>
    <class>qMRMLRangeWidget</class>
    <extends>ctkRangeWidget</extends>
    <header>qMRMLRangeWidget.h</header>
@@ -811,7 +811,7 @@
   <connection>
    <sender>qSlicerPlannerModuleWidget</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>SubjectHierarchyNodeComboBox</receiver>
+   <receiver>SubjectHierarchyComboBox</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
     <hint type="sourcelabel">

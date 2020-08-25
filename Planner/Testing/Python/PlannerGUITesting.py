@@ -83,7 +83,7 @@ class PlannerTestingTest(ScriptedLoadableModuleTest):
     """ Test the module hierachy tree view
     """
     modelHierarchyTreeView = self.widget('SubjectHierarchyTreeView')
-    modelHierarchyComboBox = self.widget('SubjectHierarchyNodeComboBox')
+    modelHierarchyComboBox = self.widget('SubjectHierarchyComboBox')
 
     # Test base state
     self.assertIsNone(modelHierarchyComboBox.GetCurrentNode())

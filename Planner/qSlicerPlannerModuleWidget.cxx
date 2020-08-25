@@ -1557,7 +1557,7 @@ void qSlicerPlannerModuleWidget::setup()
   QIcon loadIcon =
     qSlicerApplication::application()->style()->standardIcon(QStyle::SP_DialogOpenButton);
   d->TemplateReferenceOpenButton->setIcon(loadIcon);
-  d->SubjectHierarchyNodeComboBox->setNoneEnabled(true);
+  d->SubjectHierarchyComboBox->setNoneEnabled(true);
   
   qMRMLSortFilterProxyModel* filterModel4 = d->TemplateReferenceNodeComboBox->sortFilterProxyModel();
   filterModel4->addAttribute("vtkMRMLModelNode", "PlannerRole", "NonMember");
@@ -1583,10 +1583,10 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
   this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
   this->connect(
-    d->SubjectHierarchyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
+    d->SubjectHierarchyComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(setCurrentNode(vtkMRMLNode*)));
   this->connect(
-    d->SubjectHierarchyNodeComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
+    d->SubjectHierarchyComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
     this, SLOT(onCurrentNodeAboutToBeRemoved(vtkMRMLNode*)));
 
   this->connect(
@@ -1775,14 +1775,14 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   {    
     d->MetricsCollapsibleButton->setEnabled(true);
     d->FinishButton->setEnabled(true);
-    d->SubjectHierarchyNodeComboBox->setEnabled(false);
+    d->SubjectHierarchyComboBox->setEnabled(false);
     d->SetPreOp->setEnabled(true);    
   }
 
   vtkIdType HierarchyNodeID = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemByDataNode(d->HierarchyNode);
   
   // Inputs
-  d->SubjectHierarchyNodeComboBox->setCurrentNode(d->HierarchyNode);
+  d->SubjectHierarchyComboBox->setCurrentNode(d->HierarchyNode);
   d->SubjectHierarchyTreeView->setEnabled(d->HierarchyNode != NULL);
   d->SubjectHierarchyTreeView->setRootItem(HierarchyNodeID);
   d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyNode);
@@ -1897,7 +1897,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
     d->ReferencesCollapsibleButton->setEnabled(false);
     d->MetricsCollapsibleButton->setEnabled(false);
     d->FinishButton->setEnabled(false);
-    d->SubjectHierarchyNodeComboBox->setEnabled(true);
+    d->SubjectHierarchyComboBox->setEnabled(true);
     d->SubjectHierarchyTreeView->setEnabled(false);
     d->BendingMenu->setVisible(false);
     d->CuttingMenu->setVisible(false);
@@ -2511,7 +2511,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
 
   //Clear out hierarchy
   vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyNode;
-  d->SubjectHierarchyNodeComboBox->setCurrentNode(NULL);
+  d->SubjectHierarchyComboBox->setCurrentNode(NULL);
   d->HierarchyNode = NULL;
 
   d->removePlanes(this->mrmlScene(), tempH->GetSceneItemID());
