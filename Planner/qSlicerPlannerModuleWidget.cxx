@@ -395,9 +395,10 @@ std::string qSlicerPlannerModuleWidgetPrivate::generateInstruction(std::array<st
 std::string qSlicerPlannerModuleWidgetPrivate::generatePNGFilename(std::array<std::string, 4> action, int index)
 {
     std::stringstream ss;
-    if (this->HierarchyItem)
+    if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != this->HierarchyItem)
     {
-        ss << this->HierarchyItem->GetName() << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
+        vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+        ss << shNode->GetItemName(this->HierarchyItem) << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
     }  
 
     return ss.str();
