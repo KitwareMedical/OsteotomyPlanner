@@ -1179,9 +1179,9 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
                    splitNode2, scene);
 
   //add to hierarchy
-  vtkIdType hierarchyID = this->HierarchyItem->GetSceneItemID();
-  this->HierarchyItem->CreateItem(hierarchyID, splitNode1);
-  this->HierarchyItem->CreateItem(hierarchyID, splitNode2);
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  shNode->CreateItem(this->HierarchyItem, splitNode1);
+  shNode->CreateItem(this->HierarchyItem, splitNode2);
   this->StagedCutNode1 = splitNode1;
   this->StagedCutNode2 = splitNode2;
 
