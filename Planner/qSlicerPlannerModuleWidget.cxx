@@ -1774,7 +1774,7 @@ void qSlicerPlannerModuleWidget::updateWidgetFromMRML()
   d->SubjectHierarchyComboBox->setCurrentItem(d->HierarchyItem);
   d->SubjectHierarchyTreeView->setEnabled(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem);
   d->SubjectHierarchyTreeView->setRootItem(d->HierarchyItem);
-  d->SubjectHierarchyTreeView->setCurrentNode(d->HierarchyItem);
+  d->SubjectHierarchyTreeView->setCurrentItem(d->HierarchyItem);
   d->SubjectHierarchyTreeView->expandAll();
 
   // Create all the transforms for the current hierarchy node
