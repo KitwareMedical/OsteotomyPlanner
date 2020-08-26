@@ -51,7 +51,7 @@ public slots:
 
 protected slots:
   /// Tree view slots
-  void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
+  void onItemAddedEvent(vtkObject* subjectHierarchy, vtkIdType nodeID);
   void onNodeRemovedEvent(vtkObject* scene, vtkObject* node);
   void onSceneUpdated();
 

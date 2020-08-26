@@ -1667,9 +1667,11 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
 {
   Superclass::setMRMLScene(scene);
 
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+
   this->qvtkReconnect(
-    this->mrmlScene(), vtkMRMLScene::NodeAddedEvent,
-    this, SLOT(onNodeAddedEvent(vtkObject*, vtkObject*)));
+    shNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemAddedEvent,
+    this, SLOT(onItemAddedEvent(vtkObject*, vtkIdType)));
 
   this->qvtkReconnect(
     this->mrmlScene(), vtkMRMLScene::NodeRemovedEvent,
@@ -1682,13 +1684,13 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
 
 //-----------------------------------------------------------------------------
 void qSlicerPlannerModuleWidget
-::onNodeAddedEvent(vtkObject* scene, vtkObject* node)
+::onItemAddedEvent(vtkObject* subjectHierarchy, vtkIdType nodeID)
 {
   Q_D(qSlicerPlannerModuleWidget);
-  Q_UNUSED(scene);
-  vtkMRMLSubjectHierarchyNode* hNode =
-    vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
-  if(!hNode || hNode->GetHideFromEditors())
+  vtkMRMLSubjectHierarchyNode* shNode =
+    vtkMRMLSubjectHierarchyNode::SafeDownCast(subjectHierarchy);
+  if(!shNode->IsItemLevel(nodeID, vtkMRMLSubjectHierarchyConstants::GetSubjectHierarchyLevelFolder())
+     || shNode->GetItemDisplayVisibility(nodeID))
   {
     return;
   }
@@ -1702,7 +1704,7 @@ void qSlicerPlannerModuleWidget
     {
       // Problem is, during a batch processing, the model is yet up-to-date.
       // So we wait for the sceneUpdated() signal and then do the update.
-      d->StagedHierarchyItem = hNode;
+      d->StagedHierarchyItem = nodeID;
       this->connect(
         d->SubjectHierarchyTreeView->model(), SIGNAL(sceneUpdated()),
         this, SLOT(onSceneUpdated()));
@@ -1710,7 +1712,7 @@ void qSlicerPlannerModuleWidget
     else
     {
       // No problem, just do the update directly.
-      this->setCurrentNode(hNode);
+      this->setCurrentItem(nodeID);
     }
   }
 }
