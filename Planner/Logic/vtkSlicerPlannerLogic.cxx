@@ -412,13 +412,15 @@ void vtkSlicerPlannerLogic::finishWrap(vtkMRMLCommandLineModuleNode* cmdNode)
 
 //----------------------------------------------------------------------------
 //Fill table node with metrics
-void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLSubjectHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable)
+void vtkSlicerPlannerLogic::fillMetricsTable(vtkIdType hierarchyID, vtkMRMLTableNode* modelMetricsTable)
 {
   double preOpVolume;
   double currentVolume;
   double brainVolume;
   double templateVolume;
-  if(HierarchyNode)
+  vtkMRMLSubjectHierarchyNode* shNode =
+    vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->GetMRMLScene());
+  if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != hierarchyID)
   {
     preOpVolume = this->getPreOPICV();
     currentVolume = this->getCurrentICV();
@@ -426,10 +428,10 @@ void vtkSlicerPlannerLogic::fillMetricsTable(vtkMRMLSubjectHierarchyNode* Hierar
 
     modelMetricsTable->RemoveAllColumns();
     std::string modelTableName = "Model Metrics - ";
-    modelTableName += HierarchyNode->GetName();
+    modelTableName += shNode->GetItemName(hierarchyID);
     modelMetricsTable->SetName(modelTableName.c_str());
 
-    modelMetricsTable->AddColumn();    
+    modelMetricsTable->AddColumn();
     vtkAbstractArray* col2 = modelMetricsTable->AddColumn();
     col2->SetName("Bone Template");
     vtkAbstractArray* col3 = modelMetricsTable->AddColumn();

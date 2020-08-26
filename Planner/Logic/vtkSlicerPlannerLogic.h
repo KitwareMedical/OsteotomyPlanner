@@ -76,7 +76,7 @@ public:
   double getTemplateICV();
   vtkSmartPointer<vtkMRMLCommandLineModuleNode> createCurrentModel(vtkIdType hierarchyID);
   void finishWrap(vtkMRMLCommandLineModuleNode* cmdNode);
-  void fillMetricsTable(vtkMRMLSubjectHierarchyNode* HierarchyNode, vtkMRMLTableNode* modelMetricsTable);
+  void fillMetricsTable(vtkIdType hierarchyID, vtkMRMLTableNode* modelMetricsTable);
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBrainModel(){return this->HealthyBrain;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedBoneTemplateModel(){return this->BoneTemplate;}
   vtkSmartPointer<vtkMRMLModelNode> getWrappedPreOpModel() { return this->SkullWrappedPreOP; }
