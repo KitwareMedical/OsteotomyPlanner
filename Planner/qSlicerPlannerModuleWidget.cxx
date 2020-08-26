@@ -1742,7 +1742,7 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
   this->disconnect(this, SLOT(onSceneUpdated()));
   if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID == d->HierarchyItem && d->StagedHierarchyItem != d->HierarchyItem)
   {
-    this->setCurrentNode(d->StagedHierarchyItem);
+    this->setCurrentItem(d->StagedHierarchyItem);
     d->StagedHierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
   }
 }
