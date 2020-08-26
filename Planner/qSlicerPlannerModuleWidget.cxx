@@ -1591,11 +1591,8 @@ void qSlicerPlannerModuleWidget::setup()
   this->connect(d->SaveDirectoryButton, SIGNAL(directoryChanged(const QString &)), this, SLOT(saveDirectoryChanged(const QString &)));
   this->connect(sceneModel, SIGNAL(transformOn(vtkMRMLNode*)), this, SLOT(transformActivated(vtkMRMLNode*)));
   this->connect(
-    d->SubjectHierarchyComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
-    this, SLOT(setCurrentNode(vtkMRMLNode*)));
-  this->connect(
-    d->SubjectHierarchyComboBox, SIGNAL(nodeAboutToBeRemoved(vtkMRMLNode*)),
-    this, SLOT(onCurrentNodeAboutToBeRemoved(vtkMRMLNode*)));
+    d->SubjectHierarchyComboBox, SIGNAL(currentItemChanged(vtkIdType)),
+    this, SLOT(setCurrentItem(vtkIdType)));
 
   this->connect(
     d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
@@ -1658,11 +1655,10 @@ void qSlicerPlannerModuleWidget::setup()
 }
 
 //-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget::setCurrentNode(vtkMRMLNode* node)
+void qSlicerPlannerModuleWidget::setCurrentItem(vtkIdType item)
 {
   Q_D(qSlicerPlannerModuleWidget);
-  vtkMRMLSubjectHierarchyNode* hNode = vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
-  d->HierarchyItem = hNode;
+  d->HierarchyItem = item;
   this->updateWidgetFromMRML();
 }
 
@@ -1748,19 +1744,6 @@ void qSlicerPlannerModuleWidget::onSceneUpdated()
   {
     this->setCurrentNode(d->StagedHierarchyItem);
     d->StagedHierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
-  }
-}
-
-//-----------------------------------------------------------------------------
-void qSlicerPlannerModuleWidget::onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node)
-{
-  Q_D(qSlicerPlannerModuleWidget);
-  vtkMRMLSubjectHierarchyNode* hierarchy =
-    vtkMRMLSubjectHierarchyNode::SafeDownCast(node);
-  if(hierarchy && hierarchy == d->HierarchyItem)
-  {
-    d->fireDeleteChildrenWarning();
-    this->plannerLogic()->DeleteHierarchyChildren(hierarchy);
   }
 }
 

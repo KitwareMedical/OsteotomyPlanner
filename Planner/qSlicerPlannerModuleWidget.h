@@ -46,14 +46,13 @@ public:
   vtkSlicerPlannerLogic* plannerLogic() const;
 
 public slots:
-  void setCurrentNode(vtkMRMLNode* node);
+  void setCurrentItem(vtkIdType item);
   virtual void setMRMLScene(vtkMRMLScene* scene);
 
 protected slots:
   /// Tree view slots
   void onNodeAddedEvent(vtkObject* scene, vtkObject* node);
   void onNodeRemovedEvent(vtkObject* scene, vtkObject* node);
-  void onCurrentNodeAboutToBeRemoved(vtkMRMLNode* node);
   void onSceneUpdated();
 
   /// General widget slots
