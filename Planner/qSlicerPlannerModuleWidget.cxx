@@ -2505,13 +2505,13 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   }
 
   //Clear out hierarchy
-  vtkMRMLSubjectHierarchyNode* tempH = d->HierarchyItem;
+  vtkIdType tempHID = d->HierarchyItem;
   d->SubjectHierarchyComboBox->setCurrentItem(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID);
   d->HierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
 
-  d->removePlanes(this->mrmlScene(), tempH->GetSceneItemID());
-  d->removeTransforms(this->mrmlScene(), tempH->GetSceneItemID());
-  d->untagModels(this->mrmlScene(), tempH->GetSceneItemID());
+  d->removePlanes(this->mrmlScene(), tempHID);
+  d->removeTransforms(this->mrmlScene(), tempHID);
+  d->untagModels(this->mrmlScene(), tempHID);
   this->updateWidgetFromMRML();
 }
 
