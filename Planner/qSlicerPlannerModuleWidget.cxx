@@ -1519,6 +1519,11 @@ void qSlicerPlannerModuleWidget::setup()
     vtkSlicerCLIModuleLogic::SafeDownCast(wrapperModule->logic());
   this->plannerLogic()->setWrapperLogic(wrapperLogic);
 
+  d->SubjectHierarchyComboBox->setMRMLScene(d->scene);
+  QStringList allowedHierarchyItemTypes;
+  allowedHierarchyItemTypes << vtkMRMLSubjectHierarchyConstants::GetSubjectHierarchyLevelFolder();
+  d->SubjectHierarchyComboBox->setLevelFilter(allowedHierarchyItemTypes);
+
   d->SubjectHierarchyTreeView->setModel(sceneModel);
   d->SubjectHierarchyTreeView->setSelectionMode(QAbstractItemView::SingleSelection);
   sceneModel->setIDColumn(-1);
