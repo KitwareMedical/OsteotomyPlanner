@@ -2194,11 +2194,8 @@ void qSlicerPlannerModuleWidget::onComputeButton()
 
   if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
-    std::vector<vtkIdType> children;
-
     vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
-    shNode->GetItemChildren(d->HierarchyItem, children);
-    if(children.size() > 0)
+    if(shNode->GetNumberOfItemChildren(d->HierarchyItem) > 0)
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
@@ -2216,11 +2213,9 @@ void qSlicerPlannerModuleWidget::onSetPreOP()
   Q_D(qSlicerPlannerModuleWidget);
   if(vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
-    std::vector<vtkIdType> children;
     qSlicerApplication::application()->layoutManager()->setLayout(vtkMRMLLayoutNode::SlicerLayoutOneUp3DView);
     vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
-    shNode->GetItemChildren(d->HierarchyItem, children);
-    if(children.size() > 0)
+    if(shNode->GetNumberOfItemChildren(d->HierarchyItem) > 0)
     {
       d->SetPreOp->setEnabled(false);
       d->PreOpSet = true;
@@ -2259,11 +2254,8 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
   //begin wrap of current model
   if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
-    std::vector<vtkIdType> children;
-
     vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
-    shNode->GetItemChildren(d->HierarchyItem, children);
-    if (children.size() > 0)
+    if (shNode->GetNumberOfItemChildren(d->HierarchyItem) > 0)
     {
       d->hardenTransforms(false);
       std::cout << "Wrapping Current Model" << std::endl;
