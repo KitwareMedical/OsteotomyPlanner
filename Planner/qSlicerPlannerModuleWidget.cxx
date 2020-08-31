@@ -740,13 +740,6 @@ void qSlicerPlannerModuleWidgetPrivate
   }
 
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
-  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
-
-  vtkMRMLLinearTransformNode* transform = this->getTransformNode(scene, hierarchyNode);
-  if(!transform)
-  {
-    transform = this->createTransformNode(scene, hierarchyNode);
-  }
 
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
@@ -763,7 +756,6 @@ void qSlicerPlannerModuleWidgetPrivate
         childTransform = this->createTransformNode(scene, childModel);
         childModel->SetAndObserveTransformNodeID(childTransform->GetID());
       }
-      childTransform->SetAndObserveTransformNodeID(transform->GetID());
     }
   }
 
