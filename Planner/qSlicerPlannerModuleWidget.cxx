@@ -940,7 +940,6 @@ void qSlicerPlannerModuleWidgetPrivate::createPlanesIfNecessary(
 
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
 
-  int count = 0;
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
   std::vector<vtkMRMLModelNode*> models;
@@ -970,7 +969,6 @@ void qSlicerPlannerModuleWidgetPrivate::removePlanes(
 {
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
 
-  int count = 0;
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
   std::vector<vtkMRMLModelNode*> models;
