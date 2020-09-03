@@ -170,14 +170,13 @@ vtkSmartPointer<vtkMRMLCommandLineModuleNode>  vtkSlicerPlannerLogic::createCurr
 
   vtkMRMLScene* scene = this->GetMRMLScene();
   vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
-  vtkMRMLNode* hierarchyNode = shNode->GetItemDataNode(hierarchyID);
 
   std::string name;
-  name = hierarchyNode->GetName();
+  name = shNode->GetItemName(hierarchyID);
   name += " - Temp Merge";
   this->TempMerged = this->mergeModel(hierarchyID, name);
   this->TempMerged->GetDisplayNode()->SetVisibility(0);
-  name = hierarchyNode->GetName();
+  name = shNode->GetItemName(hierarchyID);
   name += " - Current Wrapped";
   return this->wrapModel(this->TempMerged, name, vtkSlicerPlannerLogic::Current);
 }
