@@ -155,7 +155,7 @@ public:
   void deleteModel(vtkMRMLModelNode* node, vtkMRMLScene* scene);
   void splitModel(vtkMRMLModelNode* inputNode, vtkMRMLModelNode* split1, vtkMRMLModelNode* split2, vtkMRMLScene* scene);
   void applyRandomColor(vtkMRMLModelNode* node);
-  void hardenTransforms(bool hardenLinearOnly);
+  void hardenTransforms(vtkMRMLScene* scene, bool hardenLinearOnly);
   void clearTransforms();
   void hideTransforms();
 
@@ -1120,7 +1120,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
   }
 
   this->hideTransforms();
-  this->hardenTransforms(false);
+  this->hardenTransforms(scene, false);
 
   //Create nodes
   vtkSmartPointer<vtkMRMLModelNode> splitNode1 = vtkSmartPointer<vtkMRMLModelNode>::New();
@@ -1368,11 +1368,13 @@ void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
 
 //-----------------------------------------------------------------------------
 //Harden all transforms in the current hierarchy
-void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(bool hardenLinearOnly)
+void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(vtkMRMLScene* scene, bool hardenLinearOnly)
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+
   shNode->GetItemChildren(this->HierarchyItem, children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
@@ -2106,7 +2108,7 @@ void qSlicerPlannerModuleWidget::initBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
   d->hideTransforms();
-  d->hardenTransforms(true);
+  d->hardenTransforms(this->mrmlScene(), true);
   d->computeAndSetSourcePoints(this->mrmlScene());
   d->bendingActive = true;
   this->updateWidgetFromMRML();
@@ -2138,7 +2140,7 @@ void qSlicerPlannerModuleWidget::finshBendClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
   
-  d->hardenTransforms(false);
+  d->hardenTransforms(this->mrmlScene(), false);
   d->BendMagnitude = 0;
   d->BendMagnitudeSlider->setValue(0);
   d->clearControlPoints(this->mrmlScene());
@@ -2187,7 +2189,7 @@ void qSlicerPlannerModuleWidget::onComputeButton()
     vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
     if(shNode->GetNumberOfItemChildren(d->HierarchyItem) > 0)
     {
-      d->hardenTransforms(false);
+      d->hardenTransforms(this->mrmlScene(), false);
       std::cout << "Wrapping Current Model" << std::endl;
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyItem);
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchMetrics()));
@@ -2247,7 +2249,7 @@ void qSlicerPlannerModuleWidget::computeScalarsClicked()
     vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->mrmlScene());
     if (shNode->GetNumberOfItemChildren(d->HierarchyItem) > 0)
     {
-      d->hardenTransforms(false);
+      d->hardenTransforms(this->mrmlScene(), false);
       std::cout << "Wrapping Current Model" << std::endl;
       d->cmdNode = this->plannerLogic()->createCurrentModel(d->HierarchyItem);
       qvtkReconnect(d->cmdNode, vtkMRMLCommandLineModuleNode::StatusModifiedEvent, this, SLOT(launchDistance()));
@@ -2291,7 +2293,7 @@ void qSlicerPlannerModuleWidget::launchDistance()
   if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem && distanceReference)
   {
     std::cout << "1" << std::endl;
-    d->hardenTransforms(false);
+    d->hardenTransforms(this->mrmlScene(), false);
     d->ComputeScalarsButton->setEnabled(false);
     //d->cliFreeze = true;
     std::cout << "2" << std::endl;
@@ -2400,7 +2402,7 @@ void qSlicerPlannerModuleWidget::finishDistance()
   distanceNode = NULL;
 
   d->hideTransforms();
-  d->hardenTransforms(false);
+  d->hardenTransforms(this->mrmlScene(), false);
   
   d->ComputeScalarsButton->setEnabled(true);
   d->ShowsScalarsCheckbox->setEnabled(true);
@@ -2481,7 +2483,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
     d->hideTransforms();
-    d->hardenTransforms(false);
+    d->hardenTransforms(this->mrmlScene(), false);
     d->clearControlPoints(this->mrmlScene());
     d->clearSavingData();
     this->plannerLogic()->clearModelsAndData();
@@ -2521,7 +2523,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         std::stringstream title;
         title << "Cutting model: " << node->GetName();
         d->CuttingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(false);        
+        d->hardenTransforms(this->mrmlScene(), false);
         this->updateCurrentCutNode(node);
         this->previewCutButtonClicked();
     }
@@ -2532,7 +2534,7 @@ void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
         d->ActionInProgress[1] = "Bend";
         title << "Bending model: " << node->GetName();
         d->BendingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(false);        
+        d->hardenTransforms(this->mrmlScene(), false);
         d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
         this->updateCurrentBendNode(node);
         d->MovingPointAButton->setEnabled(true);
@@ -2565,7 +2567,7 @@ void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
     return;
   }
   d->hideTransforms();
-  d->hardenTransforms(false);
+  d->hardenTransforms(this->mrmlScene(), false);
   d->moveActive = false;
   if (d->savingActive)
   {
