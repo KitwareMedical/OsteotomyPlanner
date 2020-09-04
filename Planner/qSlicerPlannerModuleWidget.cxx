@@ -114,8 +114,10 @@
 /// \ingroup Slicer_QtModules_ExtensionTemplate
 class qSlicerPlannerModuleWidgetPrivate: public Ui_qSlicerPlannerModuleWidget
 {
+  Q_DECLARE_PUBLIC(qSlicerPlannerModuleWidget);
 public:
-  qSlicerPlannerModuleWidgetPrivate();
+  qSlicerPlannerModuleWidgetPrivate(qSlicerPlannerModuleWidget *q);
+  qSlicerPlannerModuleWidget *q_ptr;
   void fireDeleteChildrenWarning() const;
 
   void tagModels(vtkMRMLScene* scene, vtkIdType hierarchyId);
@@ -338,6 +340,8 @@ void qSlicerPlannerModuleWidgetPrivate::writeOutActions()
 
 void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
 {
+  Q_Q(qSlicerPlannerModuleWidget);
+
   if (!this->savingActive)
   {
     return;
@@ -354,7 +358,8 @@ void qSlicerPlannerModuleWidgetPrivate::setUpSaveFiles()
     return;
   }
 
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+  vtkMRMLSubjectHierarchyNode* shNode =
+      vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(q->mrmlScene());
   
   std::stringstream ssFilename;
   ssFilename << shNode->GetItemName(this->HierarchyItem) << "_Instructions.txt";
@@ -393,10 +398,13 @@ std::string qSlicerPlannerModuleWidgetPrivate::generateInstruction(std::array<st
 // qSlicerPlannerModuleWidgetPrivate methods
 std::string qSlicerPlannerModuleWidgetPrivate::generatePNGFilename(std::array<std::string, 4> action, int index)
 {
+    Q_Q(qSlicerPlannerModuleWidget);
+
     std::stringstream ss;
     if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != this->HierarchyItem)
     {
-        vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+        vtkMRMLSubjectHierarchyNode* shNode =
+	    vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(q->mrmlScene());
         ss << shNode->GetItemName(this->HierarchyItem) << "_" << index << "_" << action[1] << "_" << action[0] << ".png";
     }  
 
@@ -449,7 +457,8 @@ void qSlicerPlannerModuleWidgetPrivate::clearBendingData(vtkMRMLScene* scene)
 
 //-----------------------------------------------------------------------------
 //Constructor
-qSlicerPlannerModuleWidgetPrivate::qSlicerPlannerModuleWidgetPrivate()
+qSlicerPlannerModuleWidgetPrivate::
+qSlicerPlannerModuleWidgetPrivate(qSlicerPlannerModuleWidget *q) : q_ptr(q)
 {
   this->HierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
   this->StagedHierarchyItem = vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID;
@@ -1305,9 +1314,12 @@ void qSlicerPlannerModuleWidgetPrivate::prepScalarComputation(vtkMRMLScene* scen
 //Set the scalar visibility on all models in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 {
+  Q_Q(qSlicerPlannerModuleWidget);
+
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+  vtkMRMLSubjectHierarchyNode* shNode =
+      vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(q->mrmlScene());
   shNode->GetItemChildren(this->HierarchyItem, children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
@@ -1424,9 +1436,12 @@ void qSlicerPlannerModuleWidgetPrivate::hardenTransforms(vtkMRMLScene* scene, bo
 //Harden all transforms in the current hierarchy
 void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
 {
+  Q_Q(qSlicerPlannerModuleWidget);
+
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+  vtkMRMLSubjectHierarchyNode* shNode =
+      vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(q->mrmlScene());
   shNode->GetItemChildren(this->HierarchyItem, children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
@@ -1475,7 +1490,7 @@ void qSlicerPlannerModuleWidgetPrivate::clearTransforms()
 //-----------------------------------------------------------------------------
 qSlicerPlannerModuleWidget::qSlicerPlannerModuleWidget(QWidget* _parent)
   : Superclass(_parent)
-  , d_ptr(new qSlicerPlannerModuleWidgetPrivate)
+  , d_ptr(new qSlicerPlannerModuleWidgetPrivate(this))
 {
 }
 
