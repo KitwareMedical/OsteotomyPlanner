@@ -157,7 +157,7 @@ public:
   void applyRandomColor(vtkMRMLModelNode* node);
   void hardenTransforms(vtkMRMLScene* scene, bool hardenLinearOnly);
   void clearTransforms();
-  void hideTransforms();
+  void hideTransforms(vtkMRMLScene* scene);
 
   //Cutting Variables
   vtkIdType HierarchyItem;
@@ -1119,7 +1119,7 @@ void qSlicerPlannerModuleWidgetPrivate::previewCut(vtkMRMLScene* scene)
     return;
   }
 
-  this->hideTransforms();
+  this->hideTransforms(scene);
   this->hardenTransforms(scene, false);
 
   //Create nodes
@@ -1346,11 +1346,11 @@ void qSlicerPlannerModuleWidgetPrivate::setScalarVisibility(bool visible)
 
 //-----------------------------------------------------------------------------
 //Hide all transforms in the current hierarchy
-void qSlicerPlannerModuleWidgetPrivate::hideTransforms()
+void qSlicerPlannerModuleWidgetPrivate::hideTransforms(vtkMRMLScene* scene)
 {
   std::vector<vtkIdType> children;
   std::vector<vtkIdType>::const_iterator it;
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(this->scene);
+  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
   shNode->GetItemChildren(this->HierarchyItem, children, true);
   for(it = children.begin(); it != children.end(); ++it)
   {
@@ -1913,7 +1913,7 @@ void qSlicerPlannerModuleWidget::updateCurrentCutNode(vtkMRMLNode* node)
   d->CurrentCutNode = node;
   if (node)
   {
-      d->hideTransforms();
+      d->hideTransforms(this->mrmlScene());
 
   }
 
@@ -2096,7 +2096,7 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
   d->CurrentBendNode = node;
   if(node)
   {
-    d->hideTransforms();
+    d->hideTransforms(this->mrmlScene());
 
   }
   this->updateWidgetFromMRML();
@@ -2107,7 +2107,7 @@ void qSlicerPlannerModuleWidget::updateCurrentBendNode(vtkMRMLNode* node)
 void qSlicerPlannerModuleWidget::initBendButtonClicked()
 {
   Q_D(qSlicerPlannerModuleWidget);
-  d->hideTransforms();
+  d->hideTransforms(this->mrmlScene());
   d->hardenTransforms(this->mrmlScene(), true);
   d->computeAndSetSourcePoints(this->mrmlScene());
   d->bendingActive = true;
@@ -2401,7 +2401,7 @@ void qSlicerPlannerModuleWidget::finishDistance()
   this->mrmlScene()->RemoveNode(distanceNode);
   distanceNode = NULL;
 
-  d->hideTransforms();
+  d->hideTransforms(this->mrmlScene());
   d->hardenTransforms(this->mrmlScene(), false);
   
   d->ComputeScalarsButton->setEnabled(true);
@@ -2482,7 +2482,7 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   
   if (vtkMRMLSubjectHierarchyNode::INVALID_ITEM_ID != d->HierarchyItem)
   {
-    d->hideTransforms();
+    d->hideTransforms(this->mrmlScene());
     d->hardenTransforms(this->mrmlScene(), false);
     d->clearControlPoints(this->mrmlScene());
     d->clearSavingData();
@@ -2566,7 +2566,7 @@ void qSlicerPlannerModuleWidget::confirmMoveButtonClicked()
   {
     return;
   }
-  d->hideTransforms();
+  d->hideTransforms(this->mrmlScene());
   d->hardenTransforms(this->mrmlScene(), false);
   d->moveActive = false;
   if (d->savingActive)
@@ -2588,7 +2588,7 @@ void qSlicerPlannerModuleWidget::cancelMoveButtonClicked()
   {
     return;
   }
-  d->hideTransforms();
+  d->hideTransforms(this->mrmlScene());
   d->clearTransforms();
   d->moveActive = false;
   d->ActionInProgress.fill("");
