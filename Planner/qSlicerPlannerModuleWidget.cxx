@@ -1679,11 +1679,11 @@ void qSlicerPlannerModuleWidget::setMRMLScene(vtkMRMLScene* scene)
 {
   Superclass::setMRMLScene(scene);
 
-  vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
+  // vtkMRMLSubjectHierarchyNode* shNode = vtkMRMLSubjectHierarchyNode::GetSubjectHierarchyNode(scene);
 
-  this->qvtkReconnect(
-    shNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemAddedEvent,
-    this, SLOT(onItemAddedEvent(vtkObject*, vtkIdType)));
+  // this->qvtkReconnect(
+  //   shNode, vtkMRMLSubjectHierarchyNode::SubjectHierarchyItemAddedEvent,
+  //   this, SLOT(onItemAddedEvent(vtkObject*, vtkIdType)));
 
   this->qvtkReconnect(
     this->mrmlScene(), vtkMRMLScene::NodeRemovedEvent,
