@@ -81,7 +81,8 @@ protected slots:
   void transformActivated(vtkMRMLNode* node);
   void confirmMoveButtonClicked();
   void cancelMoveButtonClicked();
-  void modelCallback(const QModelIndex &);
+  void cutCurrentSelectionButtonClicked();
+  void bendCurrentSelectionButtonClicked();
 
 
   //Saving slots

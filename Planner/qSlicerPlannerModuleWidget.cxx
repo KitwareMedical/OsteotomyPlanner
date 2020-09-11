@@ -1645,6 +1645,9 @@ void qSlicerPlannerModuleWidget::setup()
     d->SubjectHierarchyComboBox, SIGNAL(currentItemChanged(vtkIdType)),
     this, SLOT(setCurrentItem(vtkIdType)));
 
+  this->connect(d->cutCurrentSelectionButton, SIGNAL(clicked()), this, SLOT(cutCurrentSelectionButtonClicked()));
+  this->connect(d->bendCurrentSelectionButton, SIGNAL(clicked()), this, SLOT(bendCurrentSelectionButtonClicked()));
+
   this->connect(
     d->TemplateReferenceNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)),
     this, SLOT(updateTemplateReferenceNode(vtkMRMLNode*)));
@@ -2556,46 +2559,62 @@ void qSlicerPlannerModuleWidget::finishPlanButtonClicked()
   this->updateWidgetFromMRML();
 }
 
-void qSlicerPlannerModuleWidget::modelCallback(const QModelIndex &index)
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::cutCurrentSelectionButtonClicked()
 {
-    Q_D(qSlicerPlannerModuleWidget);
+  Q_D(qSlicerPlannerModuleWidget);
 
-    if (d->cuttingActive || d->bendingOpen)
-    {
-        std::cout << "Busy!" << std::endl;
-        return;
-    }
-    
-    QModelIndex sourceIndex = d->SubjectHierarchyTreeView->sortFilterProxyModel()->mapToSource(index);
-    vtkIdType itemID = d->SubjectHierarchyTreeView->model()->subjectHierarchyItemFromIndex(sourceIndex);
-    vtkMRMLNode* node = d->SubjectHierarchyTreeView->model()->subjectHierarchyNode()->GetItemDataNode(itemID);
+  if (d->cuttingActive || d->bendingOpen)
+  {
+    std::cout << "Busy!" << std::endl;
+    return;
+  }
 
-    if (sourceIndex.column() == 5)
-    {
-        std::stringstream title;
-        title << "Cutting model: " << node->GetName();
-        d->CuttingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(this->mrmlScene(), false);
-        this->updateCurrentCutNode(node);
-        this->previewCutButtonClicked();
-    }
-    if (sourceIndex.column() == 6)
-    {
-        std::stringstream title;
-        d->ActionInProgress[0] = node->GetName();
-        d->ActionInProgress[1] = "Bend";
-        title << "Bending model: " << node->GetName();
-        d->BendingMenu->setTitle(title.str().c_str());
-        d->hardenTransforms(this->mrmlScene(), false);
-        d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
-        this->updateCurrentBendNode(node);
-        d->MovingPointAButton->setEnabled(true);
-        d->MovingPointBButton->setEnabled(true);
-        d->bendingOpen = true;
-        this->updateWidgetFromMRML();
-    }
-    
-    
+  vtkIdType selection = d->SubjectHierarchyTreeView->currentItem();
+  vtkMRMLNode* node = d->SubjectHierarchyTreeView->subjectHierarchyNode()->GetItemDataNode(selection);
+  if(!node)
+  {
+    return;
+  }
+
+  std::stringstream title;
+  title << "Cutting model: " << node->GetName();
+  d->CuttingMenu->setTitle(title.str().c_str());
+  d->hardenTransforms(this->mrmlScene(), false);
+  this->updateCurrentCutNode(node);
+  this->previewCutButtonClicked();
+}
+
+//-----------------------------------------------------------------------------
+void qSlicerPlannerModuleWidget::bendCurrentSelectionButtonClicked()
+{
+  Q_D(qSlicerPlannerModuleWidget);
+
+  if (d->cuttingActive || d->bendingOpen)
+  {
+    std::cout << "Busy!" << std::endl;
+    return;
+  }
+
+  vtkIdType selection = d->SubjectHierarchyTreeView->currentItem();
+  vtkMRMLNode* node = d->SubjectHierarchyTreeView->subjectHierarchyNode()->GetItemDataNode(selection);
+  if(!node)
+  {
+    return;
+  }
+
+  std::stringstream title;
+  d->ActionInProgress[0] = node->GetName();
+  d->ActionInProgress[1] = "Bend";
+  title << "Bending model: " << node->GetName();
+  d->BendingMenu->setTitle(title.str().c_str());
+  d->hardenTransforms(this->mrmlScene(), false);
+  d->BendingInfoLabel->setText("Place Point A and Point B to define the bending axis (line you want the model to bend around).");
+  this->updateCurrentBendNode(node);
+  d->MovingPointAButton->setEnabled(true);
+  d->MovingPointBButton->setEnabled(true);
+  d->bendingOpen = true;
+  this->updateWidgetFromMRML();
 }
 
 void qSlicerPlannerModuleWidget::transformActivated(vtkMRMLNode* node)
