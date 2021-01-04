@@ -26,12 +26,13 @@ mark_as_superbuild(GIT_EXECUTABLE)
 
 #-----------------------------------------------------------------------------
 # Extension modules
-add_subdirectory(Planes)
-add_subdirectory(SplitModel)
-add_subdirectory(Planner)
+# add_subdirectory(Planes)
+# add_subdirectory(SplitModel)
+# add_subdirectory(Planner)
 add_subdirectory(ShrinkWrap)
 add_subdirectory(OsteotomyModelToModelDistance)
 add_subdirectory(ReplayPlan)
+add_subdirectory(OsteotomyPlanner)
 
 #-----------------------------------------------------------------------------
 set(CPACK_INSTALL_CMAKE_PROJECTS "${CPACK_INSTALL_CMAKE_PROJECTS};${CMAKE_BINARY_DIR};${EXTENSION_NAME};ALL;/")
