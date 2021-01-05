@@ -26,7 +26,10 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleGroupBox" name="CollapsibleGroupBox">
+    <widget class="ctkCollapsibleGroupBox" name="ActionsGroupBox">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>Actions</string>
      </property>
@@ -49,20 +52,30 @@
     </widget>
    </item>
    <item>
-    <widget class="QTabWidget" name="ActionsWidget">
+    <widget class="QStackedWidget" name="ActionsWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>2</number>
      </property>
-     <widget class="QWidget" name="MoveActionWidget" native="true">
-      <attribute name="title">
-       <string>Move</string>
-      </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_2"/>
+     <widget class="QWidget" name="BlankWidget"/>
+     <widget class="QWidget" name="MoveWidget">
+      <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item>
+        <widget class="QPushButton" name="MoveConfirmButton">
+         <property name="text">
+          <string>Confirm</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="MoveCancelButton">
+         <property name="text">
+          <string>Cancel</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
-     <widget class="QWidget" name="SplitActionWidget" native="true">
-      <attribute name="title">
-       <string>Split</string>
-      </attribute>
+     <widget class="QWidget" name="SplitWidget">
       <layout class="QVBoxLayout" name="verticalLayout_3">
        <item>
         <widget class="QPushButton" name="AutoPlaneButton">

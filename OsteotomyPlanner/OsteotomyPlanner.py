@@ -139,12 +139,65 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.hideColumn(4)
     self.ui.SubjectHierarchyTreeView.hideColumn(5)
 
+    #Selection 
+    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.BlankWidget)
 
+    self.ui.MoveButton.clicked.connect(self.beginMove)
+    self.ui.SplitButton.clicked.connect(self.beginSplit)
+    self.ui.MoveCancelButton.clicked.connect(self.endMove)
+    self.ui.MoveConfirmButton.clicked.connect(self.applyMove)
+    self.ui.SplitCancelButton.clicked.connect(self.endSplit)
+
+    self.transform = None
+    self.activeNode = None
     
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
 
+  def beginAction(self):
+    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
+    self.ui.ActionsGroupBox.enabled = False
+
+  def endAction(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.BlankWidget)
+    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
+    self.ui.ActionsGroupBox.enabled = True
+
+  def beginMove(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.MoveWidget)
+    self.beginAction()
+    self.createMoveTransform()
+
+  def beginSplit(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.SplitWidget)
+    self.beginAction()
+
+  def endMove(self):
+    self.activeNode.SetAndObserveTransformNodeID(None)
+    slicer.mrmlScene.RemoveNode(self.transform)
+    self.transform = None
+    self.endAction()
+
+  def applyMove(self):
+    logic = slicer.vtkSlicerTransformLogic()
+    logic.hardenTransform(self.activeNode)
+    self.endMove()
+
+  def endSplit(self):
+    self.endAction()
+  
+  
+  def createMoveTransform(self):
+    self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLLinearTransformNode')
+    self.transform.CreateDefaultDisplayNodes()
+    display = self.transform.GetDisplayNode()
+    self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
+    display.UpdateEditorBounds()
+    display.EditorScalingEnabledOff()
+    display.EditorVisibilityOn()    
+  
   def onViewItemChanged(self, item):
 
     itemList = vtk.vtkIdList()
@@ -153,8 +206,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
     node =  shNode.GetItemDataNode(item)
 
-    # if node is not None:
-    #   print(node.GetName())
+    self.ui.ActionsGroupBox.enabled = (node is not None and node.IsA('vtkMRMLModelNode'))
+    self.activeNode = node
 
 
   def onFolderChanged(self, item):
