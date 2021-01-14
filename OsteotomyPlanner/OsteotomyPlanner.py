@@ -135,35 +135,116 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyComboBox.connect("currentItemChanged(vtkIdType)", self.onFolderChanged)
     self.ui.SubjectHierarchyTreeView.connect("currentItemChanged(vtkIdType)", self.onViewItemChanged)
     self.ui.SubjectHierarchyTreeView.hideColumn(2)
-    self.ui.SubjectHierarchyTreeView.hideColumn(3)
+    # self.ui.SubjectHierarchyTreeView.hideColumn(3)
     self.ui.SubjectHierarchyTreeView.hideColumn(4)
     self.ui.SubjectHierarchyTreeView.hideColumn(5)
 
     #Selection 
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
-    self.ui.ActionsWidget.setCurrentWidget(self.ui.BlankWidget)
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
+    self.ui.MenuWidget.enabled = False
 
     self.ui.MoveButton.clicked.connect(self.beginMove)
     self.ui.SplitButton.clicked.connect(self.beginSplit)
     self.ui.MoveCancelButton.clicked.connect(self.endMove)
-    self.ui.MoveConfirmButton.clicked.connect(self.applyMove)
+    self.ui.MoveConfirmButton.clicked.connect(self.confirmMove)
     self.ui.SplitCancelButton.clicked.connect(self.endSplit)
+    self.ui.ManualPlaneButton.clicked.connect(self.placeManualPlane)
+    self.ui.ClearPlaneButton.clicked.connect(self.clearPlanes)
+    self.ui.AutoPlaneButton.clicked.connect(self.placeAutoPlane)
+    self.ui.PreviewSplitButton.clicked.connect(self.previewSplit)
+    self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
 
     self.transform = None
     self.activeNode = None
+    self.splitPlanes = []
+    self.splitModels = []
     
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
 
+  def placeManualPlane(self):
+    interactionNode = slicer.app.applicationLogic().GetInteractionNode()
+    selectionNode = slicer.app.applicationLogic().GetSelectionNode()
+    selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsPlaneNode")
+    planeNode = slicer.vtkMRMLMarkupsPlaneNode()
+    slicer.mrmlScene.AddNode(planeNode)
+    planeNode.CreateDefaultDisplayNodes() 
+    selectionNode.SetActivePlaceNodeID(planeNode.GetID())
+    interactionNode.SetCurrentInteractionMode(interactionNode.Place)
+    self.splitPlanes.append(planeNode)
+    self.ui.PreviewSplitButton.enabled = True
+
+  def placeAutoPlane(self):
+    planeNode = slicer.vtkMRMLMarkupsPlaneNode()
+    slicer.mrmlScene.AddNode(planeNode)
+    planeNode.CreateDefaultDisplayNodes() 
+    self.splitPlanes.append(planeNode)
+    bounds = [0,0,0,0,0,0]
+    self.activeNode.GetRASBounds(bounds)
+
+    # TODO: Clean this up to be clearer about what is being calculated, maybe add a function
+    center = [((bounds[1] - bounds[0]) / 2) + bounds[0], ((bounds[3] - bounds[2]) / 2) + bounds[2], ((bounds[5] - bounds[4]) / 2) + bounds[4]]
+    p2 = [((bounds[1] - bounds[0]) / 2) + bounds[0]+(bounds[1] - bounds[0])*1.5/2, ((bounds[3] - bounds[2]) / 2) + bounds[2], ((bounds[5] - bounds[4]) / 2) + bounds[4]]
+    p3 = [((bounds[1] - bounds[0]) / 2) + bounds[0], ((bounds[3] - bounds[2]) / 2) + bounds[2]+(bounds[3] - bounds[2])*1.5/2, ((bounds[5] - bounds[4]) / 2) + bounds[4]]
+
+    planeNode.AddControlPoint(vtk.vtkVector3d(center))
+    planeNode.AddControlPoint(vtk.vtkVector3d(p2))
+    planeNode.AddControlPoint(vtk.vtkVector3d(p3))
+    self.ui.PreviewSplitButton.enabled = True
+
+  def previewSplit(self):
+    self.clearSplitModels()
+    positiveModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    positiveModel.CreateDefaultDisplayNodes()
+    negativeModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    negativeModel.CreateDefaultDisplayNodes()
+    dynamicModelerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLDynamicModelerNode")
+    dynamicModelerNode.SetToolName("Plane cut")
+    dynamicModelerNode.SetNodeReferenceID("PlaneCut.InputModel", self.activeNode.GetID())
+    for plane in self.splitPlanes:
+      dynamicModelerNode.AddNodeReferenceID("PlaneCut.InputPlane", plane.GetID())
+    dynamicModelerNode.SetNodeReferenceID("PlaneCut.OutputPositiveModel", positiveModel.GetID())
+    dynamicModelerNode.SetNodeReferenceID("PlaneCut.OutputNegativeModel", negativeModel.GetID())
+    slicer.modules.dynamicmodeler.logic().RunDynamicModelerTool(dynamicModelerNode)
+    self.splitModels.append(positiveModel)
+    self.splitModels.append(negativeModel)
+    slicer.mrmlScene.RemoveNode(dynamicModelerNode)
+    self.ui.SplitConfirmButton.enabled = True
+      
+  def confirmSplit(self):
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    folderItem = self.ui.SubjectHierarchyComboBox.currentItem()
+    selectItem = None
+    for model in self.splitModels:
+      item = shNode.GetItemByDataNode(model)
+      shNode.SetItemParent(item, folderItem)
+      selectItem = item
+    self.splitModels = []
+    slicer.mrmlScene.RemoveNode(self.activeNode)
+    #need to force selection of something
+    self.ui.SubjectHierarchyTreeView.setCurrentItem(selectItem)
+    self.endSplit()
+
+  def clearSplitModels(self):
+    for model in self.splitModels:
+      slicer.mrmlScene.RemoveNode(model)
+    self.splitModels = []
+
+  def clearPlanes(self):
+    for plane in self.splitPlanes:
+      slicer.mrmlScene.RemoveNode(plane)
+    self.splitPlanes = []
+  
   def beginAction(self):
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
-    self.ui.ActionsGroupBox.enabled = False
+    self.ui.MenuWidget.enabled = False
 
   def endAction(self):
-    self.ui.ActionsWidget.setCurrentWidget(self.ui.BlankWidget)
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
-    self.ui.ActionsGroupBox.enabled = True
+    self.ui.MenuWidget.enabled = True
 
   def beginMove(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MoveWidget)
@@ -172,6 +253,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def beginSplit(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.SplitWidget)
+    self.ui.PreviewSplitButton.enabled = False
+    self.ui.SplitConfirmButton.enabled = False
     self.beginAction()
 
   def endMove(self):
@@ -180,14 +263,15 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.transform = None
     self.endAction()
 
-  def applyMove(self):
+  def confirmMove(self):
     logic = slicer.vtkSlicerTransformLogic()
     logic.hardenTransform(self.activeNode)
     self.endMove()
 
   def endSplit(self):
-    self.endAction()
-  
+    self.clearPlanes()
+    self.clearSplitModels()
+    self.endAction()  
   
   def createMoveTransform(self):
     self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLLinearTransformNode')
@@ -199,16 +283,12 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     display.EditorVisibilityOn()    
   
   def onViewItemChanged(self, item):
-
     itemList = vtk.vtkIdList()
     self.ui.SubjectHierarchyTreeView.currentItems(itemList)
-    # print(itemList)
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
     node =  shNode.GetItemDataNode(item)
-
-    self.ui.ActionsGroupBox.enabled = (node is not None and node.IsA('vtkMRMLModelNode'))
+    self.ui.MenuWidget.enabled = (node is not None and node.IsA('vtkMRMLModelNode'))
     self.activeNode = node
-
 
   def onFolderChanged(self, item):
     self.ui.SubjectHierarchyTreeView.setMRMLScene(slicer.mrmlScene)
@@ -241,6 +321,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     Called just before the scene is closed.
     """
     # Parameter node will be reset, do not use it anymore
+    self.splitPlanes = []
+    self.splitModels = []
+    self.activeNode = None
+    self.transform = None
     self.setParameterNode(None)
 
   def onSceneEndClose(self, caller, event):
