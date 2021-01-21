@@ -10,6 +10,9 @@
     <height>586</height>
    </rect>
   </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="qMRMLSubjectHierarchyComboBox" name="SubjectHierarchyComboBox">
@@ -40,7 +43,7 @@
    <item>
     <widget class="QStackedWidget" name="ActionsWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>2</number>
      </property>
      <widget class="QWidget" name="MenuWidget">
       <property name="enabled">
@@ -130,7 +133,7 @@
           </widget>
          </item>
          <item row="0" column="1">
-          <widget class="QComboBox" name="comboBox">
+          <widget class="QComboBox" name="OperationTypeComboBox">
            <item>
             <property name="text">
              <string>Union</string>
@@ -156,7 +159,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QCheckBox" name="checkBox">
+          <widget class="QCheckBox" name="CapModelCheckBox">
            <property name="text">
             <string/>
            </property>
