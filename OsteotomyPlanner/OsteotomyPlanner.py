@@ -144,6 +144,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
     self.ui.MenuWidget.enabled = False
 
+    self.ui.ActionButton.clicked.connect(self.dummyAction)
     self.ui.MoveButton.clicked.connect(self.beginMove)
     self.ui.SplitButton.clicked.connect(self.beginSplit)
     self.ui.MoveCancelButton.clicked.connect(self.endMove)
@@ -155,15 +156,177 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.PreviewSplitButton.clicked.connect(self.previewSplit)
     self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
 
+    self.ui.RedoButton.clicked.connect(self.restoreNextState)
+    self.ui.UndoButton.clicked.connect(self.restorePreviousState)
+
     self.transform = None
     self.activeNode = None
     self.splitPlanes = []
     self.splitModels = []
+    self.history = [] #List of states, each state is a list of nodes
+    self.maximumSavedStates = 10
+    self.lastRestoredState = 0 
+    self.cachedState = None
     
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
+    self.resolveStateButtons()
 
+  def archiveNode(self, node):
+    node.HideFromEditorsOn()
+    node.SetDisplayVisibility(False)
+    node.SetAttribute("History", "yes")
+
+  def restoreNode(self, node):
+    node.HideFromEditorsOff()
+    node.SetDisplayVisibility(True)
+    node.RemoveAttribute("History")
+
+  def removeNode(self,node):
+    slicer.mrmlScene.RemoveNode(node)
+
+  def isNodeCurrent(self, node):
+    return not node.GetAttribute("History") == "yes"
+  
+  def saveState(self):
+    print("Save state")
+    if self.maximumSavedStates < 1:
+      return
+    self.removeAllNextStates()
+    if self.cachedState is None:
+      self.cacheState()
+    self.history.append(self.cachedState)
+    self.cachedState = None
+    self.lastRestoredState = len(self.history)
+    self.removeAllObsoleteStates()
+
+  
+  def cacheState(self):
+    self.clearCachedState()
+    self.cachedState = []
+    #clone nodes
+    children = vtk.vtkIdList()
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+
+    shNode.GetItemChildren(self.ui.SubjectHierarchyComboBox.currentItem(), children) # Add a third argument with value True for recursive query
+    state = []
+    for i in range(children.GetNumberOfIds()):
+      child = children.GetId(i)
+      childNode = shNode.GetItemDataNode(child)
+      if not self.isNodeCurrent(childNode):
+        continue
+      clonedChild = self.cloneNode(childNode)
+      self.archiveNode(clonedChild)
+      self.cachedState.append(clonedChild)
+  
+  def clearCachedState(self):
+    if self.cachedState is not None:
+      self.deleteState(self.cachedState)
+    self.cachedState = None
+  
+  def removeAllNextStates(self):
+    while (len(self.history) > (self.lastRestoredState + 1)) and self.history:
+      state = self.history.pop()
+      self.deleteState(state)
+    
+
+  def removeAllObsoleteStates(self):
+    while (len(self.history) > self.maximumSavedStates) and self.history:
+      state = self.history.pop(0)
+      self.lastRestoredState -= 1
+      self.deleteState(state)
+  
+  def deleteState(self, state):
+    print("Deleting state")
+    for node in state:
+      self.removeNode(node)
+
+  def restoreState(self, stateIndex):
+    #restore state, then update index
+    restoredState = self.history[stateIndex]
+    
+    #hide all of the current nodes
+    children = vtk.vtkIdList()
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+
+    shNode.GetItemChildren(self.ui.SubjectHierarchyComboBox.currentItem(), children) # Add a third argument with value True for recursive query
+    for i in range(children.GetNumberOfIds()):
+      child = children.GetId(i)
+      childNode = shNode.GetItemDataNode(child)
+      self.archiveNode(childNode)
+
+    for model in restoredState:
+      self.restoreNode(model)
+
+    self.lastRestoredState = stateIndex
+
+  def restorePreviousState(self):
+    if self.lastRestoredState < 1:
+      print("There are no previous state available for restore")   
+      return
+
+    if len(self.history) < self.lastRestoredState:
+      print("There are no previous state available for restore")   
+      return
+
+    stateToRestore = self.lastRestoredState -1
+    if len(self.history) == self.lastRestoredState:
+      print("Need to save before restore")
+      self.saveState()
+      stateToRestore = len(self.history) - 2
+    
+    self.restoreState(stateToRestore)
+    self.resolveStateButtons()
+
+  def restoreNextState(self):
+
+    if self.lastRestoredState + 1 >= len(self.history):
+      print("No next state available to restore")
+      return
+
+    self.restoreState(self.lastRestoredState + 1)
+    self.resolveStateButtons()
+
+  def resolveStateButtons(self):
+
+    self.ui.UndoButton.enabled = self.isRestorePreviousStateAvailable()
+    self.ui.RedoButton.enabled = self.isRestoreNextStateAvailable()
+    print(self.history)
+    print("LastRestored: " + str(self.lastRestoredState))
+
+  
+  def isRestorePreviousStateAvailable(self):
+    return not (self.lastRestoredState < 1)
+
+  def isRestoreNextStateAvailable(self):
+    return not (self.lastRestoredState + 1 >= len(self.history))
+  
+  
+  def removeAllStates(self):
+    for state in self.history:
+      self.deleteState(state)
+
+    self.history = []
+    self.lastRestoredState = 0
+
+  def getNumberOfStates(self):
+    return len(self.history)
+  
+  def cloneNode(self, nodeToClone):
+    # Clone the node
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    itemIDToClone = shNode.GetItemByDataNode(nodeToClone)
+    clonedItemID = slicer.modules.subjecthierarchy.logic().CloneSubjectHierarchyItem(shNode, itemIDToClone)
+    clonedNode = shNode.GetItemDataNode(clonedItemID)
+    print("Cloning " + nodeToClone.GetID() + " to " + clonedNode.GetID())
+    clonedNode.SetName(nodeToClone.GetName())
+    return clonedNode
+  
+  def dummyAction(self):
+    self.beginAction()
+    self.endAction()
+  
   def placeManualPlane(self):
     interactionNode = slicer.app.applicationLogic().GetInteractionNode()
     selectionNode = slicer.app.applicationLogic().GetSelectionNode()
@@ -226,14 +389,15 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       shNode.SetItemParent(item, folderItem)
       selectItem = item
     self.splitModels = []
-    slicer.mrmlScene.RemoveNode(self.activeNode)
+    self.removeNode(self.activeNode)
     #need to force selection of something
     self.ui.SubjectHierarchyTreeView.setCurrentItem(selectItem)
+    self.saveState()
     self.endSplit()
 
   def clearSplitModels(self):
     for model in self.splitModels:
-      slicer.mrmlScene.RemoveNode(model)
+      self.removeNode(model)
     self.splitModels = []
 
   def clearPlanes(self):
@@ -244,11 +408,13 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def beginAction(self):
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
     self.ui.MenuWidget.enabled = False
+    self.cacheState()
 
   def endAction(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
     self.ui.MenuWidget.enabled = True
+    self.resolveStateButtons()
 
   def beginMove(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MoveWidget)
@@ -270,6 +436,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def confirmMove(self):
     logic = slicer.vtkSlicerTransformLogic()
     logic.hardenTransform(self.activeNode)
+    self.saveState()
     self.endMove()
 
   def endSplit(self):
@@ -330,6 +497,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.activeNode = None
     self.transform = None
     self.setParameterNode(None)
+    self.removeAllStates()
 
   def onSceneEndClose(self, caller, event):
     """
