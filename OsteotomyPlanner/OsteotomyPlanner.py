@@ -158,6 +158,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
+    self.ui.RedoButton.visible = False
 
     self.transform = None
     self.activeNode = None
@@ -193,7 +194,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     print("Save state")
     if self.maximumSavedStates < 1:
       return
-    self.removeAllNextStates()
+    # self.removeAllNextStates()
     if self.cachedState is None:
       self.cacheState()
     self.history.append(self.cachedState)
@@ -244,9 +245,9 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def restoreState(self, stateIndex):
     #restore state, then update index
-    restoredState = self.history[stateIndex]
+    restoredState = self.history.pop()
     
-    #hide all of the current nodes
+    #drop all of the current nodes
     children = vtk.vtkIdList()
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
 
@@ -254,7 +255,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     for i in range(children.GetNumberOfIds()):
       child = children.GetId(i)
       childNode = shNode.GetItemDataNode(child)
-      self.archiveNode(childNode)
+      if self.isNodeCurrent(childNode):
+        self.removeNode(childNode)
 
     for model in restoredState:
       self.restoreNode(model)
@@ -271,10 +273,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       return
 
     stateToRestore = self.lastRestoredState -1
-    if len(self.history) == self.lastRestoredState:
-      print("Need to save before restore")
-      self.saveState()
-      stateToRestore = len(self.history) - 2
+    # if len(self.history) == self.lastRestoredState:
+    #   print("Need to save before restore")
+    #   self.saveState()
+    #   stateToRestore = len(self.history) - 2
     
     self.restoreState(stateToRestore)
     self.resolveStateButtons()
@@ -300,7 +302,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     return not (self.lastRestoredState < 1)
 
   def isRestoreNextStateAvailable(self):
-    return not (self.lastRestoredState + 1 >= len(self.history))
+    # return not (self.lastRestoredState + 1 >= len(self.history))
+    return False
   
   
   def removeAllStates(self):
