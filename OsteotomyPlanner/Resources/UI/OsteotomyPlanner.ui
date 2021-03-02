@@ -50,7 +50,7 @@
    <item>
     <widget class="QStackedWidget" name="ActionsWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="MenuWidget">
       <property name="enabled">
@@ -69,6 +69,57 @@
          <property name="text">
           <string>Split</string>
          </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QPushButton" name="CurveCutButton">
+         <property name="text">
+          <string>Curve cut</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="CurveCutWidget">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QPushButton" name="PlaceCurveButton">
+         <property name="text">
+          <string>Place curve</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="PreviewCurveCutButton">
+         <property name="text">
+          <string>Preview cut</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QFrame" name="CurveCutFinishWidget">
+         <property name="frameShape">
+          <enum>QFrame::StyledPanel</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QPushButton" name="CurveCutCancelButton">
+            <property name="text">
+             <string>Cancel</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="CurveCutConfirmButton">
+            <property name="text">
+             <string>Confirm</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>

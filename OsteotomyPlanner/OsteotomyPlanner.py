@@ -148,23 +148,31 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.MenuWidget.enabled = False
 
     self.ui.MoveButton.clicked.connect(self.beginMove)
-    self.ui.SplitButton.clicked.connect(self.beginSplit)
     self.ui.MoveCancelButton.clicked.connect(self.endMove)
     self.ui.MoveConfirmButton.clicked.connect(self.confirmMove)
+
+    self.ui.CurveCutButton.clicked.connect(self.beginCurveCut)
+    self.ui.PlaceCurveButton.clicked.connect(self.placeManualCurve)
+    self.ui.PreviewCurveCutButton.clicked.connect(self.previewCurveCut)
+    self.ui.CurveCutConfirmButton.clicked.connect(self.confirmCurveCut)
+    self.ui.CurveCutCancelButton.clicked.connect(self.endCurveCut)
+
+    self.ui.SplitButton.clicked.connect(self.beginSplit)
     self.ui.SplitCancelButton.clicked.connect(self.endSplit)
     self.ui.ManualPlaneButton.clicked.connect(self.placeManualPlane)
     self.ui.ClearPlaneButton.clicked.connect(self.clearPlanes)
     self.ui.AutoPlaneButton.clicked.connect(self.placeAutoPlane)
     self.ui.PreviewSplitButton.clicked.connect(self.previewSplit)
     self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
-    self.ui.FinishButton.clicked.connect(self.finishPlan)
 
+    self.ui.FinishButton.clicked.connect(self.finishPlan)
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
     self.ui.RedoButton.visible = False
 
     self.transform = None
     self.activeNode = None
+    self.curve = None
     self.splitPlanes = []
     self.splitModels = []
     self.actionInProgress = False
@@ -174,27 +182,13 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.initializeParameterNode()
     self.resolveStateButtons()
 
-  def restoreNextState(self):
-    self.modelHistory.restoreNextState()
-    self.resolveStateButtons()
-
   
-  def restorePreviousState(self):
-    self.modelHistory.restorePreviousState()
-    self.resolveStateButtons()
-
-  
-  def finishPlan(self):
-    self.modelHistory.clearHistory()
-    self.resolveStateButtons()
-    self.ui.SubjectHierarchyComboBox.setCurrentItem(-1)
-    self.ui.SubjectHierarchyTreeView.enabled = False  
-
-  def resolveStateButtons(self):
-    self.ui.UndoButton.enabled = self.modelHistory.isRestorePreviousStateAvailable() and not self.actionInProgress
-    self.ui.RedoButton.enabled = self.modelHistory.isRestoreNextStateAvailable() and not self.actionInProgress
-    self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
-    self.ui.FinishButton.enabled = not self.actionInProgress
+  # Split Action
+  def beginSplit(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.SplitWidget)
+    self.ui.PreviewSplitButton.enabled = False
+    self.ui.SplitConfirmButton.enabled = False
+    self.beginAction()
   
   def placeManualPlane(self):
     interactionNode = slicer.app.applicationLogic().GetInteractionNode()
@@ -264,6 +258,11 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.confirmAction()
     self.endSplit()
 
+  def endSplit(self):
+    self.clearPlanes()
+    self.clearSplitModels()
+    self.endAction()  
+  
   def clearSplitModels(self):
     for model in self.splitModels:
       self.removeNode(model)
@@ -273,52 +272,79 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     for plane in self.splitPlanes:
       slicer.mrmlScene.RemoveNode(plane)
     self.splitPlanes = []
+
+  # Curve action
+  def beginCurveCut(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.CurveCutWidget)
+    self.ui.PlaceCurveButton.text = "Place curve"
+    self.ui.PreviewCurveCutButton.enabled = False
+    self.ui.CurveCutConfirmButton.enabled = False
+    self.beginAction()
+
+  def placeManualCurve(self):
+    self.clearCurve()
+    interactionNode = slicer.app.applicationLogic().GetInteractionNode()
+    selectionNode = slicer.app.applicationLogic().GetSelectionNode()
+    selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsCurveNode")
+    curveNode = slicer.vtkMRMLMarkupsCurveNode()
+    slicer.mrmlScene.AddNode(curveNode)
+    curveNode.CreateDefaultDisplayNodes() 
+    selectionNode.SetActivePlaceNodeID(curveNode.GetID())
+    interactionNode.SetCurrentInteractionMode(interactionNode.Place)
+    self.curve = curveNode
+    self.ui.PreviewCurveCutButton.enabled = True
+
+  def previewCurveCut(self):
+    self.clearSplitModels()
+    insideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    insideModel.CreateDefaultDisplayNodes()
+    insideModel.GetDisplayNode().SetColor(1.0,0,0)
+    outsideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    outsideModel.CreateDefaultDisplayNodes()
+    outsideModel.GetDisplayNode().SetColor(0,0,1.0)
+    dynamicModelerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLDynamicModelerNode")
+    dynamicModelerNode.SetToolName("Curve cut")
+    dynamicModelerNode.SetNodeReferenceID("CurveCut.InputModel", self.activeNode.GetID())
+    dynamicModelerNode.AddNodeReferenceID("CurveCut.InputCurve", self.curve.GetID())
+    dynamicModelerNode.SetNodeReferenceID("CurveCut.OutputInside", insideModel.GetID())
+    dynamicModelerNode.SetNodeReferenceID("CurveCut.OutputOutside", outsideModel.GetID())
+    slicer.modules.dynamicmodeler.logic().RunDynamicModelerTool(dynamicModelerNode)
+    self.splitModels.append(insideModel)
+    self.splitModels.append(outsideModel)
+    slicer.mrmlScene.RemoveNode(dynamicModelerNode)
+    self.ui.CurveCutConfirmButton.enabled = True
   
-  def beginAction(self):
-    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
-    self.ui.MenuWidget.enabled = False
-    self.modelHistory.cacheState()
-    self.actionInProgress = True
-    self.resolveStateButtons()
+  def confirmCurveCut(self):
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    folderItem = self.ui.SubjectHierarchyComboBox.currentItem()
+    selectItem = None
+    for model in self.splitModels:
+      item = shNode.GetItemByDataNode(model)
+      shNode.SetItemParent(item, folderItem)
+      selectItem = item
+    self.splitModels = []
+    self.removeNode(self.activeNode)
+    #need to force selection of something
+    self.ui.SubjectHierarchyTreeView.setCurrentItem(selectItem)
+    self.confirmAction()
+    self.endCurveCut()
+  
+  def endCurveCut(self):
+    self.clearCurve()
+    self.clearSplitModels()
+    self.endAction()
 
-  def endAction(self):
-    self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
-    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
-    self.ui.MenuWidget.enabled = True
-    self.actionInProgress = False
-    self.resolveStateButtons()
+  def clearCurve(self):
+    if self.curve is not None:
+      self.removeNode(self.curve)
 
+  
+  # Move action
   def beginMove(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MoveWidget)
     self.beginAction()
     self.createMoveTransform()
 
-  def beginSplit(self):
-    self.ui.ActionsWidget.setCurrentWidget(self.ui.SplitWidget)
-    self.ui.PreviewSplitButton.enabled = False
-    self.ui.SplitConfirmButton.enabled = False
-    self.beginAction()
-
-  def endMove(self):
-    self.activeNode.SetAndObserveTransformNodeID(None)
-    slicer.mrmlScene.RemoveNode(self.transform)
-    self.transform = None
-    self.endAction()
-
-  def confirmMove(self):
-    logic = slicer.vtkSlicerTransformLogic()
-    logic.hardenTransform(self.activeNode)
-    self.confirmAction()
-    self.endMove()
-
-  def endSplit(self):
-    self.clearPlanes()
-    self.clearSplitModels()
-    self.endAction()  
-  
-  def confirmAction(self):
-    self.modelHistory.saveState()
-  
   def createMoveTransform(self):
     self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLLinearTransformNode')
     self.transform.CreateDefaultDisplayNodes()
@@ -326,8 +352,24 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
     display.UpdateEditorBounds()
     display.EditorScalingEnabledOff()
-    display.EditorVisibilityOn()    
+    display.EditorVisibilityOn() 
   
+  def confirmMove(self):
+    logic = slicer.vtkSlicerTransformLogic()
+    logic.hardenTransform(self.activeNode)
+    self.confirmAction()
+    self.endMove()
+
+  def endMove(self):
+    self.activeNode.SetAndObserveTransformNodeID(None)
+    slicer.mrmlScene.RemoveNode(self.transform)
+    self.transform = None
+    self.endAction()
+
+  
+  
+  
+  #General  
   def onViewItemChanged(self, item):
     itemList = vtk.vtkIdList()
     self.ui.SubjectHierarchyTreeView.currentItems(itemList)
@@ -342,6 +384,49 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.expandItem(item)
     self.ui.SubjectHierarchyTreeView.enabled = True
     self.modelHistory = ModelHistory(item)
+
+  def removeNode(self,node):
+    slicer.mrmlScene.RemoveNode(node)
+
+  def restoreNextState(self):
+    self.modelHistory.restoreNextState()
+    self.resolveStateButtons()
+  
+  def restorePreviousState(self):
+    self.modelHistory.restorePreviousState()
+    self.resolveStateButtons()
+  
+  def finishPlan(self):
+    self.modelHistory.clearHistory()
+    self.resolveStateButtons()
+    self.ui.SubjectHierarchyComboBox.setCurrentItem(-1)
+    self.ui.SubjectHierarchyTreeView.enabled = False  
+
+  def resolveStateButtons(self):
+    self.ui.UndoButton.enabled = self.modelHistory.isRestorePreviousStateAvailable() and not self.actionInProgress
+    self.ui.RedoButton.enabled = self.modelHistory.isRestoreNextStateAvailable() and not self.actionInProgress
+    self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
+    self.ui.FinishButton.enabled = not self.actionInProgress
+  
+
+
+  # Generic Action
+  def beginAction(self):
+    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
+    self.ui.MenuWidget.enabled = False
+    self.modelHistory.cacheState()
+    self.actionInProgress = True
+    self.resolveStateButtons()
+
+  def confirmAction(self):
+    self.modelHistory.saveState()  
+
+  def endAction(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
+    self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
+    self.ui.MenuWidget.enabled = True
+    self.actionInProgress = False
+    self.resolveStateButtons()
 
   
   def cleanup(self):
