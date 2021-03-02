@@ -167,10 +167,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.activeNode = None
     self.splitPlanes = []
     self.splitModels = []
-    # self.history = [] #List of states, each state is a list of nodes
-    # self.maximumSavedStates = 10
-    # self.lastRestoredState = 0 
-    # self.cachedState = None
     self.actionInProgress = False
     self.modelHistory = ModelHistory()    
 
@@ -199,8 +195,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.RedoButton.enabled = self.modelHistory.isRestoreNextStateAvailable() and not self.actionInProgress
     self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
     self.ui.FinishButton.enabled = not self.actionInProgress
-    # print(self.history)
-    # print("LastRestored: " + str(self.lastRestoredState))  
   
   def placeManualPlane(self):
     interactionNode = slicer.app.applicationLogic().GetInteractionNode()
@@ -267,7 +261,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.removeNode(self.activeNode)
     #need to force selection of something
     self.ui.SubjectHierarchyTreeView.setCurrentItem(selectItem)
-    self.modelHistory.saveState()
+    self.confirmAction()
     self.endSplit()
 
   def clearSplitModels(self):
@@ -314,13 +308,16 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def confirmMove(self):
     logic = slicer.vtkSlicerTransformLogic()
     logic.hardenTransform(self.activeNode)
-    self.modelHistory.saveState()
+    self.confirmAction()
     self.endMove()
 
   def endSplit(self):
     self.clearPlanes()
     self.clearSplitModels()
     self.endAction()  
+  
+  def confirmAction(self):
+    self.modelHistory.saveState()
   
   def createMoveTransform(self):
     self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLLinearTransformNode')
