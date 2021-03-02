@@ -4,6 +4,7 @@ set(MODULE_NAME OsteotomyPlanner)
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
+  ModelHistory/ModelHistory.py
   )
 
 set(MODULE_PYTHON_RESOURCES
