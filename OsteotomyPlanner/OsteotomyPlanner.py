@@ -16,7 +16,7 @@ class OsteotomyPlanner(ScriptedLoadableModule):
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "OsteotomyPlannerv2"  # TODO: make this more human readable by adding spaces
+    self.parent.title = "OsteotomyPlanner"  # TODO: make this more human readable by adding spaces
     self.parent.categories = ["Surface Models"]  # TODO: set categories (folders where the module shows up in the module selector)
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
     self.parent.contributors = ["Sam Horvath (Kitware Inc.)"]  # TODO: replace with "Firstname Lastname (Organization)"
