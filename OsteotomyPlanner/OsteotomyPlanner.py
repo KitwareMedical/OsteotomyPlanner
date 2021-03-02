@@ -144,7 +144,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
     self.ui.MenuWidget.enabled = False
 
-    self.ui.ActionButton.clicked.connect(self.dummyAction)
     self.ui.MoveButton.clicked.connect(self.beginMove)
     self.ui.SplitButton.clicked.connect(self.beginSplit)
     self.ui.MoveCancelButton.clicked.connect(self.endMove)
@@ -155,6 +154,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.AutoPlaneButton.clicked.connect(self.placeAutoPlane)
     self.ui.PreviewSplitButton.clicked.connect(self.previewSplit)
     self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
+    self.ui.FinishButton.clicked.connect(self.finishPlan)
 
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
@@ -168,12 +168,19 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.maximumSavedStates = 10
     self.lastRestoredState = 0 
     self.cachedState = None
+    self.actionInProgress = False
     
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
     self.resolveStateButtons()
 
+  def finishPlan(self):
+    self.clearHistory()
+    self.resolveStateButtons()
+    self.ui.SubjectHierarchyComboBox.setCurrentItem(-1)
+    self.ui.SubjectHierarchyTreeView.enabled = False
+  
   def archiveNode(self, node):
     node.HideFromEditorsOn()
     node.SetDisplayVisibility(False)
@@ -191,7 +198,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     return not node.GetAttribute("History") == "yes"
   
   def saveState(self):
-    print("Save state")
     if self.maximumSavedStates < 1:
       return
     # self.removeAllNextStates()
@@ -239,7 +245,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.deleteState(state)
   
   def deleteState(self, state):
-    print("Deleting state")
     for node in state:
       self.removeNode(node)
 
@@ -273,11 +278,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       return
 
     stateToRestore = self.lastRestoredState -1
-    # if len(self.history) == self.lastRestoredState:
-    #   print("Need to save before restore")
-    #   self.saveState()
-    #   stateToRestore = len(self.history) - 2
-    
     self.restoreState(stateToRestore)
     self.resolveStateButtons()
 
@@ -292,10 +292,12 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def resolveStateButtons(self):
 
-    self.ui.UndoButton.enabled = self.isRestorePreviousStateAvailable()
-    self.ui.RedoButton.enabled = self.isRestoreNextStateAvailable()
-    print(self.history)
-    print("LastRestored: " + str(self.lastRestoredState))
+    self.ui.UndoButton.enabled = self.isRestorePreviousStateAvailable() and not self.actionInProgress
+    self.ui.RedoButton.enabled = self.isRestoreNextStateAvailable() and not self.actionInProgress
+    self.ui.SubjectHierarchyComboBox.enabled = (len(self.history) == 0)
+    self.ui.FinishButton.enabled = not self.actionInProgress
+    # print(self.history)
+    # print("LastRestored: " + str(self.lastRestoredState))
 
   
   def isRestorePreviousStateAvailable(self):
@@ -306,7 +308,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     return False
   
   
-  def removeAllStates(self):
+  def clearHistory(self):
     for state in self.history:
       self.deleteState(state)
 
@@ -322,13 +324,9 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     itemIDToClone = shNode.GetItemByDataNode(nodeToClone)
     clonedItemID = slicer.modules.subjecthierarchy.logic().CloneSubjectHierarchyItem(shNode, itemIDToClone)
     clonedNode = shNode.GetItemDataNode(clonedItemID)
-    print("Cloning " + nodeToClone.GetID() + " to " + clonedNode.GetID())
     clonedNode.SetName(nodeToClone.GetName())
     return clonedNode
   
-  def dummyAction(self):
-    self.beginAction()
-    self.endAction()
   
   def placeManualPlane(self):
     interactionNode = slicer.app.applicationLogic().GetInteractionNode()
@@ -412,11 +410,14 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().NoSelection)
     self.ui.MenuWidget.enabled = False
     self.cacheState()
+    self.actionInProgress = True
+    self.resolveStateButtons()
 
   def endAction(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.MenuWidget)
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
     self.ui.MenuWidget.enabled = True
+    self.actionInProgress = False
     self.resolveStateButtons()
 
   def beginMove(self):
@@ -468,6 +469,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.setMRMLScene(slicer.mrmlScene)
     self.ui.SubjectHierarchyTreeView.setRootItem(item)
     self.ui.SubjectHierarchyTreeView.expandItem(item)
+    self.ui.SubjectHierarchyTreeView.enabled = True
+    self.clearHistory()
 
   
   def cleanup(self):
@@ -500,7 +503,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.activeNode = None
     self.transform = None
     self.setParameterNode(None)
-    self.removeAllStates()
+    self.clearHistory()
 
   def onSceneEndClose(self, caller, event):
     """

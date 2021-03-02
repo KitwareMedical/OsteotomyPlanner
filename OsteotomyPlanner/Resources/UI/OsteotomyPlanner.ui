@@ -22,6 +22,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="FinishButton">
+     <property name="text">
+      <string>Finish and Clear History</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="qMRMLSubjectHierarchyTreeView" name="SubjectHierarchyTreeView">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
@@ -50,24 +57,17 @@
        <bool>false</bool>
       </property>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="1" column="3">
+       <item row="0" column="3">
         <widget class="QPushButton" name="MoveButton">
          <property name="text">
           <string>Move</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="0" column="0">
         <widget class="QPushButton" name="SplitButton">
          <property name="text">
           <string>Split</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QPushButton" name="ActionButton">
-         <property name="text">
-          <string>Action</string>
          </property>
         </widget>
        </item>
@@ -248,11 +248,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ctkComboBox</class>
-   <extends>QComboBox</extends>
-   <header>ctkComboBox.h</header>
-  </customwidget>
-  <customwidget>
    <class>qMRMLWidget</class>
    <extends>QWidget</extends>
    <header>qMRMLWidget.h</header>
@@ -267,6 +262,11 @@
    <class>qMRMLSubjectHierarchyComboBox</class>
    <extends>ctkComboBox</extends>
    <header>qMRMLSubjectHierarchyComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ctkComboBox</class>
+   <extends>QComboBox</extends>
+   <header>ctkComboBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
