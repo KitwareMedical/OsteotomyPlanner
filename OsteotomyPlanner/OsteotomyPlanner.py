@@ -188,6 +188,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.SplitWidget)
     self.ui.PreviewSplitButton.enabled = False
     self.ui.SplitConfirmButton.enabled = False
+    self.ui.SplitLabel.text = ''
     self.beginAction()
   
   def placeManualPlane(self):
@@ -222,10 +223,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def previewSplit(self):
     self.clearSplitModels()
-    positiveModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    positiveModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", self.activeNode.GetName() + '-positive')
     positiveModel.CreateDefaultDisplayNodes()
     positiveModel.GetDisplayNode().SetColor(1.0,0,0)
-    negativeModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    negativeModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", self.activeNode.GetName() + '-negative')
     negativeModel.CreateDefaultDisplayNodes()
     negativeModel.GetDisplayNode().SetColor(0,0,1.0)
     dynamicModelerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLDynamicModelerNode")
@@ -238,10 +239,18 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     dynamicModelerNode.SetNodeReferenceID("PlaneCut.OutputPositiveModel", positiveModel.GetID())
     dynamicModelerNode.SetNodeReferenceID("PlaneCut.OutputNegativeModel", negativeModel.GetID())
     slicer.modules.dynamicmodeler.logic().RunDynamicModelerTool(dynamicModelerNode)
+    
     self.splitModels.append(positiveModel)
     self.splitModels.append(negativeModel)
-    slicer.mrmlScene.RemoveNode(dynamicModelerNode)
-    self.ui.SplitConfirmButton.enabled = True
+    
+    if self.isModelValid(positiveModel) and self.isModelValid(negativeModel):      
+      self.ui.SplitConfirmButton.enabled = True
+      self.ui.SplitLabel.text = 'Success'
+    else:
+      self.ui.SplitLabel.text = 'Failed - check planes'
+
+
+    slicer.mrmlScene.RemoveNode(dynamicModelerNode)    
       
   def confirmSplit(self):
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
@@ -277,6 +286,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def beginCurveCut(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.CurveCutWidget)
     self.ui.PlaceCurveButton.text = "Place curve"
+    self.ui.CurveCutLabel.text = ''
     self.ui.PreviewCurveCutButton.enabled = False
     self.ui.CurveCutConfirmButton.enabled = False
     self.beginAction()
@@ -296,10 +306,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def previewCurveCut(self):
     self.clearSplitModels()
-    insideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    insideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", self.activeNode.GetName() + '-inside')
     insideModel.CreateDefaultDisplayNodes()
     insideModel.GetDisplayNode().SetColor(1.0,0,0)
-    outsideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+    outsideModel = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode", self.activeNode.GetName() + '-outside')
     outsideModel.CreateDefaultDisplayNodes()
     outsideModel.GetDisplayNode().SetColor(0,0,1.0)
     dynamicModelerNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLDynamicModelerNode")
@@ -309,11 +319,19 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     dynamicModelerNode.SetNodeReferenceID("CurveCut.OutputInside", insideModel.GetID())
     dynamicModelerNode.SetNodeReferenceID("CurveCut.OutputOutside", outsideModel.GetID())
     slicer.modules.dynamicmodeler.logic().RunDynamicModelerTool(dynamicModelerNode)
+    
     self.splitModels.append(insideModel)
     self.splitModels.append(outsideModel)
+    
+    if self.isModelValid(insideModel) and self.isModelValid(outsideModel):      
+      self.ui.CurveCutConfirmButton.enabled = True
+      self.ui.CurveCutLabel.text = 'Success'
+    else:
+      self.ui.CurveCutLabel.text = 'Failed - check curve'
+
     slicer.mrmlScene.RemoveNode(dynamicModelerNode)
-    self.ui.CurveCutConfirmButton.enabled = True
   
+   
   def confirmCurveCut(self):
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
     folderItem = self.ui.SubjectHierarchyComboBox.currentItem()
@@ -370,6 +388,12 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   
   
   #General  
+  def isModelValid(self, model):
+    if model.GetPolyData() is not None:
+      if model.GetPolyData().GetNumberOfPoints() > 0:
+        return True
+    return False
+  
   def onViewItemChanged(self, item):
     itemList = vtk.vtkIdList()
     self.ui.SubjectHierarchyTreeView.currentItems(itemList)
