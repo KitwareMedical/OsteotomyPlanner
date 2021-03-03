@@ -165,6 +165,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.PreviewSplitButton.clicked.connect(self.previewSplit)
     self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
 
+    self.ui.RemoveButton.clicked.connect(self.beginRemove)
+    self.ui.RemoveConfirmButton.clicked.connect(self.confirmRemove)
+    self.ui.RemoveCancelButton.clicked.connect(self.endRemove)
+
     self.ui.FinishButton.clicked.connect(self.finishPlan)
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
@@ -370,7 +374,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
     display.UpdateEditorBounds()
     display.EditorScalingEnabledOff()
-    display.EditorVisibilityOn() 
+    display.EditorVisibilityOn()
+    self.ui.MRMLTransformSlidersTranslation.setMRMLTransformNode(self.transform)
+    self.ui.MRMLTransformSlidersRotation.setMRMLTransformNode(self.transform)
+
   
   def confirmMove(self):
     logic = slicer.vtkSlicerTransformLogic()
@@ -384,7 +391,20 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.transform = None
     self.endAction()
 
-  
+  #Remove action
+  def beginRemove(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.RemoveWidget)
+    self.beginAction()
+
+  def confirmRemove(self):
+    self.removeNode(self.activeNode)
+    self.confirmAction()
+    self.endRemove()
+
+  def endRemove(self):
+    self.endAction()
+
+
   
   
   #General  
@@ -431,6 +451,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.RedoButton.enabled = self.modelHistory.isRestoreNextStateAvailable() and not self.actionInProgress
     self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
     self.ui.FinishButton.enabled = not self.actionInProgress
+    self.onViewItemChanged(self.ui.SubjectHierarchyTreeView.currentItem())
+     
   
 
 

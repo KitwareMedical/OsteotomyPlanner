@@ -78,6 +78,31 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="3">
+        <widget class="QPushButton" name="RemoveButton">
+         <property name="text">
+          <string>Remove</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="RemoveWidget">
+      <layout class="QHBoxLayout" name="horizontalLayout_5">
+       <item>
+        <widget class="QPushButton" name="RemoveConfirmButton">
+         <property name="text">
+          <string>Confirm</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="RemoveCancelButton">
+         <property name="text">
+          <string>Cancel</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="CurveCutWidget">
@@ -132,20 +157,37 @@
       </layout>
      </widget>
      <widget class="QWidget" name="MoveWidget">
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
-        <widget class="QPushButton" name="MoveConfirmButton">
-         <property name="text">
-          <string>Confirm</string>
+        <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersTranslation"/>
+       </item>
+       <item>
+        <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersRotation">
+         <property name="Title">
+          <string>Rotation</string>
+         </property>
+         <property name="TypeOfTransform">
+          <enum>qMRMLTransformSliders::ROTATION</enum>
          </property>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="MoveCancelButton">
-         <property name="text">
-          <string>Cancel</string>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QPushButton" name="MoveConfirmButton">
+           <property name="text">
+            <string>Confirm</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="MoveCancelButton">
+           <property name="text">
+            <string>Cancel</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -312,6 +354,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>qMRMLTransformSliders</class>
+   <extends>qMRMLWidget</extends>
+   <header>qMRMLTransformSliders.h</header>
+  </customwidget>
   <customwidget>
    <class>qMRMLWidget</class>
    <extends>QWidget</extends>
