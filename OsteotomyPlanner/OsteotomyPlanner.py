@@ -388,6 +388,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def endMove(self):
     self.activeNode.SetAndObserveTransformNodeID(None)
     slicer.mrmlScene.RemoveNode(self.transform)
+    self.ui.MRMLTransformSlidersTranslation.reset()
+    self.ui.MRMLTransformSlidersRotation.reset()
+    self.ui.MRMLTransformSlidersTranslation.setMRMLTransformNode(None)
+    self.ui.MRMLTransformSlidersRotation.setMRMLTransformNode(None)
     self.transform = None
     self.endAction()
 
@@ -452,6 +456,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
     self.ui.FinishButton.enabled = not self.actionInProgress
     self.onViewItemChanged(self.ui.SubjectHierarchyTreeView.currentItem())
+    print(self.modelHistory.history)
+    print(self.modelHistory.lastRestoredState)
      
   
 
