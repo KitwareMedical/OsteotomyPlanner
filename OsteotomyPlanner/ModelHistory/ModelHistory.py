@@ -4,6 +4,7 @@ class ModelHistory:
 
   def __init__(self, folderID=-1):
     self.history = [] #List of states, each state is a list of nodes
+    self.future = []
     self.maximumSavedStates = 10
     self.lastRestoredState = 0 
     self.cachedState = None
@@ -42,7 +43,7 @@ class ModelHistory:
   def saveState(self):
     if self.maximumSavedStates < 1:
       return
-    # self.removeAllNextStates()
+    self.removeAllNextStates()
     if self.cachedState is None:
       self.cacheState()
     self.history.append(self.cachedState)
@@ -75,9 +76,9 @@ class ModelHistory:
     self.cachedState = None
   
   def removeAllNextStates(self):
-    while (len(self.history) > (self.lastRestoredState + 1)) and self.history:
-      state = self.history.pop()
+    for state in self.future:
       self.deleteState(state)
+    self.future = []
     
 
   def removeAllObsoleteStates(self):
@@ -90,9 +91,10 @@ class ModelHistory:
     for node in state:
       self.removeNode(node)
 
-  def restoreState(self, stateIndex):
+  def restoreStatePrev(self):
     #restore state, then update index
     restoredState = self.history.pop()
+    futureState = []
     
     #drop all of the current nodes
     children = vtk.vtkIdList()
@@ -103,12 +105,36 @@ class ModelHistory:
       child = children.GetId(i)
       childNode = shNode.GetItemDataNode(child)
       if self.isNodeCurrent(childNode):
-        self.removeNode(childNode)
-
+        self.archiveNode(childNode)
+        futureState.append(childNode)
+    self.future.append(futureState)
     for model in restoredState:
       self.restoreNode(model)
 
-    self.lastRestoredState = stateIndex
+    self.lastRestoredState = len(self.history)
+
+  def restoreStateNext(self):
+    #restore state, then update index
+    restoredState = self.future.pop()
+    pastState = []
+    
+    #drop all of the current nodes
+    children = vtk.vtkIdList()
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+
+    shNode.GetItemChildren(self.folder, children) # Add a third argument with value True for recursive query
+    for i in range(children.GetNumberOfIds()):
+      child = children.GetId(i)
+      childNode = shNode.GetItemDataNode(child)
+      if self.isNodeCurrent(childNode):
+        self.archiveNode(childNode)
+        pastState.append(childNode)
+    self.history.append(pastState)
+    
+    for model in restoredState:
+      self.restoreNode(model)
+
+    self.lastRestoredState = len(self.history)
 
   def restorePreviousState(self):
     if self.lastRestoredState < 1:
@@ -119,30 +145,32 @@ class ModelHistory:
       print("There are no previous state available for restore")   
       return
 
-    stateToRestore = self.lastRestoredState -1
-    self.restoreState(stateToRestore)
+    self.restoreStatePrev()
 
   def restoreNextState(self):
 
-    if self.lastRestoredState + 1 >= len(self.history):
+    if 0 == len(self.future):
       print("No next state available to restore")
       return
 
-    self.restoreState(self.lastRestoredState + 1)
+    self.restoreStateNext()
 
   def isRestorePreviousStateAvailable(self):
     return not (self.lastRestoredState < 1)
 
   def isRestoreNextStateAvailable(self):
-    # return not (self.lastRestoredState + 1 >= len(self.history))
-    return False
+    return not (0 == len(self.future))
   
   
   def clearHistory(self):
     for state in self.history:
       self.deleteState(state)
 
+    for state in self.future:
+      self.deleteState(state)
+
     self.history = []
+    self.future = []
     self.lastRestoredState = 0
 
   def getNumberOfStates(self):

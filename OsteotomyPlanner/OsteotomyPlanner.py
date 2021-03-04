@@ -172,7 +172,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.FinishButton.clicked.connect(self.finishPlan)
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
-    self.ui.RedoButton.visible = False
+    # self.ui.RedoButton.visible = False
 
     self.transform = None
     self.activeNode = None
@@ -457,6 +457,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.FinishButton.enabled = not self.actionInProgress
     self.onViewItemChanged(self.ui.SubjectHierarchyTreeView.currentItem())
     print(self.modelHistory.history)
+    print(self.modelHistory.future)
     print(self.modelHistory.lastRestoredState)
      
   
