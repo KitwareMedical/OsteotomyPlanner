@@ -493,6 +493,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.setSelectionMode(qt.QAbstractItemView().SingleSelection)
     self.ui.MenuWidget.enabled = True
     self.actionInProgress = False
+    interactionNode = slicer.app.applicationLogic().GetInteractionNode()    
+    interactionNode.SetCurrentInteractionMode(interactionNode.ViewTransform)
     self.resolveStateButtons()
 
   
