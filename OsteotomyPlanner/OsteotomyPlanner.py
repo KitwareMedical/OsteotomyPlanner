@@ -148,16 +148,22 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.MenuWidget.enabled = False
 
     self.ui.MoveButton.clicked.connect(self.beginMove)
+    moveIcon = qt.QIcon(":/Icons/Transform.png")
+    self.ui.MoveButton.setIcon(moveIcon)
     self.ui.MoveCancelButton.clicked.connect(self.endMove)
     self.ui.MoveConfirmButton.clicked.connect(self.confirmMove)
 
     self.ui.CurveCutButton.clicked.connect(self.beginCurveCut)
+    curveCutIcon = qt.QIcon(":/Icons/CurveCut.png")
+    self.ui.CurveCutButton.setIcon(curveCutIcon)
     self.ui.PlaceCurveButton.clicked.connect(self.placeManualCurve)
     self.ui.PreviewCurveCutButton.clicked.connect(self.previewCurveCut)
     self.ui.CurveCutConfirmButton.clicked.connect(self.confirmCurveCut)
     self.ui.CurveCutCancelButton.clicked.connect(self.endCurveCut)
 
     self.ui.SplitButton.clicked.connect(self.beginSplit)
+    splitIcon = qt.QIcon(":/Icons/DynamicModeler.png")
+    self.ui.SplitButton.setIcon(splitIcon)
     self.ui.SplitCancelButton.clicked.connect(self.endSplit)
     self.ui.ManualPlaneButton.clicked.connect(self.placeManualPlane)
     self.ui.ClearPlaneButton.clicked.connect(self.clearPlanes)
@@ -166,12 +172,20 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SplitConfirmButton.clicked.connect(self.confirmSplit)
 
     self.ui.RemoveButton.clicked.connect(self.beginRemove)
+    removeIcon = qt.QIcon(":/Icons/Medium/SlicerEditCut.png")
+    self.ui.RemoveButton.setIcon(removeIcon)
     self.ui.RemoveConfirmButton.clicked.connect(self.confirmRemove)
     self.ui.RemoveCancelButton.clicked.connect(self.endRemove)
 
     self.ui.FinishButton.clicked.connect(self.finishPlan)
+    finishIcon = qt.QIcon(":/Icons/AnnotationOkDone.png")
+    self.ui.FinishButton.setIcon(finishIcon)
     self.ui.RedoButton.clicked.connect(self.restoreNextState)
+    redoIcon = qt.QIcon(":/Icons/Medium/SlicerRedo.png")
+    self.ui.RedoButton.setIcon(redoIcon)
     self.ui.UndoButton.clicked.connect(self.restorePreviousState)
+    undoIcon = qt.QIcon(":/Icons/Medium/SlicerUndo.png")
+    self.ui.UndoButton.setIcon(undoIcon)
     # self.ui.RedoButton.visible = False
 
     self.transform = None
