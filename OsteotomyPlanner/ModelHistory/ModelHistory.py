@@ -89,9 +89,17 @@ class ModelHistory:
   
   def deleteState(self, state):
     for node in state:
-      self.removeNode(node)
+      self.removeNode(node)  
 
-  def restoreStatePrev(self):
+  def restorePreviousState(self):
+    if self.lastRestoredState < 1:
+      print("There are no previous state available for restore")   
+      return
+
+    if len(self.history) < self.lastRestoredState:
+      print("There are no previous state available for restore")   
+      return
+
     #restore state, then update index
     restoredState = self.history.pop()
     futureState = []
@@ -113,7 +121,12 @@ class ModelHistory:
 
     self.lastRestoredState = len(self.history)
 
-  def restoreStateNext(self):
+  def restoreNextState(self):
+
+    if 0 == len(self.future):
+      print("No next state available to restore")
+      return
+
     #restore state, then update index
     restoredState = self.future.pop()
     pastState = []
@@ -135,25 +148,6 @@ class ModelHistory:
       self.restoreNode(model)
 
     self.lastRestoredState = len(self.history)
-
-  def restorePreviousState(self):
-    if self.lastRestoredState < 1:
-      print("There are no previous state available for restore")   
-      return
-
-    if len(self.history) < self.lastRestoredState:
-      print("There are no previous state available for restore")   
-      return
-
-    self.restoreStatePrev()
-
-  def restoreNextState(self):
-
-    if 0 == len(self.future):
-      print("No next state available to restore")
-      return
-
-    self.restoreStateNext()
 
   def isRestorePreviousStateAvailable(self):
     return not (self.lastRestoredState < 1)
