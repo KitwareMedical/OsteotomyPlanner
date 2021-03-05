@@ -470,9 +470,9 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyComboBox.enabled = not self.modelHistory.hasHistory() and not self.actionInProgress
     self.ui.FinishButton.enabled = not self.actionInProgress
     self.onViewItemChanged(self.ui.SubjectHierarchyTreeView.currentItem())
-    print(self.modelHistory.history)
-    print(self.modelHistory.future)
-    print(self.modelHistory.lastRestoredState)
+    # print(self.modelHistory.history)
+    # print(self.modelHistory.future)
+    # print(self.modelHistory.lastRestoredState)
      
   
 
