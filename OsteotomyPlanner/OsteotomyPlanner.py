@@ -135,10 +135,11 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyComboBox.setLevelFilter(levelFilters)
     self.ui.SubjectHierarchyComboBox.connect("currentItemChanged(vtkIdType)", self.onFolderChanged)
     self.ui.SubjectHierarchyTreeView.connect("currentItemChanged(vtkIdType)", self.onViewItemChanged)
-    self.ui.SubjectHierarchyTreeView.hideColumn(2)
-    # self.ui.SubjectHierarchyTreeView.hideColumn(3)
-    self.ui.SubjectHierarchyTreeView.hideColumn(4)
-    self.ui.SubjectHierarchyTreeView.hideColumn(5)
+    self.ui.SubjectHierarchyTreeView.transformColumnVisible = False
+    self.ui.SubjectHierarchyTreeView.idColumnVisible = False
+    self.ui.AllModelsSubjectHierarchyTreeView.transformColumnVisible = False
+    self.ui.AllModelsSubjectHierarchyTreeView.idColumnVisible = False
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
 
 
 
@@ -199,6 +200,10 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
     self.resolveStateButtons()
+
+    self.ui.TabWidget.setCurrentWidget(self.ui.ActionTab)
+    self.onTabChanged(self.ui.TabWidget.indexOf(self.ui.ActionTab))
+    self.ui.TabWidget.currentChanged.connect(self.onTabChanged)
 
   
   # Split Action
@@ -446,6 +451,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.expandItem(item)
     self.ui.SubjectHierarchyTreeView.enabled = True
     self.modelHistory = ModelHistory(item)
+    self.tagModels()
 
   def removeNode(self,node):
     slicer.mrmlScene.RemoveNode(node)
@@ -462,7 +468,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.modelHistory.clearHistory()
     self.resolveStateButtons()
     self.ui.SubjectHierarchyComboBox.setCurrentItem(-1)
-    self.ui.SubjectHierarchyTreeView.enabled = False  
+    self.ui.SubjectHierarchyTreeView.enabled = False 
+    self.untagModels() 
 
   def resolveStateButtons(self):
     self.ui.UndoButton.enabled = self.modelHistory.isRestorePreviousStateAvailable() and not self.actionInProgress
@@ -473,6 +480,39 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # print(self.modelHistory.history)
     # print(self.modelHistory.future)
     # print(self.modelHistory.lastRestoredState)
+
+  def onTabChanged(self, index):
+
+    if index == self.ui.TabWidget.indexOf(self.ui.ActionTab):
+      self.ui.AllModelsSubjectHierarchyTreeView.visible = False
+
+    if index == self.ui.TabWidget.indexOf(self.ui.ReferenceTab):
+     self.ui.AllModelsSubjectHierarchyTreeView.visible = True
+
+  def tagModel(self, node):
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    item = shNode.GetItemByDataNode(node)
+    parent = shNode.GetItemParent(item)
+    node.RemoveAttribute('NodeInPlanner')
+    if parent == self.ui.SubjectHierarchyComboBox.currentItem():
+      node.SetAttribute('NodeInPlanner', 'True')
+
+  def untagModel(self, node):
+    node.RemoveAttribute('NodeInPlanner')
+
+  def tagModels(self):
+    
+    modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
+    for node in modelNodes:         
+      self.tagModel(node)
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
+
+  def untagModels(self):
+    modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
+    for node in modelNodes:         
+      self.untagModel(node)
+    
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
      
   
 
