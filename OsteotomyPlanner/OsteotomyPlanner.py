@@ -189,6 +189,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.UndoButton.setIcon(undoIcon)
     # self.ui.RedoButton.visible = False
 
+    self.ui.HideModelsButton.clicked.connect(self.onHideModels)
+
     self.transform = None
     self.activeNode = None
     self.curve = None
@@ -432,6 +434,14 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   
   
   #General  
+  def onHideModels(self):
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
+    for node in modelNodes:         
+      item = shNode.GetItemByDataNode(node)
+      if shNode.GetItemAttribute(item, 'NodeInPlanner') == '':
+        node.SetDisplayVisibility(False)
+  
   def isModelValid(self, model):
     if model.GetPolyData() is not None:
       if model.GetPolyData().GetNumberOfPoints() > 0:

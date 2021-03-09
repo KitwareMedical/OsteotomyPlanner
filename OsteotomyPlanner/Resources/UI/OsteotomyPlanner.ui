@@ -484,7 +484,35 @@
       <attribute name="title">
        <string>References</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_8"/>
+      <layout class="QVBoxLayout" name="verticalLayout_8">
+       <item>
+        <widget class="QPushButton" name="HideModelsButton">
+         <property name="text">
+          <string>Hide all models</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="ShowAsTemplateButton">
+         <property name="text">
+          <string>Show selected model as template</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_6">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>
