@@ -190,6 +190,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # self.ui.RedoButton.visible = False
 
     self.ui.HideModelsButton.clicked.connect(self.onHideModels)
+    self.ui.ShowAsTemplateButton.clicked.connect(self.onShowModelAsTemplate)
 
     self.transform = None
     self.activeNode = None
@@ -434,6 +435,15 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   
   
   #General  
+  def onShowModelAsTemplate(self):
+    item = self.ui.AllModelsSubjectHierarchyTreeView.currentItem()
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    node = shNode.GetItemDataNode(item)
+    if node is not None:
+      node.SetDisplayVisibility(True)
+      node.GetDisplayNode().SetOpacity(0.2)
+
+  
   def onHideModels(self):
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
     modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
