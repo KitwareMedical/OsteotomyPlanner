@@ -139,7 +139,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.idColumnVisible = False
     self.ui.AllModelsSubjectHierarchyTreeView.transformColumnVisible = False
     self.ui.AllModelsSubjectHierarchyTreeView.idColumnVisible = False
-    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeItemAttributeNamesFilter(['NodeInPlanner'])
 
 
 
@@ -195,7 +195,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.splitPlanes = []
     self.splitModels = []
     self.actionInProgress = False
-    self.modelHistory = ModelHistory()    
+    self.modelHistory = ModelHistory()   
+    self.activeFolder = None 
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -451,6 +452,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.expandItem(item)
     self.ui.SubjectHierarchyTreeView.enabled = True
     self.modelHistory = ModelHistory(item)
+    self.untagModels()
+    self.activeFolder = self.ui.SubjectHierarchyComboBox.currentItem()
     self.tagModels()
 
   def removeNode(self,node):
@@ -465,11 +468,11 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.resolveStateButtons()
   
   def finishPlan(self):
+    self.untagModels()
     self.modelHistory.clearHistory()
     self.resolveStateButtons()
     self.ui.SubjectHierarchyComboBox.setCurrentItem(-1)
     self.ui.SubjectHierarchyTreeView.enabled = False 
-    self.untagModels() 
 
   def resolveStateButtons(self):
     self.ui.UndoButton.enabled = self.modelHistory.isRestorePreviousStateAvailable() and not self.actionInProgress
@@ -493,29 +496,33 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
     item = shNode.GetItemByDataNode(node)
     parent = shNode.GetItemParent(item)
-    node.RemoveAttribute('NodeInPlanner')
-    if parent == self.ui.SubjectHierarchyComboBox.currentItem():
-      node.SetAttribute('NodeInPlanner', 'True')
+    shNode.RemoveItemAttribute(item, 'NodeInPlanner')
+    if parent == self.ui.SubjectHierarchyComboBox.currentItem() and not parent == shNode.GetSceneItemID():
+      print('Tagging ' + node.GetName())
+      shNode.SetItemAttribute(item, 'NodeInPlanner', 'True')
 
   def untagModel(self, node):
-    node.RemoveAttribute('NodeInPlanner')
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    item = shNode.GetItemByDataNode(node)
+    shNode.RemoveItemAttribute(item, 'NodeInPlanner')
 
   def tagModels(self):
-    
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    item = self.ui.SubjectHierarchyComboBox.currentItem()
+    shNode.SetItemAttribute(item, 'NodeInPlanner', 'True')
     modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
     for node in modelNodes:         
       self.tagModel(node)
-    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeItemAttributeNamesFilter(['NodeInPlanner'])
 
   def untagModels(self):
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    if self.activeFolder is not None:
+      shNode.RemoveItemAttribute(self.activeFolder, 'NodeInPlanner')
     modelNodes = slicer.util.getNodesByClass('vtkMRMLModelNode')
     for node in modelNodes:         
-      self.untagModel(node)
-    
-    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeNodeAttributeNamesFilter(['NodeInPlanner'])
-     
-  
-
+      self.untagModel(node)    
+    self.ui.AllModelsSubjectHierarchyTreeView.sortFilterProxyModel().setExcludeItemAttributeNamesFilter(['NodeInPlanner'])
 
   # Generic Action
   def beginAction(self):
