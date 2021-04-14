@@ -11,9 +11,6 @@ set(EXTENSION_DESCRIPTION "Osteotomy Planner is an extension designed to help th
 set(EXTENSION_ICONURL "https://raw.githubusercontent.com/KitwareMedical/OsteotomyPlanner/master/Planner/Resources/Icons/Planner.png")
 set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/KitwareMedical/OsteotomyPlanner/master/Screenshots/Screenshot.jpg")
 set(EXTENSION_DEPENDS "NA") # Specified as a space separated string, a list or 'NA' if any
-set(EXTENSION_BUILD_SUBDIRECTORY inner-build)
-
-set(SUPERBUILD_TOPLEVEL_PROJECT inner)
 
 #-----------------------------------------------------------------------------
 # Extension dependencies
