@@ -5,6 +5,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from ModelHistory.ModelHistory import ModelHistory as ModelHistory
+from vtk.util.numpy_support import vtk_to_numpy as vtk_to_numpy
 
 #
 # OsteotomyPlanner
@@ -191,6 +192,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self.ui.HideModelsButton.clicked.connect(self.onHideModels)
     self.ui.ShowAsTemplateButton.clicked.connect(self.onShowModelAsTemplate)
+    self.ui.ComputeDistanceButton.clicked.connect(self.onComputeDistance)
 
     self.transform = None
     self.activeNode = None
@@ -451,7 +453,24 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       item = shNode.GetItemByDataNode(node)
       if shNode.GetItemAttribute(item, 'NodeInPlanner') == '':
         node.SetDisplayVisibility(False)
-  
+
+  def onComputeDistance(self):
+    referenceItem = self.ui.AllModelsSubjectHierarchyTreeView.currentItem()
+    subjectItem = self.ui.SubjectHierarchyTreeView.currentItem()
+    shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+    subjectNode = shNode.GetItemDataNode(subjectItem)
+    referenceNode = shNode.GetItemDataNode(referenceItem)
+    if subjectNode is not None and referenceNode is not None:
+      distanceFilter = vtk.vtkDistancePolyDataFilter()
+      distanceFilter.SetInputData(0, subjectNode.GetPolyData())
+      distanceFilter.SetInputData(1, referenceNode.GetPolyData())
+      distanceFilter.SignedDistanceOff()
+      distanceFilter.Update()
+      distanceData = vtk_to_numpy(distanceFilter.GetOutput().GetPointData().GetScalars('Distance'))
+      logging.info('min: ' + str(distanceData.min()) +
+                   ' max: ' + str(distanceData.max()) +
+                   ' mean: ' + str(distanceData.mean()) + f'\n')
+
   def isModelValid(self, model):
     if model.GetPolyData() is not None:
       if model.GetPolyData().GetNumberOfPoints() > 0:
