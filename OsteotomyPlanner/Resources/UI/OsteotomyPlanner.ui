@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>586</height>
+    <width>326</width>
+    <height>609</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -16,7 +16,7 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="qMRMLSubjectHierarchyComboBox" name="SubjectHierarchyComboBox">
-     <property name="defaultText">
+     <property name="defaultText" stdset="0">
       <string>Select model folder</string>
      </property>
     </widget>
@@ -322,15 +322,12 @@
             </layout>
            </item>
            <item>
-            <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersTranslation"/>
+            <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersTranslation" native="true"/>
            </item>
            <item>
-            <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersRotation">
-             <property name="Title">
+            <widget class="qMRMLTransformSliders" name="MRMLTransformSlidersRotation" native="true">
+             <property name="Title" stdset="0">
               <string>Rotation</string>
-             </property>
-             <property name="TypeOfTransform">
-              <enum>qMRMLTransformSliders::ROTATION</enum>
              </property>
             </widget>
            </item>
@@ -500,6 +497,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="ComputeDistanceButton">
+         <property name="text">
+          <string>Compute distance between selected models</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_6">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -533,11 +537,6 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>qMRMLTransformSliders</class>
-   <extends>qMRMLWidget</extends>
-   <header>qMRMLTransformSliders.h</header>
-  </customwidget>
-  <customwidget>
    <class>qMRMLWidget</class>
    <extends>QWidget</extends>
    <header>qMRMLWidget.h</header>
@@ -549,14 +548,20 @@
    <header>qMRMLSubjectHierarchyTreeView.h</header>
   </customwidget>
   <customwidget>
-   <class>qMRMLSubjectHierarchyComboBox</class>
-   <extends>ctkComboBox</extends>
-   <header>qMRMLSubjectHierarchyComboBox.h</header>
-  </customwidget>
-  <customwidget>
    <class>ctkComboBox</class>
    <extends>QComboBox</extends>
    <header>ctkComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLTransformSliders</class>
+   <extends>qMRMLWidget</extends>
+   <header>qMRMLTransformSliders.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLSubjectHierarchyComboBox</class>
+   <extends>ctkComboBox</extends>
+   <header>qMRMLSubjectHierarchyComboBox.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
