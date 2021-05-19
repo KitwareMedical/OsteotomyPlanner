@@ -4,7 +4,7 @@ import logging
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
-import ModelHistory.ModelHistory as ModelHistory
+from ModelHistory.ModelHistory import ModelHistory as ModelHistory
 
 #
 # OsteotomyPlanner
@@ -198,7 +198,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.splitPlanes = []
     self.splitModels = []
     self.actionInProgress = False
-    self.modelHistory = ModelHistory()   
+    self.modelHistory = ModelHistory()
     self.activeFolder = None 
 
     # Make sure parameter node is initialized (needed for module reload)
