@@ -179,6 +179,14 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.RemoveConfirmButton.clicked.connect(self.confirmRemove)
     self.ui.RemoveCancelButton.clicked.connect(self.endRemove)
 
+    self.ui.BendButton.clicked.connect(self.beginBend)
+    BendIcon = qt.QIcon(":/Icons/Medium/SlicerEditCut.png")
+    self.ui.BendButton.setIcon(BendIcon)
+    self.ui.BendPlaceAxisButton.clicked.connect(self.placeBendAxis)
+    self.ui.BendInitializeButton.clicked.connect(self.createTPSTransform)
+    self.ui.BendConfirmButton.clicked.connect(self.confirmBend)
+    self.ui.BendCancelButton.clicked.connect(self.endBend)
+
     self.ui.FinishButton.clicked.connect(self.finishPlan)
     finishIcon = qt.QIcon(":/Icons/AnnotationOkDone.png")
     self.ui.FinishButton.setIcon(finishIcon)
@@ -199,6 +207,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.curve = None
     self.splitPlanes = []
     self.splitModels = []
+    self.axis = None
     self.actionInProgress = False
     self.modelHistory = ModelHistory()
     self.activeFolder = None 
@@ -226,7 +235,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsPlaneNode")
     planeNode = slicer.vtkMRMLMarkupsPlaneNode()
     slicer.mrmlScene.AddNode(planeNode)
-    planeNode.CreateDefaultDisplayNodes() 
+    planeNode.CreateDefaultDisplayNodes()
     selectionNode.SetActivePlaceNodeID(planeNode.GetID())
     interactionNode.SetCurrentInteractionMode(interactionNode.Place)
     self.splitPlanes.append(planeNode)
@@ -433,10 +442,43 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def endRemove(self):
     self.endAction()
 
+  # Bend action
+  def beginBend(self):
+    self.ui.ActionsWidget.setCurrentWidget(self.ui.BendWidget)
+    self.ui.BendInitializeButton.enabled = False
+    self.beginAction()
 
-  
-  
-  #General  
+  def placeBendAxis(self):
+    interactionNode = slicer.app.applicationLogic().GetInteractionNode()
+    selectionNode = slicer.app.applicationLogic().GetSelectionNode()
+    selectionNode.SetReferenceActivePlaceNodeClassName("vtkMRMLMarkupsLineNode")
+    lineNode = slicer.vtkMRMLMarkupsLineNode()
+    slicer.mrmlScene.AddNode(lineNode)
+    lineNode.CreateDefaultDisplayNodes()
+    selectionNode.SetActivePlaceNodeID(lineNode.GetID())
+    interactionNode.SetCurrentInteractionMode(interactionNode.Place)
+    self.axis = lineNode
+    self.ui.BendInitializeButton.enabled = True
+
+  def createTPSTransform(self):
+    self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLTransformNode')
+    self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
+
+  def confirmBend(self):
+    logic = slicer.vtkSlicerTransformLogic()
+    logic.hardenTransform(self.activeNode)
+    self.confirmAction()
+    self.endBend()
+
+  def endBend(self):
+    self.activeNode.SetAndObserveTransformNodeID(None)
+    slicer.mrmlScene.RemoveNode(self.transform)
+    slicer.mrmlScene.RemoveNode(self.axis)
+    self.transform = None
+    self.axis = None
+    self.endAction()
+
+  #General
   def onShowModelAsTemplate(self):
     item = self.ui.AllModelsSubjectHierarchyTreeView.currentItem()
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
@@ -461,15 +503,55 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     subjectNode = shNode.GetItemDataNode(subjectItem)
     referenceNode = shNode.GetItemDataNode(referenceItem)
     if subjectNode is not None and referenceNode is not None:
+
       distanceFilter = vtk.vtkDistancePolyDataFilter()
       distanceFilter.SetInputData(0, subjectNode.GetPolyData())
       distanceFilter.SetInputData(1, referenceNode.GetPolyData())
       distanceFilter.SignedDistanceOff()
       distanceFilter.Update()
-      distanceData = vtk_to_numpy(distanceFilter.GetOutput().GetPointData().GetScalars('Distance'))
-      logging.info('min: ' + str(distanceData.min()) +
-                   ' max: ' + str(distanceData.max()) +
-                   ' mean: ' + str(distanceData.mean()) + f'\n')
+
+      # update polydata
+      vtkDistanceArray = distanceFilter.GetOutput().GetPointData().GetScalars('Distance')
+      subjectNode.GetPolyData().GetPointData().SetActiveScalars('Distance')
+      subjectNode.GetPolyData().GetPointData().SetScalars(vtkDistanceArray)
+      displayNode = subjectNode.GetDisplayNode()
+      displayNode.SetActiveScalar('Distance', vtk.vtkAssignAttribute.POINT_DATA)
+      displayNode.SetAndObserveColorNodeID('Rainbow')
+      displayNode.SetScalarVisibility(True)
+
+      # update metric table
+      table = self.ui.DistanceTableWidget
+      distanceData = vtk_to_numpy(vtkDistanceArray)
+
+      table.setRowCount(3)
+      table.setColumnCount(2)
+      table.setHorizontalHeaderLabels([' Metric ', ' Value '])
+      table.setColumnWidth(0, 100)
+      table.setColumnWidth(1, 200)
+      horizontalHeader = table.horizontalHeader()
+      horizontalHeader.setStretchLastSection(True)
+      table.verticalHeader().setVisible(True)
+
+      minMetricLabel = qt.QLabel('min')
+      minMetricLabel.setAlignment(0x84)
+      table.setCellWidget(0, 0, minMetricLabel)
+      minValueLabel = qt.QLabel("{:.6e}".format(distanceData.min()))
+      minValueLabel.setAlignment(0x84)
+      table.setCellWidget(0, 1, minValueLabel)
+
+      maxMetricLabel = qt.QLabel('max')
+      maxMetricLabel.setAlignment(0x84)
+      table.setCellWidget(1, 0, maxMetricLabel)
+      maxValueLabel = qt.QLabel("{:.6e}".format(distanceData.max()))
+      maxValueLabel.setAlignment(0x84)
+      table.setCellWidget(1, 1, maxValueLabel)
+
+      meanMetricLabel = qt.QLabel('mean')
+      meanMetricLabel.setAlignment(0x84)
+      table.setCellWidget(2, 0, meanMetricLabel)
+      meanValueLabel = qt.QLabel("{:.6e}".format(distanceData.mean()))
+      meanValueLabel.setAlignment(0x84)
+      table.setCellWidget(2, 1, meanValueLabel)
 
   def isModelValid(self, model):
     if model.GetPolyData() is not None:
