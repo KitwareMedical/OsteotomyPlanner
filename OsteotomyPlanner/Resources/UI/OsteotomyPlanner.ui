@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>326</width>
-    <height>609</height>
+    <width>382</width>
+    <height>668</height>
    </rect>
   </property>
   <property name="styleSheet">
@@ -185,6 +185,25 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QToolButton" name="BendButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>Move</string>
+               </property>
+               <property name="text">
+                <string>Bend</string>
+               </property>
+               <property name="toolButtonStyle">
+                <enum>Qt::ToolButtonTextUnderIcon</enum>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -196,6 +215,105 @@
               <size>
                <width>20</width>
                <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="BendWidget">
+          <layout class="QVBoxLayout" name="verticalLayout_9">
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_8">
+             <item>
+              <widget class="QPushButton" name="BendConfirmButton">
+               <property name="text">
+                <string>Confirm</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="BendCancelButton">
+               <property name="text">
+                <string>Cancel</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_12">
+             <item>
+              <widget class="QPushButton" name="BendPlaceAxisButton">
+               <property name="text">
+                <string>Place bending Axis</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="BendInitializeButton">
+               <property name="text">
+                <string>Initialize bending</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QGridLayout" name="gridLayout">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Radius of deform region</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QSlider" name="BendRadiusHorizontalSlider">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="BendMagnitudeLabel">
+               <property name="text">
+                <string>Magnitude</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QSlider" name="BendMagnitudeSlider">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="BendSideACheckBox">
+               <property name="text">
+                <string>Side A</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QCheckBox" name="BendSideBCheckBox">
+               <property name="text">
+                <string>Side B</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_7">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>208</height>
               </size>
              </property>
             </spacer>
@@ -502,6 +620,9 @@
           <string>Compute distance between selected models</string>
          </property>
         </widget>
+       </item>
+       <item>
+        <widget class="QTableWidget" name="DistanceTableWidget"/>
        </item>
        <item>
         <spacer name="verticalSpacer_6">
