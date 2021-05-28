@@ -2,10 +2,12 @@ import os
 import unittest
 import logging
 import vtk, qt, ctk, slicer
+import numpy as np
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from ModelHistory.ModelHistory import ModelHistory as ModelHistory
 from vtk.util.numpy_support import vtk_to_numpy as vtk_to_numpy
+from scipy.spatial.transform import Rotation as R
 
 #
 # OsteotomyPlanner
@@ -183,9 +185,15 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     BendIcon = qt.QIcon(":/Icons/Medium/SlicerEditCut.png")
     self.ui.BendButton.setIcon(BendIcon)
     self.ui.BendPlaceAxisButton.clicked.connect(self.placeBendAxis)
-    self.ui.BendInitializeButton.clicked.connect(self.createTPSTransform)
+    self.ui.BendInitializeButton.clicked.connect(self.initializeBend)
     self.ui.BendConfirmButton.clicked.connect(self.confirmBend)
     self.ui.BendCancelButton.clicked.connect(self.endBend)
+    self.ui.BendRadiusSlider.valueChanged.connect(self.updateBendTransform)
+    self.ui.BendMagnitudeSlider.valueChanged.connect(self.updateBendTransform)
+    self.ui.BendMagnitudeSlider.setMinimum(-15)
+    self.ui.BendMagnitudeSlider.setMaximum(15)
+    self.ui.BendSideACheckBox.stateChanged.connect(self.updateBendTransform)
+    self.ui.BendSideBCheckBox.stateChanged.connect(self.updateBendTransform)
 
     self.ui.FinishButton.clicked.connect(self.finishPlan)
     finishIcon = qt.QIcon(":/Icons/AnnotationOkDone.png")
@@ -207,7 +215,11 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.curve = None
     self.splitPlanes = []
     self.splitModels = []
-    self.axis = None
+    self.bendAxis = None
+    self.bendAxisNode = None
+    self.bendPlane = None
+    self.bendTPS = None
+    self.bendDownSample = None
     self.actionInProgress = False
     self.modelHistory = ModelHistory()
     self.activeFolder = None 
@@ -457,12 +469,121 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     lineNode.CreateDefaultDisplayNodes()
     selectionNode.SetActivePlaceNodeID(lineNode.GetID())
     interactionNode.SetCurrentInteractionMode(interactionNode.Place)
-    self.axis = lineNode
+    self.bendAxisNode = lineNode
     self.ui.BendInitializeButton.enabled = True
 
-  def createTPSTransform(self):
+  def initializeBend(self):
+    # In case bend axis is moved for re-initialization
+    if self.transform is not None:
+      slicer.mrmlScene.RemoveNode(self.transform)
+      self.transform = None
+
+    # Create transform
     self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLTransformNode')
+    self.bendTPS = vtk.vtkThinPlateSplineTransform()
+    self.bendTPS.SetSigma(.0001)
+    self.bendTPS.SetBasisToR()
+    # # Get parent transform
+    # parentTransform = self.activeNode.GetParentTransformNode()
+    # if parentTransform is None:
+    #   print("parent transform is none")
+    # elif parentTransform.IsA("vtkMRMLLinearTransformNode"):
+    #   print("parent transform is vtkMRMLLinearTransformNode")
+    # elif parentTransform.IsA("vtkMRMLTransformNode"):
+    #   print("parent transform is vtkMRMLTransformNode")
+    # else:
+    #   print("unknown parent transform")
+    self.transform.SetAndObserveTransformToParent(self.bendTPS)
     self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
+
+    # Create bend plane
+    normals = vtk.vtkPolyDataNormals()
+    normals.ComputePointNormalsOn()
+    normals.ComputeCellNormalsOn()
+    normals.AutoOrientNormalsOn()
+    normals.SetInputData(self.activeNode.GetPolyData())
+    normals.Update()
+
+    cellLocator = vtk.vtkCellLocator()
+    cellLocator.SetDataSet(normals.GetOutput())
+    cellLocator.BuildLocator()
+
+    A = np.array(self.bendAxisNode.GetNthControlPointPositionVector(0))
+    B = np.array(self.bendAxisNode.GetNthControlPointPositionVector(1))
+    AB = B - A
+    ABMid = A + 0.5 * AB
+    self.bendAxis = AB / np.linalg.norm(AB)
+
+    cellId = vtk.mutable(0)
+    cellLocator.FindClosestPoint(ABMid.tolist(), [0.0, 0.0, 0.0], cellId, vtk.mutable(0), vtk.mutable(0))
+    normal = np.array(normals.GetOutput().GetCellData().GetNormals().GetTuple(cellId))
+    self.bendPlane = vtk.vtkPlane()
+    self.bendPlane.SetOrigin(ABMid)
+    self.bendPlane.SetNormal(np.cross(self.bendAxis, normal))
+    # planeNode = slicer.vtkMRMLMarkupsPlaneNode()
+    # slicer.mrmlScene.AddNode(planeNode)
+    # planeNode.CreateDefaultDisplayNodes()
+    # planeNode.AddControlPoint(vtk.vtkVector3d(ABMid))
+    # planeNode.AddControlPoint(vtk.vtkVector3d(B))
+    # planeNode.AddControlPoint(vtk.vtkVector3d(ABMid-20*normal))
+
+    # Create down-sampling point set
+    verts = vtk.vtkVertexGlyphFilter()
+    verts.SetInputData(normals.GetOutput())
+    verts.Update()
+    clean = vtk.vtkCleanPolyData()
+    clean.SetInputData(verts.GetOutput())
+    clean.SetTolerance(0.07)
+    clean.Update()
+    self.bendDownSample = clean.GetOutput().GetPoints()  # vtkPoints
+
+    # Update UI
+    maxRadius = 0.0
+    for i in range(self.bendDownSample.GetNumberOfPoints()):
+      radius = self.bendPlane.EvaluateFunction(self.bendDownSample.GetPoint(i))
+      if abs(radius) > maxRadius:
+        maxRadius = abs(radius)
+    print(str(self.bendDownSample.GetNumberOfPoints()) + ' points\n')
+    print('Max radius:' + str(maxRadius))
+    self.ui.BendRadiusSlider.setMinimum(0)
+    self.ui.BendRadiusSlider.setMaximum(maxRadius)
+
+    self.updateBendTransform()
+
+  def updateBendTransform(self):
+    # Check status
+    radius = self.ui.BendRadiusSlider.sliderPosition
+    magnitude = self.ui.BendMagnitudeSlider.sliderPosition / 10.0
+    sideA = self.ui.BendSideACheckBox.isChecked()
+    sideB = self.ui.BendSideBCheckBox.isChecked()
+
+    # Compute Transform
+    sourcePoints = vtk.vtkPoints()
+    targetPoints = vtk.vtkPoints()
+    for i in range(self.bendDownSample.GetNumberOfPoints()):
+      sourcePoint = self.bendDownSample.GetPoint(i)
+      if self.bendPlane.EvaluateFunction(sourcePoint) > radius:
+        sourcePoints.InsertNextPoint(sourcePoint)
+        if sideA:
+          r = R.from_rotvec(magnitude * self.bendAxis)
+          center = np.array(self.bendPlane.GetOrigin())
+          targetPoint = (r.as_matrix() @ (np.array(sourcePoint) - center)) + center
+          targetPoints.InsertNextPoint(targetPoint.tolist())
+        else:
+          targetPoints.InsertNextPoint(sourcePoint)
+      if self.bendPlane.EvaluateFunction(sourcePoint) < -radius:
+        sourcePoints.InsertNextPoint(sourcePoint)
+        if sideB:
+          r = R.from_rotvec(-magnitude * self.bendAxis)
+          center = np.array(self.bendPlane.GetOrigin())
+          targetPoint = (r.as_matrix() @ (np.array(sourcePoint) - center)) + center
+          targetPoints.InsertNextPoint(targetPoint.tolist())
+        else:
+          targetPoints.InsertNextPoint(sourcePoint)
+
+    self.bendTPS.SetSourceLandmarks(sourcePoints)
+    self.bendTPS.SetTargetLandmarks(targetPoints)
+    self.bendTPS.Update()
 
   def confirmBend(self):
     logic = slicer.vtkSlicerTransformLogic()
@@ -473,9 +594,13 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def endBend(self):
     self.activeNode.SetAndObserveTransformNodeID(None)
     slicer.mrmlScene.RemoveNode(self.transform)
-    slicer.mrmlScene.RemoveNode(self.axis)
+    slicer.mrmlScene.RemoveNode(self.bendAxisNode)
     self.transform = None
-    self.axis = None
+    self.bendAxisNode = None
+    self.bendAxis = None
+    self.bendPlane = None
+    self.bendTPS = None
+    self.bendDownSample = None
     self.endAction()
 
   #General
