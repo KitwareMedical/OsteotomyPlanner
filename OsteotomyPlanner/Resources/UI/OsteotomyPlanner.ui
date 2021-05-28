@@ -84,7 +84,7 @@
    <item>
     <widget class="QTabWidget" name="TabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="ActionTab">
       <attribute name="title">
@@ -226,16 +226,16 @@
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_8">
              <item>
-              <widget class="QPushButton" name="BendConfirmButton">
+              <widget class="QPushButton" name="BendCancelButton">
                <property name="text">
-                <string>Confirm</string>
+                <string>Cancel</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="BendCancelButton">
+              <widget class="QPushButton" name="BendConfirmButton">
                <property name="text">
-                <string>Cancel</string>
+                <string>Confirm</string>
                </property>
               </widget>
              </item>
@@ -262,14 +262,14 @@
            <item>
             <layout class="QGridLayout" name="gridLayout">
              <item row="0" column="0">
-              <widget class="QLabel" name="label_3">
+              <widget class="QLabel" name="BendRadiusLabel">
                <property name="text">
                 <string>Radius of deform region</string>
                </property>
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QSlider" name="BendRadiusHorizontalSlider">
+              <widget class="QSlider" name="BendRadiusSlider">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
