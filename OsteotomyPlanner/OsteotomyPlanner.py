@@ -477,22 +477,20 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     if self.transform is not None:
       slicer.mrmlScene.RemoveNode(self.transform)
       self.transform = None
+      self.activeNode.SetAndObserveTransformNodeID(None)
+
+    # Check parent transform
+    parentTransform = self.activeNode.GetParentTransformNode()
+    if parentTransform is not None:
+      print("Bending initialization failed: parent transform is not None," +
+            " please harden existing transform and initialize bending again.")
+      return
 
     # Create transform
     self.transform = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLTransformNode')
     self.bendTPS = vtk.vtkThinPlateSplineTransform()
     self.bendTPS.SetSigma(.0001)
     self.bendTPS.SetBasisToR()
-    # # Get parent transform
-    # parentTransform = self.activeNode.GetParentTransformNode()
-    # if parentTransform is None:
-    #   print("parent transform is none")
-    # elif parentTransform.IsA("vtkMRMLLinearTransformNode"):
-    #   print("parent transform is vtkMRMLLinearTransformNode")
-    # elif parentTransform.IsA("vtkMRMLTransformNode"):
-    #   print("parent transform is vtkMRMLTransformNode")
-    # else:
-    #   print("unknown parent transform")
     self.transform.SetAndObserveTransformToParent(self.bendTPS)
     self.activeNode.SetAndObserveTransformNodeID(self.transform.GetID())
 
@@ -520,12 +518,6 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.bendPlane = vtk.vtkPlane()
     self.bendPlane.SetOrigin(ABMid)
     self.bendPlane.SetNormal(np.cross(self.bendAxis, normal))
-    # planeNode = slicer.vtkMRMLMarkupsPlaneNode()
-    # slicer.mrmlScene.AddNode(planeNode)
-    # planeNode.CreateDefaultDisplayNodes()
-    # planeNode.AddControlPoint(vtk.vtkVector3d(ABMid))
-    # planeNode.AddControlPoint(vtk.vtkVector3d(B))
-    # planeNode.AddControlPoint(vtk.vtkVector3d(ABMid-20*normal))
 
     # Create down-sampling point set
     verts = vtk.vtkVertexGlyphFilter()
