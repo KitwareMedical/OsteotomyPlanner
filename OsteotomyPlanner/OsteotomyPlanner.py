@@ -182,16 +182,19 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.RemoveCancelButton.clicked.connect(self.endRemove)
 
     self.ui.BendButton.clicked.connect(self.beginBend)
-    BendIcon = qt.QIcon(":/Icons/Medium/SlicerEditCut.png")
+    BendIcon = qt.QIcon(self.resourcePath('Icons/Bending.png'))
     self.ui.BendButton.setIcon(BendIcon)
     self.ui.BendPlaceAxisButton.clicked.connect(self.placeBendAxis)
     self.ui.BendInitializeButton.clicked.connect(self.initializeBend)
     self.ui.BendConfirmButton.clicked.connect(self.confirmBend)
     self.ui.BendCancelButton.clicked.connect(self.endBend)
+    self.ui.BendRadiusSlider.setMinimum(0)
+    self.ui.BendRadiusSlider.setMaximum(100)
+    self.ui.BendRadiusSlider.setSliderPosition(10)
     self.ui.BendRadiusSlider.valueChanged.connect(self.updateBendTransform)
-    self.ui.BendMagnitudeSlider.valueChanged.connect(self.updateBendTransform)
     self.ui.BendMagnitudeSlider.setMinimum(-15)
     self.ui.BendMagnitudeSlider.setMaximum(15)
+    self.ui.BendMagnitudeSlider.valueChanged.connect(self.updateBendTransform)
     self.ui.BendSideACheckBox.stateChanged.connect(self.updateBendTransform)
     self.ui.BendSideBCheckBox.stateChanged.connect(self.updateBendTransform)
 
@@ -218,6 +221,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.bendAxis = None
     self.bendAxisNode = None
     self.bendPlane = None
+    self.bendMaxRadius = 0.0
     self.bendTPS = None
     self.bendDownSample = None
     self.actionInProgress = False
@@ -552,26 +556,25 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     verts.Update()
     clean = vtk.vtkCleanPolyData()
     clean.SetInputData(verts.GetOutput())
+    # TODO: use some metrics to calculate tolerance
     clean.SetTolerance(0.07)
     clean.Update()
     self.bendDownSample = clean.GetOutput().GetPoints()  # vtkPoints
 
-    # Update UI
-    maxRadius = 0.0
+    # Update max radius
+    self.bendMaxRadius = 0.0
     for i in range(self.bendDownSample.GetNumberOfPoints()):
       radius = self.bendPlane.EvaluateFunction(self.bendDownSample.GetPoint(i))
-      if abs(radius) > maxRadius:
-        maxRadius = abs(radius)
+      if abs(radius) > self.bendMaxRadius:
+        self.bendMaxRadius = abs(radius)
     print(str(self.bendDownSample.GetNumberOfPoints()) + ' points\n')
-    print('Max radius:' + str(maxRadius))
-    self.ui.BendRadiusSlider.setMinimum(0)
-    self.ui.BendRadiusSlider.setMaximum(maxRadius)
+    print('Max radius:' + str(self.bendMaxRadius))
 
     self.updateBendTransform()
 
   def updateBendTransform(self):
     # Check status
-    radius = self.ui.BendRadiusSlider.sliderPosition
+    radius = self.ui.BendRadiusSlider.sliderPosition * self.bendMaxRadius / 100.0
     magnitude = self.ui.BendMagnitudeSlider.sliderPosition / 10.0
     sideA = self.ui.BendSideACheckBox.isChecked()
     sideB = self.ui.BendSideBCheckBox.isChecked()
@@ -618,6 +621,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.bendAxisNode = None
     self.bendAxis = None
     self.bendPlane = None
+    self.bendMaxRadius = 0.0
     self.bendTPS = None
     self.bendDownSample = None
     self.endAction()
