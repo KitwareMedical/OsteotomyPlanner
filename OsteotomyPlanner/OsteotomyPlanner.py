@@ -486,6 +486,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def beginBend(self):
     self.ui.ActionsWidget.setCurrentWidget(self.ui.BendWidget)
     self.ui.BendInitializeButton.enabled = False
+    self.ui.BendRadiusSlider.enabled = False
+    self.ui.BendMagnitudeSlider.enabled = False
     self.beginAction()
     if len(self.activeNodes) != 1:
       print("Warning: multiple models are selected, please choose only one.")
@@ -570,6 +572,8 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     print(str(self.bendDownSample.GetNumberOfPoints()) + ' points\n')
     print('Max radius:' + str(self.bendMaxRadius))
 
+    self.ui.BendRadiusSlider.enabled = True
+    self.ui.BendMagnitudeSlider.enabled = True
     self.updateBendTransform()
 
   def updateBendTransform(self):
