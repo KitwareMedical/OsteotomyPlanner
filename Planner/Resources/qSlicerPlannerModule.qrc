@@ -1,7 +1,0 @@
-<!DOCTYPE RCC><RCC version="1.0">
-  <qresource>
-    <file>Icons/Planner.png</file>
-    <file>Testing/ModelHierachyScene.mrb</file>
-    <file>Icons/MarkupsPlaneMouseModePlace.png</file>
-  </qresource>
-</RCC>
