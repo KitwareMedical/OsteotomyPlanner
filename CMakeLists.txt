@@ -28,7 +28,7 @@ mark_as_superbuild(GIT_EXECUTABLE)
 # add_subdirectory(Planner)
 add_subdirectory(ShrinkWrap)
 add_subdirectory(OsteotomyModelToModelDistance)
-add_subdirectory(ReplayPlan)
+# add_subdirectory(ReplayPlan)
 add_subdirectory(OsteotomyPlanner)
 
 #-----------------------------------------------------------------------------
