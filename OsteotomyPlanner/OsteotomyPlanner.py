@@ -687,21 +687,21 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       minMetricLabel = qt.QLabel('min')
       minMetricLabel.setAlignment(0x84)
       table.setCellWidget(0, 0, minMetricLabel)
-      minValueLabel = qt.QLabel("{:.6e}".format(distanceData.min()))
+      minValueLabel = qt.QLabel(f"{distanceData.min():.6e}")
       minValueLabel.setAlignment(0x84)
       table.setCellWidget(0, 1, minValueLabel)
 
       maxMetricLabel = qt.QLabel('max')
       maxMetricLabel.setAlignment(0x84)
       table.setCellWidget(1, 0, maxMetricLabel)
-      maxValueLabel = qt.QLabel("{:.6e}".format(distanceData.max()))
+      maxValueLabel = qt.QLabel(f"{distanceData.max():.6e}")
       maxValueLabel.setAlignment(0x84)
       table.setCellWidget(1, 1, maxValueLabel)
 
       meanMetricLabel = qt.QLabel('mean')
       meanMetricLabel.setAlignment(0x84)
       table.setCellWidget(2, 0, meanMetricLabel)
-      meanValueLabel = qt.QLabel("{:.6e}".format(distanceData.mean()))
+      meanValueLabel = qt.QLabel(f"{distanceData.mean():.6e}")
       meanValueLabel.setAlignment(0x84)
       table.setCellWidget(2, 1, meanValueLabel)
 
@@ -716,7 +716,7 @@ class OsteotomyPlannerWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.SubjectHierarchyTreeView.currentItems(itemList)
     self.activeNodes = []
     shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
-    if itemList.GetNumberOfIds() is not 0:
+    if itemList.GetNumberOfIds() != 0:
       for i in range(itemList.GetNumberOfIds()):
         node = shNode.GetItemDataNode(itemList.GetId(i))
         if (node is None) or (node.IsA('vtkMRMLModelNode') is False):
@@ -1020,7 +1020,7 @@ class OsteotomyPlannerLogic(ScriptedLoadableModuleLogic):
     slicer.mrmlScene.RemoveNode(cliNode)
 
     stopTime = time.time()
-    logging.info('Processing completed in {0:.2f} seconds'.format(stopTime-startTime))
+    logging.info(f'Processing completed in {stopTime-startTime:.2f} seconds')
 
 #
 # OsteotomyPlannerTest
